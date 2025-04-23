@@ -43,13 +43,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 return Padding(
                   padding: const EdgeInsets.only(left: 10),
                   child: ChoiceChip(
-                    label: Text(tabs[index]),
+                    label: Text(tabs[index],overflow: TextOverflow.visible,),
                     selected: isSelected,
                     onSelected: (_) {
                       setState(() => selectedTabIndex = index);
                     },
                     selectedColor: AppTheme.primaryColor,
-                    backgroundColor: AppTheme.secondaryTextColor,
+                    backgroundColor: Colors.white10,
                     labelStyle: TextStyle(
                       color: isSelected ? Colors.white : AppTheme.primaryColor,
                     ),
@@ -68,6 +68,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 return ListTile(
                   title: Text(task.title),
                   subtitle: Text('Deadline: ${task.deadline.toLocal()}'),
+                  onTap: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AddTaskScreen(existingTask: task),
+                      ),
+                    );
+                    if (result == true) {
+                      _loadTasks(); // reload data setelah edit
+                    }
+                  },
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _confirmDelete(task),
+                  ),
                 );
               },
             ),
@@ -88,5 +103,31 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: AppTheme.primaryColor,
       ),
     );
+  }
+
+  void _confirmDelete(Task task) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Hapus Tugas'),
+            content: const Text('Yakin ingin menghapus tugas ini?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Batal'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+    );
+
+    if (shouldDelete == true) {
+      await _taskService.deleteTask(task.id!); // pastikan ID tidak null
+      _loadTasks();
+    }
   }
 }

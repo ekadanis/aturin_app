@@ -1,3 +1,4 @@
+import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'categories.dart';
@@ -26,7 +27,7 @@ class CategoryPickerScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isSelected ? category.color : Colors.grey.shade300,
+                  color: isSelected ? AppTheme.primaryColor : Colors.grey.shade300,
                   width: isSelected ? 2 : 1,
                 ),
               ),
@@ -49,7 +50,7 @@ class CategoryPickerScreen extends StatelessWidget {
                     ),
                   ),
                   if (isSelected)
-                    Icon(Icons.check, color: category.color)
+                    Icon(Icons.check, color: AppTheme.primaryColor)
                 ],
               ),
             ),

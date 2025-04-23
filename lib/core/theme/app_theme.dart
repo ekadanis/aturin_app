@@ -14,7 +14,7 @@ class AppTheme {
   
 
   // Light theme (now dark)
-  static final ThemeData lightTheme = ThemeData(
+  static final ThemeData darkTheme = ThemeData(
     primaryColor: primaryColor,
     scaffoldBackgroundColor: backgroundColor,
     appBarTheme: AppBarTheme(
@@ -105,4 +105,44 @@ class AppTheme {
     ),
     iconTheme: const IconThemeData(color: textColor),
   );
+
+  static final ThemeData lightTheme = ThemeData(
+  primaryColor: primaryColor,
+  scaffoldBackgroundColor: Colors.white,
+  appBarTheme: AppBarTheme(
+    backgroundColor: Colors.white,
+    elevation: 0,
+    iconTheme: const IconThemeData(color: Colors.black),
+    titleTextStyle: GoogleFonts.plusJakartaSans(
+      color: Colors.black,
+      fontSize: 24,
+      fontWeight: FontWeight.bold,
+    ),
+  ),
+  textTheme: GoogleFonts.plusJakartaSansTextTheme(
+    const TextTheme(
+      bodyLarge: TextStyle(color: Colors.black),
+      bodyMedium: TextStyle(color: Colors.black),
+      bodySmall: TextStyle(color: Colors.grey),
+    ),
+  ),
+  colorScheme: ColorScheme.light(
+    primary: primaryColor,
+    secondary: buttonBackgroundColor,
+  ),
+  inputDecorationTheme: InputDecorationTheme(
+    filled: true,
+    fillColor: Colors.grey.shade100,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide.none,
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: primaryColor),
+    ),
+    hintStyle: const TextStyle(color: Colors.grey),
+  ),
+);
+
 }
