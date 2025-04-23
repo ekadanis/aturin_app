@@ -10,7 +10,7 @@ buildscript {
         google()
         mavenCentral()
     }
-     dependencies {
+    dependencies {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
         classpath("org.jetbrains.kotlin:kotlin-serialization:$kotlin_version")
     }

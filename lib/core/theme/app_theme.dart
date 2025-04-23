@@ -98,7 +98,6 @@ class AppTheme {
       primary: primaryColor,
       secondary: accentColor,
       surface: cardColor,
-      background: backgroundColor,
       onPrimary: Colors.white,
       onSurface: textColor,
       brightness: Brightness.dark,

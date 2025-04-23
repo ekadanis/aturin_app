@@ -1,5 +1,7 @@
 {
     "cSpell.words": [
         "allprojects"
-    ]
+    ],
+    "cmake.ignoreCMakeListsMissing": true,
+    "java.configuration.updateBuildConfiguration": "interactive"
 }
