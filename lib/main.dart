@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:aturin_app/Test/main_page.dart';
 import 'package:flutter/services.dart';
+import 'package:aturin_app/routers/app_router.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,21 +12,23 @@ void main() {
     ),
   );
 
-  runApp(const Aturin());
+  runApp(Aturin());
 }
 
 class Aturin extends StatelessWidget {
-  const Aturin({super.key});
+  Aturin({super.key});
+
+  final _appRouter = AppRouter();
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'Aturin',
       theme: ThemeData(
         useMaterial3: true,
       ),
-      home: const MainPage(),
+      routerConfig: _appRouter.config(),
       /*
       routes: {
         '/homepage': (context) => const HomePage(),

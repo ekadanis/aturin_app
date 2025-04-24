@@ -1,3 +1,4 @@
+/*
 import 'package:aturin_app/core/widgets/bottom_navbar.dart';
 import 'package:aturin_app/Test/home_page.dart';
 import 'package:aturin_app/Test/task_page.dart';
@@ -69,3 +70,4 @@ class _MainPageState extends State<MainPage> {
     );
   }
 }
+*/
