@@ -1,3 +1,4 @@
+import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,8 +19,8 @@ class BottomNavbar extends StatelessWidget {
       data: NavigationBarThemeData(
         elevation: 10,
         labelPadding: const EdgeInsets.only(top: 0),
-        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-        indicatorColor: const Color.fromARGB(0, 255, 255, 255),
+        backgroundColor: Colors.white,
+        indicatorColor: WidgetStateColor.transparent,
         overlayColor: WidgetStateColor.transparent,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
@@ -27,24 +28,24 @@ class BottomNavbar extends StatelessWidget {
               fontStyle: FontStyle.normal,
               fontSize: 12,
               fontWeight: FontWeight.w900,
-              color: const Color.fromARGB(255, 82, 99, 243),
+              color: AppTheme.primaryColor,
             );
           }
           return GoogleFonts.plusJakartaSans(
             fontStyle: FontStyle.normal,
             fontSize: 12,
             fontWeight: FontWeight.w900,
-            color: const Color.fromARGB(255, 198, 214, 255),
+            color: AppTheme.buttonBackgroundColor,
           );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return const IconThemeData(
-              color: Color.fromARGB(255, 82, 99, 243),
+              color: AppTheme.primaryColor,
             );
           }
           return const IconThemeData(
-            color: Color.fromARGB(255, 198, 214, 255),
+            color: AppTheme.buttonBackgroundColor,
           );
         }),
       ),
@@ -58,7 +59,7 @@ class BottomNavbar extends StatelessWidget {
               height: 24,
               width: 24,
               colorFilter: const ColorFilter.mode(
-                Color.fromARGB(255, 198, 214, 255),
+                AppTheme.buttonBackgroundColor,
                 BlendMode.srcIn,
               ),
             ),
@@ -67,7 +68,7 @@ class BottomNavbar extends StatelessWidget {
               height: 24,
               width: 24,
               colorFilter: const ColorFilter.mode(
-                Color.fromARGB(255, 82, 99, 243),
+                AppTheme.primaryColor,
                 BlendMode.srcIn,
               ),
             ),
@@ -79,7 +80,7 @@ class BottomNavbar extends StatelessWidget {
               height: 24,
               width: 24,
               colorFilter: const ColorFilter.mode(
-                Color.fromARGB(255, 198, 214, 255),
+                AppTheme.buttonBackgroundColor,
                 BlendMode.srcIn,
               ),
             ),
@@ -88,7 +89,7 @@ class BottomNavbar extends StatelessWidget {
               height: 24,
               width: 24,
               colorFilter: const ColorFilter.mode(
-                Color.fromARGB(255, 82, 99, 243),
+                AppTheme.primaryColor,
                 BlendMode.srcIn,
               ),
             ),
@@ -100,7 +101,7 @@ class BottomNavbar extends StatelessWidget {
               height: 24,
               width: 24,
               colorFilter: const ColorFilter.mode(
-                Color.fromARGB(255, 198, 214, 255),
+                AppTheme.buttonBackgroundColor,
                 BlendMode.srcIn,
               ),
             ),
@@ -109,7 +110,7 @@ class BottomNavbar extends StatelessWidget {
               height: 24,
               width: 24,
               colorFilter: const ColorFilter.mode(
-                Color.fromARGB(255, 82, 99, 243),
+                AppTheme.primaryColor,
                 BlendMode.srcIn,
               ),
             ),
