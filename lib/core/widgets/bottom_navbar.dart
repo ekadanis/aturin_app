@@ -33,12 +33,12 @@ class BottomNavbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
             blurRadius: 17.0,
-            color: AppTheme.secondaryTextColor,
-            offset: Offset(0, 7),
+            color: AppTheme.lightSecondaryTextColor.withOpacity(0.1),
+            offset: const Offset(0, 7),
           ),
         ],
       ),
@@ -46,11 +46,10 @@ class BottomNavbar extends StatelessWidget {
         data: NavigationBarThemeData(
           elevation: 10,
           labelPadding: const EdgeInsets.only(top: 0),
-          backgroundColor: Colors.white,
-          indicatorColor: WidgetStateColor.transparent,
-          overlayColor: WidgetStateColor.transparent,
-          labelTextStyle: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) {
+          backgroundColor: AppTheme.lightCardColor,
+          indicatorColor: Colors.transparent,
+          labelTextStyle: MaterialStateProperty.resolveWith((states) {
+            if (states.contains(MaterialState.selected)) {
               return GoogleFonts.plusJakartaSans(
                 fontStyle: FontStyle.normal,
                 fontSize: 12,
@@ -65,13 +64,13 @@ class BottomNavbar extends StatelessWidget {
               color: AppTheme.buttonBackgroundColor,
             );
           }),
-          iconTheme: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) {
-              return const IconThemeData(
+          iconTheme: MaterialStateProperty.resolveWith((states) {
+            if (states.contains(MaterialState.selected)) {
+              return IconThemeData(
                 color: AppTheme.primaryColor,
               );
             }
-            return const IconThemeData(
+            return IconThemeData(
               color: AppTheme.buttonBackgroundColor,
             );
           }),

@@ -1,10 +1,14 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:aturin_app/Test/home_page.dart';
-import 'package:aturin_app/Test/profile_page.dart';
+import 'package:flutter/material.dart';
+import 'package:aturin_app/features/home/ui/page/home_page.dart';
+import 'package:aturin_app/features/profile/ui/profile_page.dart';
+import 'package:aturin_app/features/profile/ui/profile_edit_page.dart';
+import 'package:aturin_app/features/profile/models/user.dart';
 import 'package:aturin_app/Test/task_page.dart';
 import 'package:aturin_app/features/onboarding/ui/onboarding_screen.dart';
 import 'package:aturin_app/features/splash_screen/ui/splash_screen.dart';
-
+import 'package:aturin_app/core/widgets/bottom_navbar.dart';
+import 'package:aturin_app/Test/task_page.dart';
 part 'app_router.gr.dart';
 
 @AutoRouterConfig()
@@ -29,6 +33,7 @@ class AppRouter extends RootStackRouter{
       path: '/onboarding',
       page: OnboardingRoute.page,
     ),
+    
     CustomRoute(
       path: '/home',
       page: HomeRoute.page,
@@ -36,15 +41,21 @@ class AppRouter extends RootStackRouter{
       duration: Duration.zero
     ),
     CustomRoute(
+      path: '/profile',
+      page: ProfileRoute.page,
+      transitionsBuilder: (_, __, ___, child) => child,
+      duration: Duration.zero
+    ),
+     CustomRoute(
       path: '/task',
       page: TaskRoute.page,
       transitionsBuilder: (_, __, ___, child) => child,
       duration: Duration.zero
     ),
     CustomRoute(
-      path: '/profile',
-      page: ProfileRoute.page,
-      transitionsBuilder: (_, __, ___, child) => child,
+      path: '/profile/edit',
+      page: ProfileEditRoute.page,
+      transitionsBuilder: TransitionsBuilders.fadeIn,
       duration: Duration.zero
     ),
   ];

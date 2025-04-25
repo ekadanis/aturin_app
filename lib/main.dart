@@ -1,3 +1,4 @@
+import 'package:aturin_app/features/home/ui/page/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:aturin_app/routers/app_router.dart';
@@ -28,7 +29,6 @@ class Aturin extends StatelessWidget {
           useMaterial3: true,
         ),
         routerConfig: appRouter.config(),
-        // Hapus builder dan ganti dengan routerDelegate & routeInformationParser
       );
   }
 }
