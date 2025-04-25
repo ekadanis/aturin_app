@@ -2,6 +2,7 @@
     "cSpell.words": [
         "allprojects"
     ],
+    "cmake.sourceDirectory": "D:/Agile/Splahscreen/aturin_app/linux"
     "cmake.ignoreCMakeListsMissing": true,
     "java.configuration.updateBuildConfiguration": "interactive"
 }
