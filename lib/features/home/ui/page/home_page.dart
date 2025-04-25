@@ -1,10 +1,7 @@
-import 'package:aturin_app/features/home/models/task_model.dart';
 import 'package:aturin_app/features/home/services/task_service.dart';
 import 'package:aturin_app/features/home/widget/empty_task.dart';
 import 'package:aturin_app/features/home/widget/greeting_header.dart';
-import 'package:aturin_app/features/home/widget/task_card.dart';
 import 'package:aturin_app/features/home/widget/timeline_widget.dart';
-import 'package:timelines_plus/timelines_plus.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatelessWidget {

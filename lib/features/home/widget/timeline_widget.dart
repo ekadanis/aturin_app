@@ -62,6 +62,6 @@ class TimelineWidget extends StatelessWidget {
         child: TaskCard(task: task),
       ),
     );
-    ;
+    
   }
 }
