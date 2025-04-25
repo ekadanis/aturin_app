@@ -44,7 +44,7 @@ class TaskCard extends StatelessWidget {
                       children: [
                         Padding(
                           padding: const EdgeInsets.only(right: 4),
-                          child: SvgPicture.asset(categoryIcon, width: 20),
+                          child: SvgPicture.asset(categoryIcon, width: 18),
                         ),
                         const SizedBox(width: 4),
                         Text(

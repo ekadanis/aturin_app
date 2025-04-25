@@ -2,7 +2,6 @@ import 'package:aturin_app/features/home/services/task_service.dart';
 import 'package:aturin_app/features/profile/database/profile_database.dart';
 import 'package:aturin_app/features/profile/models/user.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 
 class GreetingHeader extends StatelessWidget implements PreferredSizeWidget {
   const GreetingHeader({super.key});
@@ -34,7 +33,7 @@ class GreetingHeader extends StatelessWidget implements PreferredSizeWidget {
           backgroundColor: Colors.transparent,
           elevation: 0,
           automaticallyImplyLeading: false,
-          toolbarHeight: 80,
+          toolbarHeight: 50,
           title: Row(
             children: [
               CircleAvatar(backgroundImage: AssetImage(user.avatar)),
@@ -48,14 +47,14 @@ class GreetingHeader extends StatelessWidget implements PreferredSizeWidget {
                         TextSpan(
                           text: 'Hallo, ',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 12,
                             color: Colors.blue,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         TextSpan(
                           text: user.username,
-                          style: TextStyle(fontSize: 16, color: Colors.black),
+                          style: TextStyle(fontSize: 12, color: Colors.black),
                         ),
                       ],
                     ),
@@ -93,5 +92,5 @@ class GreetingHeader extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(80);
+  Size get preferredSize => const Size.fromHeight(48);
 }
