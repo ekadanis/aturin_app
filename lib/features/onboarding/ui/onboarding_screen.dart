@@ -50,9 +50,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              SizedBox(height: MediaQuery.of(context).size.height * 0.1),
+              const Spacer(flex: 1),
               SizedBox(
-                height: MediaQuery.of(context).size.height * 0.5,
+                height: 500,
                 child: PageView.builder(
                   controller: _pageController,
                   itemCount: contents.length,
@@ -67,32 +67,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       child: Column(
                         children: [
                           SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.25,
-                            child: Image.asset(
-                              contents[index].image,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                          const SizedBox(height: 30),
-                          SizedBox(
-                            height: 32,
-                            child: Text(
-                              contents[index].title,
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
+                            height: 350,
+                            child: Center(
+                              child: Image.asset(
+                                contents[index].image,
+                                fit: BoxFit.contain,
+                                height: 350,
                               ),
                             ),
                           ),
-                          const SizedBox(height: 10),
-                          SizedBox(
-                            height: 60,
+                          const SizedBox(height: 24),
+                          Text(
+                            contents[index].title,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 34,
+                              height: 1.3,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Description with consistent styling
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
                             child: Text(
                               contents[index].description,
                               textAlign: TextAlign.center,
                               style: GoogleFonts.plusJakartaSans(
-                                fontSize: 16,
-                                color: Colors.grey,
+                                fontSize: 18,
+                                height: 1.5,
+                                color: Colors.grey[600],
                               ),
                             ),
                           ),
@@ -102,7 +106,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   },
                 ),
               ),
-              SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+              const Spacer(flex: 1),
               Container(
                 height: 100,
                 margin: const EdgeInsets.symmetric(horizontal: 40),
@@ -110,7 +114,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     SizedBox(
-                      width: MediaQuery.of(context).size.width * 0.5,
+                      width: 200,
                       height: 50,
                       child: ElevatedButtonTheme(
                         data: ElevatedButtonThemeData(
@@ -182,7 +186,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ],
                 ),
               ),
-              SizedBox(height: MediaQuery.of(context).size.height * 0.1),
+              const Spacer(flex: 1),
             ],
           ),
         ),
