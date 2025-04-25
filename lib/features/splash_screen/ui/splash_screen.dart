@@ -37,7 +37,6 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return AnimatedSplashScreen(
-      //Masih nunggu gif dari mas Zap
       splash: 'assets/images/splash_screen/splashscreen.gif',
       splashIconSize: double.infinity,
       centered: true,
