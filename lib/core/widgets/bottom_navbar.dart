@@ -19,21 +19,13 @@ class BottomNavbar extends StatelessWidget {
 
     switch (index) {
       case 0:
-        context.router.pushAndPopUntil(
-          const HomeRoute(),
-          predicate: (_) => false,
-        );
+        context.router.replace(const HomeRoute());
+        break;
       case 1:
-        context.router.pushAndPopUntil(
-          const TaskRoute(),
-          predicate: (_) => false,
-        );
+        context.router.replace(const TaskRoute());
         break;
       case 2:
-        context.router.pushAndPopUntil(
-          const ProfileRoute(),
-          predicate: (_) => false,
-        );
+        context.router.replace(const ProfileRoute());
         break;
     }
   }

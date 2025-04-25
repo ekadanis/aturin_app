@@ -1,11 +1,13 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:aturin_app/routers/app_router.dart';
 import 'package:aturin_app/features/onboarding/models/on_boarding_content.dart';
-import 'package:aturin_app/Test/main_page.dart';
 
+@RoutePage()
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -29,15 +31,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  _storeOnboardInfo() async {
+  Future<void> _storeOnboardInfo() async {
+    if (!mounted) return;
+    
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isFirstTime', false);
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainPage()),
-      );
-    }
+    
+    if (!mounted) return;
+    
+    await context.router.replace(const HomeRoute());
   }
 
   @override
@@ -120,9 +122,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           ),
                         ),
                         child: ElevatedButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (currentPage == contents.length - 1) {
-                              _storeOnboardInfo();
+                              await _storeOnboardInfo();
                             }
                             _pageController.nextPage(
                               duration: const Duration(milliseconds: 300),
