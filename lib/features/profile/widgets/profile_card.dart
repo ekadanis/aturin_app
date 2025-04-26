@@ -8,10 +8,10 @@ class ProfileCard extends StatelessWidget {
   final VoidCallback onEdit;
 
   const ProfileCard({
-    Key? key,
+    super.key,
     required this.user,
     required this.onEdit,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

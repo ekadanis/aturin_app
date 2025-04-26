@@ -1,5 +1,4 @@
 // lib/features/profile/database/profile_database.dart
-import 'package:sqflite/sqflite.dart';
 import 'package:aturin_app/core/database/database_helper.dart';
 import 'package:aturin_app/features/profile/models/user.dart';
 

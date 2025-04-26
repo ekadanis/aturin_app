@@ -12,7 +12,7 @@ import 'package:aturin_app/core/theme/app_theme.dart';
 
 @RoutePage()
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+  const ProfilePage({super.key});
 
   @override
   _ProfilePageState createState() => _ProfilePageState();

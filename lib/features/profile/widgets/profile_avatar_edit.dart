@@ -6,10 +6,10 @@ class ProfileAvatar extends StatelessWidget {
   final VoidCallback onEditPressed;
 
   const ProfileAvatar({
-    Key? key,
+    super.key,
     required this.avatarPath,
     required this.onEditPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

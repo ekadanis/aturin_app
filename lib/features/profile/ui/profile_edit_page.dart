@@ -14,7 +14,7 @@ import 'package:auto_route/auto_route.dart';
 class ProfileEditPage extends StatefulWidget {
   final User user;
 
-  const ProfileEditPage({Key? key, required this.user}) : super(key: key);
+  const ProfileEditPage({super.key, required this.user});
 
   @override
   _ProfileEditPageState createState() => _ProfileEditPageState();
