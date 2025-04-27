@@ -29,6 +29,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _loadUser() {
+    // Langsung muat user tanpa debugging database
     setState(() {
       _userFuture = _profileService.getUser();
     });

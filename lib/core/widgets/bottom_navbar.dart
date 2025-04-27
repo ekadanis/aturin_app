@@ -36,9 +36,10 @@ class BottomNavbar extends StatelessWidget {
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            blurRadius: 17.0,
+            blurRadius: 4.0,
             color: AppTheme.lightSecondaryTextColor.withOpacity(0.1),
-            offset: const Offset(0, 7),
+            offset: const Offset(0, -2),
+            spreadRadius: 0,
           ),
         ],
       ),

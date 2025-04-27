@@ -1,8 +1,20 @@
 // lib/features/profile/database/profile_database.dart
 import 'package:aturin_app/core/database/database_helper.dart';
 import 'package:aturin_app/features/profile/models/user.dart';
+import 'package:sqflite/sqflite.dart';
 
 class ProfileDatabase {
+  /// Dapatkan instance database langsung (untuk debugging)
+  Future<Database> getDatabaseInstance() async {
+    return await DatabaseHelper.instance.database;
+  }
+  
+  /// Insert user baru
+  Future<int> insertUser(Map<String, dynamic> userData) async {
+    final db = await DatabaseHelper.instance.database;
+    return await db.insert('users', userData);
+  }
+
   /// Ambil user berdasarkan email
   Future<User?> getUserByEmail(String email) async {
     final db = await DatabaseHelper.instance.database;
