@@ -1,25 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'core/theme/app_theme.dart';
-import 'features/task/ui/screens/home_screen.dart';
-import 'package:intl/date_symbol_data_local.dart';
+import 'package:provider/provider.dart';
+import 'features/task/services/task_services.dart';
+import 'features/task/ui/screens/task_list_screen.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('id_ID', null);
-  debugPaintSizeEnabled = false; 
-  runApp(const myApp());
+void main() {
+  runApp(const MyApp());
 }
 
-class myApp extends StatelessWidget{
-  const myApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context){
-    return MaterialApp(
-      title: 'Aturin',
-      theme: AppTheme.lightTheme,
-      home: const HomeScreen(),
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (context) => TaskService(),
+      child: MaterialApp(
+        title: 'Task Manager',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+        ),
+        home: const TaskListScreen(),
+      ),
     );
   }
 }
