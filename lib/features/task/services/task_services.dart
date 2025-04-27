@@ -3,14 +3,14 @@ import '../database/task_database.dart';
 import '../models/task.dart';
 
 class TaskService extends ChangeNotifier {
-  final dbHelper = DatabaseHelper.instance;
+  final taskDatabase = TaskDatabase();
   List<Task> _tasks = [];
 
   List<Task> get tasks => _tasks;
 
   // Fetch all tasks from the database
   Future<void> fetchTasks() async {
-    final result = await dbHelper.queryAll();
+    final result = await taskDatabase.queryAll();
     _tasks = result.map((row) => Task.fromMap(row)).toList();
     notifyListeners();
   }
@@ -44,7 +44,7 @@ class TaskService extends ChangeNotifier {
         completedAt: !task.isCompleted ? now : null,
       );
       
-      await dbHelper.update(updatedTask.toMap());
+      await taskDatabase.update(updatedTask.toMap());
       _tasks[index] = updatedTask;
       notifyListeners();
     }
@@ -62,7 +62,7 @@ class TaskService extends ChangeNotifier {
         isAlarmActive: !task.isAlarmActive,
       );
       
-      await dbHelper.update(updatedTask.toMap());
+      await taskDatabase.update(updatedTask.toMap());
       _tasks[index] = updatedTask;
       notifyListeners();
     }
@@ -70,7 +70,7 @@ class TaskService extends ChangeNotifier {
 
   // Get all tasks
   Future<List<Task>> getAllTasks() async {
-    final result = await dbHelper.queryAll();
+    final result = await taskDatabase.queryAll();
     _tasks = result.map((row) => Task.fromMap(row)).toList();
     notifyListeners();
     return _tasks;
@@ -78,7 +78,7 @@ class TaskService extends ChangeNotifier {
 
   // Get task by ID
   Future<Task?> getTaskById(int id) async {
-    final row = await dbHelper.queryById(id);
+    final row = await taskDatabase.queryById(id);
     if (row != null) {
       return Task.fromMap(row);
     }
@@ -87,14 +87,14 @@ class TaskService extends ChangeNotifier {
 
   // Add a new task
   Future<int> addTask(Task task) async {
-    final id = await dbHelper.insert(task.toMap());
+    final id = await taskDatabase.insert(task.toMap());
     await fetchTasks(); // Refresh the task list
     return id;
   }
 
   // Update an existing task
   Future<int> updateTask(Task task) async {
-    final result = await dbHelper.update(task.toMap());
+    final result = await taskDatabase.update(task.toMap());
     await fetchTasks(); // Refresh the task list
     return result;
   }
@@ -102,14 +102,14 @@ class TaskService extends ChangeNotifier {
   // Delete a task
   Future<int> deleteTask(int? id) async {
     if (id == null) return 0;
-    final result = await dbHelper.delete(id);
+    final result = await taskDatabase.delete(id);
     await fetchTasks(); // Refresh the task list
     return result;
   }
 
   // Clear all tasks
   Future<void> clearAllTasks() async {
-    await dbHelper.deleteAll();
+    await taskDatabase.deleteAll();
     await fetchTasks(); // Refresh the task list
   }
 }

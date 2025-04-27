@@ -3,43 +3,57 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Colors
-  static const Color primaryColor = Color(0xFF5263F3);
+  static const Color primaryColor = Color(0xFF5263F3);  // Primary blue color
   static const Color buttonBackgroundColor = Color(0xFFC6D6FF);
-  static const Color backgroundColor = Color(0xFF121212); // Dark background
-  static const Color cardColor = Color(0xFF1E1E1E); // Card background
-  static const Color textColor = Colors.white; // Light text for dark background
-  static const Color secondaryTextColor = Color(0xFFAAAAAA); // Lighter grey for secondary text
-  static const Color accentColor = Color(0xFF6E7BFF); // Slightly lighter blue for accents
-  static const Color dividerColor = Color(0xFF2A2A2A);
   
+  // Light theme colors
+  static const Color lightBackgroundColor = Colors.white;
+  static const Color lightCardColor = Colors.white;
+  static const Color lightTextColor = Color(0xFF131927);
+  static const Color lightSecondaryTextColor = Color(0xFF71717A);
+  static const Color lightDividerColor = Color(0xFFE4E4E7);
+  static const Color lightErrorColor = Color(0xFFEF4444);
 
-  // Light theme (now dark)
-  static final ThemeData darkTheme = ThemeData(
+  // Dark theme colors
+  static const Color darkBackgroundColor = Color(0xFF121212); 
+  static const Color darkCardColor = Color(0xFF1E1E1E);
+  static const Color darkTextColor = Colors.white;
+  static const Color darkSecondaryTextColor = Color(0xFFAAAAAA);
+  static const Color darkDividerColor = Color(0xFF2A2A2A);
+  
+  // Accent colors
+  static const Color accentColor = Color(0xFF6E7BFF);
+  static const Color successColor = Color(0xFF3DA755);
+  static const Color warningColor = Color(0xFFE6A73C);
+  static const Color dangerColor = Color(0xFFD34141);
+
+  // Light theme
+  static final ThemeData lightTheme = ThemeData(
     primaryColor: primaryColor,
-    scaffoldBackgroundColor: backgroundColor,
+    scaffoldBackgroundColor: lightBackgroundColor,
     appBarTheme: AppBarTheme(
-      backgroundColor: backgroundColor,
+      backgroundColor: lightBackgroundColor,
       elevation: 0,
-      iconTheme: const IconThemeData(color: textColor),
+      iconTheme: IconThemeData(color: lightTextColor),
       titleTextStyle: GoogleFonts.plusJakartaSans(
-        color: textColor,
-        fontSize: 24,
+        color: lightTextColor,
+        fontSize: 20,
         fontWeight: FontWeight.bold,
       ),
     ),
     textTheme: GoogleFonts.plusJakartaSansTextTheme(
       TextTheme(
-        displayLarge: const TextStyle(color: textColor),
-        displayMedium: const TextStyle(color: textColor),
-        displaySmall: const TextStyle(color: textColor),
-        headlineMedium: const TextStyle(color: textColor),
-        headlineSmall: const TextStyle(color: textColor),
-        titleLarge: const TextStyle(color: textColor, fontWeight: FontWeight.w600),
-        titleMedium: const TextStyle(color: textColor),
-        titleSmall: const TextStyle(color: textColor),
-        bodyLarge: const TextStyle(color: textColor),
-        bodyMedium: const TextStyle(color: textColor),
-        bodySmall: const TextStyle(color: secondaryTextColor),
+        displayLarge: const TextStyle(color: lightTextColor),
+        displayMedium: const TextStyle(color: lightTextColor),
+        displaySmall: const TextStyle(color: lightTextColor),
+        headlineMedium: const TextStyle(color: lightTextColor),
+        headlineSmall: const TextStyle(color: lightTextColor),
+        titleLarge: const TextStyle(color: lightTextColor, fontWeight: FontWeight.w600),
+        titleMedium: const TextStyle(color: lightTextColor),
+        titleSmall: const TextStyle(color: lightTextColor),
+        bodyLarge: const TextStyle(color: lightTextColor),
+        bodyMedium: const TextStyle(color: lightTextColor),
+        bodySmall: const TextStyle(color: lightSecondaryTextColor),
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
@@ -66,7 +80,7 @@ class AppTheme {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: cardColor,
+      fillColor: lightCardColor,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide.none,
@@ -79,70 +93,29 @@ class AppTheme {
         borderRadius: BorderRadius.circular(16),
         borderSide: const BorderSide(color: primaryColor, width: 1.5),
       ),
-      hintStyle: TextStyle(color: secondaryTextColor),
+      hintStyle: TextStyle(color: lightSecondaryTextColor),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
     ),
     dividerTheme: const DividerThemeData(
-      color: dividerColor,
+      color: lightDividerColor,
       thickness: 1,
     ),
     cardTheme: CardTheme(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
-      color: cardColor,
+      color: lightCardColor,
       elevation: 8,
       shadowColor: Colors.black.withOpacity(0.3),
     ),
-    colorScheme: ColorScheme.dark().copyWith(
+    colorScheme: ColorScheme.light().copyWith(
       primary: primaryColor,
       secondary: accentColor,
-      surface: cardColor,
-      background: backgroundColor,
+      surface: lightCardColor,
       onPrimary: Colors.white,
-      onSurface: textColor,
-      brightness: Brightness.dark,
+      onSurface: lightTextColor,
+      brightness: Brightness.light,
     ),
-    iconTheme: const IconThemeData(color: textColor),
+    iconTheme: const IconThemeData(color: lightTextColor),
   );
-
-  static final ThemeData lightTheme = ThemeData(
-  primaryColor: primaryColor,
-  scaffoldBackgroundColor: Colors.white,
-  appBarTheme: AppBarTheme(
-    backgroundColor: Colors.white,
-    elevation: 0,
-    iconTheme: const IconThemeData(color: Colors.black),
-    titleTextStyle: GoogleFonts.plusJakartaSans(
-      color: Colors.black,
-      fontSize: 24,
-      fontWeight: FontWeight.bold,
-    ),
-  ),
-  textTheme: GoogleFonts.plusJakartaSansTextTheme(
-    const TextTheme(
-      bodyLarge: TextStyle(color: Colors.black),
-      bodyMedium: TextStyle(color: Colors.black),
-      bodySmall: TextStyle(color: Colors.grey),
-    ),
-  ),
-  colorScheme: ColorScheme.light(
-    primary: primaryColor,
-    secondary: buttonBackgroundColor,
-  ),
-  inputDecorationTheme: InputDecorationTheme(
-    filled: true,
-    fillColor: Colors.grey.shade100,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
-      borderSide: BorderSide.none,
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: primaryColor),
-    ),
-    hintStyle: const TextStyle(color: Colors.grey),
-  ),
-);
-
 }
