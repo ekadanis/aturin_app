@@ -1,4 +1,3 @@
-// lib/core/database/database_helper.dart
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:aturin_app/core/database/seeders/profile_seeder.dart';
@@ -11,7 +10,7 @@ class DatabaseHelper {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('tasks.db');
+    _database = await _initDB('aturin_app.db');
     return _database!;
   }
 
@@ -21,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
