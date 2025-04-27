@@ -48,8 +48,8 @@ class BottomNavbar extends StatelessWidget {
           labelPadding: const EdgeInsets.only(top: 0),
           backgroundColor: AppTheme.lightCardColor,
           indicatorColor: Colors.transparent,
-          labelTextStyle: MaterialStateProperty.resolveWith((states) {
-            if (states.contains(MaterialState.selected)) {
+          labelTextStyle: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
               return GoogleFonts.plusJakartaSans(
                 fontStyle: FontStyle.normal,
                 fontSize: 12,
@@ -64,8 +64,8 @@ class BottomNavbar extends StatelessWidget {
               color: AppTheme.buttonBackgroundColor,
             );
           }),
-          iconTheme: MaterialStateProperty.resolveWith((states) {
-            if (states.contains(MaterialState.selected)) {
+          iconTheme: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
               return IconThemeData(
                 color: AppTheme.primaryColor,
               );

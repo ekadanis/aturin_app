@@ -9,13 +9,13 @@ class ProfileTextField extends StatelessWidget {
   final VoidCallback? onEditPressed;
 
   const ProfileTextField({
-    Key? key,
+    super.key,
     required this.label,
     this.value,
     this.controller,
     this.editable = false,
     this.onEditPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

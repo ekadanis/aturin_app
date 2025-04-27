@@ -8,12 +8,12 @@ class AvatarSelectionDialog extends StatelessWidget {
   final VoidCallback onCancel;
 
   const AvatarSelectionDialog({
-    Key? key,
+    super.key,
     required this.availableAvatars,
     required this.selectedAvatar,
     required this.onAvatarSelected,
     required this.onCancel,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

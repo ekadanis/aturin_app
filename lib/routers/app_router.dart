@@ -7,8 +7,6 @@ import 'package:aturin_app/features/profile/models/user.dart';
 import 'package:aturin_app/Test/task_page.dart';
 import 'package:aturin_app/features/onboarding/ui/onboarding_screen.dart';
 import 'package:aturin_app/features/splash_screen/ui/splash_screen.dart';
-import 'package:aturin_app/core/widgets/bottom_navbar.dart';
-import 'package:aturin_app/Test/task_page.dart';
 part 'app_router.gr.dart';
 
 @AutoRouterConfig()
