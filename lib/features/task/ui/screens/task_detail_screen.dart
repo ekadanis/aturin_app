@@ -4,7 +4,8 @@ import 'package:intl/intl.dart';
 import '../../models/task.dart';
 import '../../services/task_services.dart';
 import '../../../../core/theme/app_theme.dart';
-
+import 'package:auto_route/auto_route.dart'; 
+@RoutePage()
 class TaskDetailScreen extends StatefulWidget {
   final Task task;
 

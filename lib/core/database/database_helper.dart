@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:aturin_app/core/database/seeders/profile_seeder.dart';
+import 'package:flutter/material.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -20,13 +21,15 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 4,
+      version: 5, // Meningkatkan versi database untuk memicu migrasi
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onCreate(Database db, int version) async {
+    debugPrint("Creating new database at version $version");
+    
     // Buat tabel users
     await db.execute('''
       CREATE TABLE IF NOT EXISTS users (
@@ -56,6 +59,8 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    debugPrint("Upgrading database from version $oldVersion to $newVersion");
+    
     if (oldVersion < 2) {
       // Jika versi sebelumnya kurang dari 2, kita perlu menjalankan onCreate
       await _onCreate(db, newVersion);
@@ -67,14 +72,43 @@ class DatabaseHelper {
         await db.execute('ALTER TABLE tasks ADD COLUMN completedAt TEXT');
       } catch (e) {
         // Kolom mungkin sudah ada, abaikan error
-        print('Info: kolom completedAt mungkin sudah ada: $e');
+        debugPrint('Info: kolom completedAt mungkin sudah ada: $e');
       }
     }
     
     if (oldVersion < 4) {
       // Tambahan migrasi untuk versi 4 jika ada
-      // Saat ini tidak ada perubahan untuk versi 4
-      print('Upgrading to database version 4');
+      debugPrint('Upgrading to database version 4');
+    }
+    
+    if (oldVersion < 5) {
+      // Pastikan tabel tasks dibuat pada versi 5
+      debugPrint('Upgrading to database version 5');
+      try {
+        // Cek apakah tabel tasks sudah ada
+        final result = await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='tasks'");
+        if (result.isEmpty) {
+          // Buat tabel tasks jika belum ada
+          debugPrint('Creating tasks table that was missing');
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS tasks (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              title TEXT NOT NULL,
+              deadline TEXT NOT NULL,
+              estimatedDuration INTEGER NOT NULL,
+              category TEXT NOT NULL,
+              isAlarmEnabled INTEGER NOT NULL,
+              alarmDateTime TEXT,
+              isDone INTEGER NOT NULL,
+              completedAt TEXT
+            )
+          ''');
+        } else {
+          debugPrint('Tasks table already exists');
+        }
+      } catch (e) {
+        debugPrint('Error checking/creating tasks table: $e');
+      }
     }
   }
 

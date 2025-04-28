@@ -4,13 +4,13 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../models/task.dart';
 import '../../services/task_services.dart';
 import '../widgets/filter_tabs.dart';
-import '../widgets/task_card.dart';
-import 'task_detail_screen.dart';
-import 'add_task_screen.dart';
 import '../../../../core/theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:auto_route/auto_route.dart';
+import '../../../../core/widgets/bottom_navbar.dart';
+import '../../../../routers/app_router.dart';
 
-
+@RoutePage()
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({Key? key}) : super(key: key);
 
@@ -155,12 +155,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
                           children: [
                             SlidableAction(
                               onPressed: (_) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => TaskDetailScreen(task: task),
-                                  ),
-                                );
+                                // Menggunakan AutoRoute untuk navigasi ke halaman detail
+                                context.router.push(TaskDetailRoute(task: task));
                               },
                               backgroundColor: Colors.white,
                               foregroundColor: Colors.grey.shade600,
@@ -190,47 +186,26 @@ class _TaskListScreenState extends State<TaskListScreen> {
           ),
         ],
       ),
-     floatingActionButton: ClipRRect(
-  borderRadius: BorderRadius.circular(100),
-  child: FloatingActionButton(
-    onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const AddTaskScreen(),
+      
+      floatingActionButton: ClipRRect(
+        borderRadius: BorderRadius.circular(100),
+        child: FloatingActionButton(
+          onPressed: () {
+            // Menggunakan AutoRoute alih-alih Navigator.push
+            context.pushRoute(AddTaskRoute()).then((result) {
+              if (result == true) {
+                Provider.of<TaskService>(context, listen: false).fetchTasks();
+                _showSuccess('Berhasil menambahkan tugas');
+              }
+            });
+          },
+          backgroundColor: AppTheme.primaryColor,
+          child: const Icon(Icons.add, color: AppTheme.buttonBackgroundColor),
         ),
-      ).then((result) {
-        if (result == true) {
-          Provider.of<TaskService>(context, listen: false).fetchTasks();
-          _showSuccess('Berhasil menambahkan tugas');
-        }
-      });
-    },
-    backgroundColor: AppTheme.primaryColor,
-    child: const Icon(Icons.add, color: AppTheme.buttonBackgroundColor),
-  ),
-),
-
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1, // Tab Tugas aktif
-        onTap: (index) {
-          // Implementasi navigasi ke halaman lain jika diperlukan
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt),
-            label: 'Tugas',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profil',
-          ),
-        ],
       ),
+      
+      // Menggunakan bottom navbar custom yang sudah ada
+      bottomNavigationBar: const BottomNavbar(currentIndex: 1),
     );
   }
 
@@ -349,7 +324,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
-                    _getStatusName(task.status),
+                    _getStatusName(task.status, task: task),
                     style: TextStyle(
                       fontSize: 12,
                       color: _getStatusTextColor(task.status),
@@ -421,7 +396,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
     }
   }
 
-  String _getStatusName(TaskStatus status) {
+  String _getStatusName(TaskStatus status, {Task? task}) {
     switch (status) {
       case TaskStatus.completed:
         return 'Selesai';
@@ -432,6 +407,13 @@ class _TaskListScreenState extends State<TaskListScreen> {
       case TaskStatus.tomorrow:
         return 'Besok';
       case TaskStatus.upcoming:
+        if (task != null) {
+          final now = DateTime.now();
+          final today = DateTime(now.year, now.month, now.day);
+          final deadlineDay = DateTime(task.deadline.year, task.deadline.month, task.deadline.day);
+          final daysRemaining = deadlineDay.difference(today).inDays;
+          return '$daysRemaining hari lagi';
+        }
         return 'Mendatang';
     }
   }

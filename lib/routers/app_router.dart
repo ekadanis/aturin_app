@@ -4,9 +4,12 @@ import 'package:aturin_app/features/home/ui/page/home_page.dart';
 import 'package:aturin_app/features/profile/ui/profile_page.dart';
 import 'package:aturin_app/features/profile/ui/profile_edit_page.dart';
 import 'package:aturin_app/features/profile/models/user.dart';
-import 'package:aturin_app/Test/task_page.dart';
 import 'package:aturin_app/features/onboarding/ui/onboarding_screen.dart';
 import 'package:aturin_app/features/splash_screen/ui/splash_screen.dart';
+import 'package:aturin_app/features/task/ui/screens/task_list_screen.dart';
+import 'package:aturin_app/features/task/ui/screens/add_task_screen.dart';
+import 'package:aturin_app/features/task/ui/screens/task_detail_screen.dart';
+import 'package:aturin_app/features/task/models/task.dart'; // Menambahkan import model Task
 part 'app_router.gr.dart';
 
 @AutoRouterConfig()
@@ -44,9 +47,21 @@ class AppRouter extends RootStackRouter{
       transitionsBuilder: (_, __, ___, child) => child,
       duration: Duration.zero
     ),
-     CustomRoute(
+    CustomRoute(
       path: '/task',
-      page: TaskRoute.page,
+      page: TaskListRoute.page,
+      transitionsBuilder: (_, __, ___, child) => child,
+      duration: Duration.zero
+    ),
+    CustomRoute(
+      path: '/task/add',
+      page: AddTaskRoute.page,
+      transitionsBuilder: (_, __, ___, child) => child,
+      duration: Duration.zero
+    ),
+    CustomRoute(
+      path: '/task/detail',
+      page: TaskDetailRoute.page,
       transitionsBuilder: (_, __, ___, child) => child,
       duration: Duration.zero
     ),

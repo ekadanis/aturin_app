@@ -1,13 +1,12 @@
 import '../../../../core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:intl/date_symbol_data_local.dart'; // Import ini diperlukan untuk initializeDateFormatting
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 Future<DateTime?> showDeadlinePickerBottomSheet(BuildContext context) async {
-  // Inisialisasi data locale untuk 'id_ID'
-  await initializeDateFormatting('id_ID', null);
+
   
   DateTime now = DateTime.now();
   DateTime selectedDate = DateTime(now.year, now.month, now.day);
