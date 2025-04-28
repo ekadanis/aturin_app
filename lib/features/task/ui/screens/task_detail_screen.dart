@@ -1,18 +1,17 @@
+import 'package:aturin_app/features/task/ui/screens/add_task_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../models/task.dart';
 import '../../services/task_services.dart';
 import '../../../../core/theme/app_theme.dart';
-import 'package:auto_route/auto_route.dart'; 
+import 'package:auto_route/auto_route.dart';
+
 @RoutePage()
 class TaskDetailScreen extends StatefulWidget {
   final Task task;
 
-  const TaskDetailScreen({
-    Key? key,
-    required this.task,
-  }) : super(key: key);
+  const TaskDetailScreen({Key? key, required this.task}) : super(key: key);
 
   @override
   State<TaskDetailScreen> createState() => _TaskDetailScreenState();
@@ -20,7 +19,7 @@ class TaskDetailScreen extends StatefulWidget {
 
 class _TaskDetailScreenState extends State<TaskDetailScreen> {
   late Task _task;
-  
+
   @override
   void initState() {
     super.initState();
@@ -54,8 +53,22 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit, color: AppTheme.lightTextColor),
-            onPressed: () {
-              // Implementasi edit tugas
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AddTaskScreen(existingTask: _task),
+                ),
+              );
+
+              if (result == true) {
+                final updatedTask = await TaskService().getTaskById(_task.id!);
+                if (updatedTask != null) {
+                  setState(() {
+                    _task = updatedTask;
+                  });
+                }
+              }
             },
           ),
         ],
@@ -67,24 +80,30 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           children: [
             _buildDetailField('Nama Tugas', _task.title),
             const SizedBox(height: 16),
-            _buildDetailField('Kategori Tugas', _getCategoryName(_task.category)),
+            _buildDetailField(
+              'Kategori Tugas',
+              _getCategoryName(_task.category),
+            ),
             const SizedBox(height: 16),
-            _buildDetailField('Estimasi Pengerjaan(Jam)', _task.estimatedHours.toString()),
+            _buildDetailField(
+              'Estimasi Pengerjaan(Jam)',
+              _task.estimatedHours.toString(),
+            ),
             const SizedBox(height: 16),
             _buildDetailField('Deadline', _formatDateTime(_task.deadline)),
             const SizedBox(height: 16),
             _buildDetailField(
-              'Pengingat', 
-              _task.alarmDateTime != null 
-                ? _formatDateTime(_task.alarmDateTime!) 
-                : 'Tidak diatur'
+              'Pengingat',
+              _task.alarmDateTime != null
+                  ? _formatDateTime(_task.alarmDateTime!)
+                  : 'Tidak diatur',
             ),
             const SizedBox(height: 16),
             _buildDetailField(
-              'Diselesaikan pada', 
+              'Diselesaikan pada',
               _task.isCompleted && _task.completedAt != null
-                ? _formatDateTime(_task.completedAt!)
-                : 'Belum diselesaikan'
+                  ? _formatDateTime(_task.completedAt!)
+                  : 'Belum diselesaikan',
             ),
           ],
         ),
@@ -124,37 +143,37 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 
-// Perbaiki fungsi _getCategoryName untuk menangani konversi kategori dengan lebih baik
-String _getCategoryName(String category) {
-  try {
-    // Pastikan format string kategori sesuai dengan nama enum
-    final categoryString = category.toLowerCase();
-    final taskCategory = TaskCategory.values.firstWhere(
-      (e) => e.toString().split('.').last.toLowerCase() == categoryString,
-      orElse: () => TaskCategory.akademik,
-    );
-    
-    switch (taskCategory) {
-      case TaskCategory.akademik:
-        return 'Akademik';
-      case TaskCategory.hiburan:
-        return 'Hiburan';
-      case TaskCategory.pekerjaan:
-        return 'Pekerjaan';
-      case TaskCategory.olahraga:
-        return 'Olahraga';
-      case TaskCategory.sosial:
-        return 'Sosial';
-      case TaskCategory.spiritual:
-        return 'Spiritual';
-      case TaskCategory.pribadi:
-        return 'Pribadi';
-      case TaskCategory.istirahat:
-        return 'Istirahat';
+  // Perbaiki fungsi _getCategoryName untuk menangani konversi kategori dengan lebih baik
+  String _getCategoryName(String category) {
+    try {
+      // Pastikan format string kategori sesuai dengan nama enum
+      final categoryString = category.toLowerCase();
+      final taskCategory = TaskCategory.values.firstWhere(
+        (e) => e.toString().split('.').last.toLowerCase() == categoryString,
+        orElse: () => TaskCategory.akademik,
+      );
+
+      switch (taskCategory) {
+        case TaskCategory.akademik:
+          return 'Akademik';
+        case TaskCategory.hiburan:
+          return 'Hiburan';
+        case TaskCategory.pekerjaan:
+          return 'Pekerjaan';
+        case TaskCategory.olahraga:
+          return 'Olahraga';
+        case TaskCategory.sosial:
+          return 'Sosial';
+        case TaskCategory.spiritual:
+          return 'Spiritual';
+        case TaskCategory.pribadi:
+          return 'Pribadi';
+        case TaskCategory.istirahat:
+          return 'Istirahat';
+      }
+    } catch (e) {
+      print('Error getting category name: ${e.toString()}');
+      return category;
     }
-  } catch (e) {
-    print('Error getting category name: ${e.toString()}');
-    return category;
   }
-}
 }

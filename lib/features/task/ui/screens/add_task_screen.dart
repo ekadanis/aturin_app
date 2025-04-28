@@ -188,10 +188,15 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     );
 
     try {
-      await _taskService.addTask(task);
+      if (widget.existingTask != null) {
+        // EDIT mode
+        await _taskService.updateTask(task);
+      } else {
+        // ADD mode
+        await _taskService.addTask(task);
+      }
     } catch (e) {
-      // Kalau terjadi error, cetak ke console
-      print('Error saat menambahkan tugas: $e');
+      print('Error saat menyimpan tugas: $e');
     }
 
     if (mounted) {
@@ -208,11 +213,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Tambah Tugas'),
         actions: [
           IconButton(icon: const Icon(Icons.check), onPressed: _saveTask),
         ],
+        backgroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
