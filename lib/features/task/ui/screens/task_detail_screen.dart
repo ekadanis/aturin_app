@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../models/task.dart';
 import '../../services/task_services.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class TaskDetailScreen extends StatefulWidget {
   final Task task;
@@ -33,25 +34,25 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.lightBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.lightBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
+          icon: const Icon(Icons.close, color: AppTheme.lightTextColor),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Detail Tugas',
           style: TextStyle(
-            color: Colors.black,
+            color: AppTheme.lightTextColor,
             fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit, color: Colors.black),
+            icon: const Icon(Icons.edit, color: AppTheme.lightTextColor),
             onPressed: () {
               // Implementasi edit tugas
             },
@@ -99,7 +100,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: Colors.black87,
+            color: AppTheme.lightTextColor,
           ),
         ),
         const SizedBox(height: 8),
@@ -107,14 +108,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: AppTheme.lightDividerColor),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
             value,
             style: const TextStyle(
               fontSize: 16,
-              color: Colors.black,
+              color: AppTheme.lightTextColor,
             ),
           ),
         ),
@@ -122,25 +123,37 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 
-  String _getCategoryName(String category) {
-    try {
-      final taskCategory = TaskCategory.values.firstWhere(
-        (e) => e.toString() == 'TaskCategory.$category',
-        orElse: () => TaskCategory.other,
-      );
-      
-      switch (taskCategory) {
-        case TaskCategory.academic:
-          return 'Akademik';
-        case TaskCategory.personal:
-          return 'Pribadi';
-        case TaskCategory.work:
-          return 'Kerja';
-        case TaskCategory.other:
-          return 'Lainnya';
-      }
-    } catch (_) {
-      return category;
+// Perbaiki fungsi _getCategoryName untuk menangani konversi kategori dengan lebih baik
+String _getCategoryName(String category) {
+  try {
+    // Pastikan format string kategori sesuai dengan nama enum
+    final categoryString = category.toLowerCase();
+    final taskCategory = TaskCategory.values.firstWhere(
+      (e) => e.toString().split('.').last.toLowerCase() == categoryString,
+      orElse: () => TaskCategory.akademik,
+    );
+    
+    switch (taskCategory) {
+      case TaskCategory.akademik:
+        return 'Akademik';
+      case TaskCategory.hiburan:
+        return 'Hiburan';
+      case TaskCategory.pekerjaan:
+        return 'Pekerjaan';
+      case TaskCategory.olahraga:
+        return 'Olahraga';
+      case TaskCategory.sosial:
+        return 'Sosial';
+      case TaskCategory.spiritual:
+        return 'Spiritual';
+      case TaskCategory.pribadi:
+        return 'Pribadi';
+      case TaskCategory.istirahat:
+        return 'Istirahat';
     }
+  } catch (e) {
+    print('Error getting category name: ${e.toString()}');
+    return category;
   }
+}
 }

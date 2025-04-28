@@ -266,9 +266,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     width: 24,
                     height: 24,
                     decoration: BoxDecoration(
-                      color: task.isCompleted ? Colors.blue.shade100 : Colors.transparent,
+                      color: task.isCompleted ? AppTheme.primaryColor : Colors.transparent,
                       border: Border.all(
-                        color: task.isCompleted ? Colors.blue : Colors.blue.shade200,
+                        color: task.isCompleted ? AppTheme.primaryColor : AppTheme.primaryColor,
                         width: 2,
                       ),
                       borderRadius: BorderRadius.circular(6),
@@ -277,7 +277,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                         ? const Icon(
                             Icons.check,
                             size: 16,
-                            color: Colors.blue,
+                            color: AppTheme.lightCardColor,
                           )
                         : null,
                   ),
@@ -292,7 +292,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                       // Kategori
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.school,
                             size: 14,
                             color: AppTheme.primaryColor,
@@ -396,18 +396,25 @@ class _TaskListScreenState extends State<TaskListScreen> {
     try {
       final taskCategory = TaskCategory.values.firstWhere(
         (e) => e.toString() == 'TaskCategory.$category',
-        orElse: () => TaskCategory.other,
       );
       
       switch (taskCategory) {
-        case TaskCategory.academic:
+        case TaskCategory.akademik:
           return 'Akademik';
-        case TaskCategory.personal:
+        case TaskCategory.hiburan:
+          return 'Hiburan';
+        case TaskCategory.pekerjaan:
+          return 'Pekerjaan';
+        case TaskCategory.olahraga:
+          return 'Olahraga';
+        case TaskCategory.sosial:
+          return 'Sosial';
+        case TaskCategory.spiritual:
+          return 'Spiritual';
+        case TaskCategory.pribadi:
           return 'Pribadi';
-        case TaskCategory.work:
-          return 'Kerja';
-        case TaskCategory.other:
-          return 'Lainnya';
+        case TaskCategory.istirahat:
+          return 'Istirahat';
       }
     } catch (_) {
       return category;

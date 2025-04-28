@@ -7,10 +7,14 @@ enum TaskStatus {
 }
 
 enum TaskCategory {
-  academic,
-  personal,
-  work,
-  other,
+  akademik,
+  hiburan,
+  pekerjaan,
+  olahraga,
+  sosial,
+  spiritual,
+  pribadi,
+  istirahat,
 }
 
 class Task {

@@ -27,6 +27,25 @@ class AppTheme {
   static const Color warningColor = Color(0xFFE6A73C);
   static const Color dangerColor = Color(0xFFD34141);
 
+  // Task status colors
+  static const Color lateColor = Color(0xFFFFDDDD);
+  static const Color lateTextColor = Color(0xFFFF6B6B);
+  static const Color todayColor = Color(0xFFE3F2F9);
+  static const Color todayTextColor = Color(0xFF2196F3);
+  static const Color tomorrowColor = Color(0xFFFFF8E1);
+  static const Color tomorrowTextColor = Color(0xFFFFC107);
+  static const Color upcomingColor = Color(0xFFF5F5F5);
+  static const Color upcomingTextColor = Color(0xFF9E9E9E);
+  static const Color completedColor = Color(0xFFE3F2E9);
+  static const Color completedTextColor = Color(0xFF4CAF50);
+  
+  // Action colors
+  static const Color detailBackgroundColor = Color(0xFFF5F5F5);
+  static const Color detailTextColor = Color(0xFF71717A);
+  static const Color deleteBackgroundColor = Color(0xFFFFDDDD);
+  static const Color deleteTextColor = Color(0xFFFF6B6B);
+  static const Color alarmActiveColor = Color(0xFF5263F3);
+
   // Light theme
   static final ThemeData lightTheme = ThemeData(
     primaryColor: primaryColor,
