@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class FilterTabs extends StatelessWidget {
   final List<String> filters;
@@ -14,28 +16,37 @@ class FilterTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 40,
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       child: Row(
         children: filters.map((filter) {
-          final isSelected = filter == selectedFilter;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onFilterSelected(filter),
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                  color: isSelected ? Theme.of(context).primaryColor : const Color(0xFFE3EAFF),
-                  borderRadius: BorderRadius.circular(20),
+          final isSelected = selectedFilter == filter;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ElevatedButton(
+              onPressed: () => onFilterSelected(filter),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isSelected 
+                    ? AppTheme.primaryColor 
+                    : const Color(0xFFE9EFFF),
+                foregroundColor: isSelected 
+                    ? Colors.white 
+                    : AppTheme.primaryColor,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                minimumSize: const Size(0, 40), // Menetapkan tinggi minimum
+              ),
+              child: Center(
                 child: Text(
                   filter,
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : const Color(0xFF6B7FD7),
-                    fontWeight: FontWeight.w500,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
+                    fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
                   ),
                 ),
               ),

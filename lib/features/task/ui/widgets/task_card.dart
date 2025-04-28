@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../models/task.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class TaskCard extends StatelessWidget {
   final Task task;
@@ -45,7 +46,7 @@ class TaskCard extends StatelessWidget {
       child: Container(
         height: 84, // Sesuai dengan ukuran di Figma
         width: 330, // Sesuai dengan ukuran di Figma
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -57,9 +58,10 @@ class TaskCard extends StatelessWidget {
             ),
           ],
         ),
-        child: task.status == TaskStatus.late && !task.isCompleted
-            ? _buildLateTaskCard(context)
-            : _buildNormalTaskCard(context),
+        child:
+            task.status == TaskStatus.late && !task.isCompleted
+                ? _buildLateTaskCard(context)
+                : _buildNormalTaskCard(context),
       ),
     );
   }
@@ -103,10 +105,7 @@ class TaskCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       const Text(
                         'Alarm Aktif',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.blue,
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.blue),
                       ),
                     ],
                   ],
@@ -163,7 +162,10 @@ class TaskCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFDDDD),
                   borderRadius: BorderRadius.circular(16),
@@ -187,10 +189,7 @@ class TaskCard extends StatelessWidget {
           padding: const EdgeInsets.only(right: 16),
           child: Text(
             task.isAlarmActive ? 'Alarm Aktif' : '',
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.blue,
-            ),
+            style: const TextStyle(fontSize: 12, color: Colors.blue),
           ),
         ),
       ],
@@ -201,7 +200,7 @@ class TaskCard extends StatelessWidget {
     IconData iconData;
     // Mengkonversi string kategori ke enum TaskCategory jika perlu
     TaskCategory taskCategory;
-    
+
     try {
       // Mencoba mengkonversi string ke enum
       taskCategory = TaskCategory.values.firstWhere(
@@ -212,7 +211,7 @@ class TaskCard extends StatelessWidget {
       // Jika gagal, gunakan kategori default
       taskCategory = TaskCategory.other;
     }
-    
+
     // Menentukan ikon berdasarkan kategori
     switch (taskCategory) {
       case TaskCategory.academic:
@@ -243,13 +242,10 @@ class TaskCard extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(6),
         ),
-        child: task.isCompleted
-            ? const Icon(
-                Icons.check,
-                size: 16,
-                color: Colors.blue,
-              )
-            : null,
+        child:
+            task.isCompleted
+                ? const Icon(Icons.check, size: 16, color: Colors.blue)
+                : null,
       ),
     );
   }

@@ -7,6 +7,9 @@ import '../widgets/filter_tabs.dart';
 import '../widgets/task_card.dart';
 import 'task_detail_screen.dart';
 import 'add_task_screen.dart';
+import '../../../../core/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({Key? key}) : super(key: key);
@@ -50,9 +53,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FD),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Tugas',
-          style: TextStyle(
+          style: GoogleFonts.plusJakartaSans(
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -203,8 +206,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
         }
       });
     },
-    backgroundColor: const Color(0xFF5263F3),
-    child: const Icon(Icons.add),
+    backgroundColor: AppTheme.primaryColor,
+    child: const Icon(Icons.add, color: AppTheme.buttonBackgroundColor),
   ),
 ),
 
@@ -292,14 +295,14 @@ class _TaskListScreenState extends State<TaskListScreen> {
                           const Icon(
                             Icons.school,
                             size: 14,
-                            color: Colors.blue,
+                            color: AppTheme.primaryColor,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             _getCategoryName(task.category),
                             style: const TextStyle(
                               fontSize: 12,
-                              color: Colors.blue,
+                              color: AppTheme.primaryColor,
                             ),
                           ),
                         ],
