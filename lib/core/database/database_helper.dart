@@ -27,6 +27,7 @@ class DatabaseHelper {
   }
 
   Future<void> _onCreate(Database db, int version) async {
+    // Buat tabel users
     await db.execute('''
       CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,12 +36,45 @@ class DatabaseHelper {
         avatar TEXT NOT NULL
       )
     ''');
+    
+    // Buat tabel tasks
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        deadline TEXT NOT NULL,
+        estimatedDuration INTEGER NOT NULL,
+        category TEXT NOT NULL,
+        isAlarmEnabled INTEGER NOT NULL,
+        alarmDateTime TEXT,
+        isDone INTEGER NOT NULL,
+        completedAt TEXT
+      )
+    ''');
+    
     await ProfileSeeder.seedDefaultUser(db);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 3) {
+    if (oldVersion < 2) {
+      // Jika versi sebelumnya kurang dari 2, kita perlu menjalankan onCreate
       await _onCreate(db, newVersion);
+    }
+    
+    if (oldVersion < 3) {
+      // Tambahkan kolom completedAt jika belum ada
+      try {
+        await db.execute('ALTER TABLE tasks ADD COLUMN completedAt TEXT');
+      } catch (e) {
+        // Kolom mungkin sudah ada, abaikan error
+        print('Info: kolom completedAt mungkin sudah ada: $e');
+      }
+    }
+    
+    if (oldVersion < 4) {
+      // Tambahan migrasi untuk versi 4 jika ada
+      // Saat ini tidak ada perubahan untuk versi 4
+      print('Upgrading to database version 4');
     }
   }
 
