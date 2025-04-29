@@ -18,7 +18,7 @@ class TaskListScreen extends StatefulWidget {
   State<TaskListScreen> createState() => _TaskListScreenState();
 }
 
-class _TaskListScreenState extends State<TaskListScreen> {
+class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObserver {
   String _selectedFilter = 'Semua';
   final List<String> _filters = ['Semua', 'Terlambat', 'Belum Selesai', 'Selesai'];
   bool _showSuccessMessage = false;
@@ -27,8 +27,45 @@ class _TaskListScreenState extends State<TaskListScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<TaskService>(context, listen: false).fetchTasks();
+    WidgetsBinding.instance.addObserver(this);
+    
+    // Load data on initial load
+    _loadTasks();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Fetch tasks when dependencies change
+    _loadTasks();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Refresh task list when app comes to foreground
+    if (state == AppLifecycleState.resumed) {
+      _loadTasks();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Centralized method to load tasks with error handling
+  void _loadTasks() {
+    // Use Future.microtask to avoid setState during build
+    Future.microtask(() {
+      if (mounted) {
+        try {
+          Provider.of<TaskService>(context, listen: false).fetchTasks();
+        } catch (e) {
+          // Handle errors if needed
+          debugPrint('Error fetching tasks: $e');
+        }
+      }
     });
   }
 
@@ -60,14 +97,10 @@ class _TaskListScreenState extends State<TaskListScreen> {
             fontSize: 20,
           ),
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
       ),
       
       body: Column(
-        
         children: [
-          
           // Pesan sukses
           if (_showSuccessMessage)
             Container(
@@ -111,7 +144,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
             ),
           
           // Filter tabs
-            FilterTabs(
+          FilterTabs(
             filters: _filters,
             selectedFilter: _selectedFilter,
             onFilterSelected: (filter) {
@@ -121,65 +154,103 @@ class _TaskListScreenState extends State<TaskListScreen> {
             },
           ),
           
-          
           // Task list
           Expanded(
             child: Consumer<TaskService>(
               builder: (context, taskService, child) {
+                // // Check if tasks are loading
+                // if (taskService.isLoading) {
+                //   return const Center(
+                //     child: CircularProgressIndicator(),
+                //   );
+                // }
+                
                 final filteredTasks = taskService.getTasksByFilter(_selectedFilter);
                 
                 if (filteredTasks.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'Tidak ada tugas',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 16,
-                      ),
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.assignment_outlined,
+                          size: 56,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Tidak ada tugas',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: Colors.grey,
+                            fontSize: 16,
+                          ),
+                        ),
+                        if (_selectedFilter != 'Semua')
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              'Coba pilih filter lain',
+                              style: GoogleFonts.plusJakartaSans(
+                                color: Colors.grey,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   );
                 }
                 
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: filteredTasks.length,
-                  itemBuilder: (context, index) {
-                    final task = filteredTasks[index];
-                    
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      child: Slidable(
-                        endActionPane: ActionPane(
-                          motion: const ScrollMotion(),
-                          extentRatio: 0.3,
-                          children: [
-                            SlidableAction(
-                              onPressed: (_) {
-                                // Menggunakan AutoRoute untuk navigasi ke halaman detail
-                                context.router.push(TaskDetailRoute(task: task));
-                              },
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.grey.shade600,
-                              icon: Icons.info_outline,
-                              label: 'Detail',
-                            ),
-                            SlidableAction(
-                              onPressed: (_) {
-                                Provider.of<TaskService>(context, listen: false)
-                                    .deleteTask(task.id);
-                                _showSuccess('Berhasil menghapus tugas');
-                              },
-                              backgroundColor: const Color(0xFFFFCDD2),
-                              foregroundColor: Colors.red,
-                              icon: Icons.delete_outline,
-                              label: 'Hapus',
-                            ),
-                          ],
-                        ),
-                        child: _buildTaskCard(task),
-                      ),
-                    );
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    await Provider.of<TaskService>(context, listen: false).fetchTasks();
                   },
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: filteredTasks.length,
+                    itemBuilder: (context, index) {
+                      final task = filteredTasks[index];
+                      
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        child: Slidable(
+                          endActionPane: ActionPane(
+                            motion: const ScrollMotion(),
+                            extentRatio: 0.3,
+                            children: [
+                              SlidableAction(
+                                onPressed: (_) {
+                                  // Menggunakan AutoRoute untuk navigasi ke halaman detail
+                                  context.router.push(TaskDetailRoute(task: task)).then((_) {
+                                    // Refresh tasks when returning from detail screen
+                                    _loadTasks();
+                                  });
+                                },
+                                backgroundColor: Colors.white,
+                                foregroundColor: Colors.grey.shade600,
+                                icon: Icons.info_outline,
+                                label: 'Detail',
+                              ),
+                              SlidableAction(
+                                onPressed: (_) async {
+                                  await Provider.of<TaskService>(context, listen: false)
+                                      .deleteTask(task.id);
+                                  // Force refresh after deletion
+                                  _loadTasks();
+                                  _showSuccess('Berhasil menghapus tugas');
+                                },
+                                backgroundColor: const Color(0xFFFFCDD2),
+                                foregroundColor: Colors.red,
+                                icon: Icons.delete_outline,
+                                label: 'Hapus',
+                              ),
+                            ],
+                          ),
+                          child: _buildTaskCard(task),
+                        ),
+                      );
+                    },
+                  ),
                 );
               },
             ),
@@ -194,7 +265,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
             // Menggunakan AutoRoute alih-alih Navigator.push
             context.pushRoute(AddTaskRoute()).then((result) {
               if (result == true) {
-                Provider.of<TaskService>(context, listen: false).fetchTasks();
+                _loadTasks();
                 _showSuccess('Berhasil menambahkan tugas');
               }
             });
@@ -230,9 +301,11 @@ class _TaskListScreenState extends State<TaskListScreen> {
               children: [
                 // Checkbox atau indikator status
                 GestureDetector(
-                  onTap: () {
-                    Provider.of<TaskService>(context, listen: false)
+                  onTap: () async {
+                    await Provider.of<TaskService>(context, listen: false)
                         .toggleTaskCompletion(task.id);
+                    // Force refresh after updating completion status
+                    _loadTasks();
                     if (!task.isCompleted) {
                       _showSuccess('Berhasil Menyelesaikan Tugas');
                     }
@@ -267,7 +340,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                       // Kategori
                       Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.school,
                             size: 14,
                             color: AppTheme.primaryColor,
@@ -287,7 +360,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                       // Judul tugas
                       Text(
                         task.title,
-                        style: const TextStyle(
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -304,7 +377,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            'Estimasi: ${task.estimatedHours}jam',
+                            'Estimasi: ${task.estimatedDuration.inHours};${(task.estimatedDuration.inMinutes % 60).toString().padLeft(2, '0')}',
                             style: const TextStyle(
                               fontSize: 12,
                               color: Colors.black54,
@@ -352,6 +425,12 @@ class _TaskListScreenState extends State<TaskListScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: const [
+                  Icon(
+                    Icons.alarm,
+                    size: 12,
+                    color: Colors.blue,
+                  ),
+                  SizedBox(width: 4),
                   Text(
                     'Alarm Aktif',
                     style: TextStyle(

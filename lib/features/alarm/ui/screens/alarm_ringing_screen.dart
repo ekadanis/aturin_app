@@ -1,32 +1,28 @@
-// lib/screens/alarm_ring_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:alarm/alarm.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 import 'package:aturin_app/features/task/services/task_services.dart';
 import 'package:aturin_app/features/task/models/task.dart';
-
-import '../widgets/alarm_time_display.dart';
 import '../widgets/alarm_clock_image.dart';
+import '../widgets/alarm_time_display.dart';
 import '../widgets/task_description.dart';
 import '../widgets/category_tag.dart';
 import '../widgets/cancel_slider.dart';
 
-class AlarmRingScreen extends StatefulWidget {
-  final AlarmSettings alarmSettings;
+class AlarmRingingScreen extends StatefulWidget {
+  final int alarmId;
 
-  const AlarmRingScreen({
-    Key? key,
-    required this.alarmSettings,
-  }) : super(key: key);
+  const AlarmRingingScreen({Key? key, required this.alarmId}) : super(key: key);
 
   @override
-  State<AlarmRingScreen> createState() => _AlarmRingScreenState();
+  State<AlarmRingingScreen> createState() => _AlarmRingingScreenState();
 }
 
-class _AlarmRingScreenState extends State<AlarmRingScreen> {
+class _AlarmRingingScreenState extends State<AlarmRingingScreen> {
   Task? _task;
   bool _loading = true;
+  bool _error = false;
   final timeFormat = DateFormat('HH:mm');
   final dateFormat = DateFormat('EEEE, d MMMM yyyy', 'id_ID');
 
@@ -34,11 +30,6 @@ class _AlarmRingScreenState extends State<AlarmRingScreen> {
   void initState() {
     super.initState();
     _loadTask();
-    
-    // Debug untuk membantu troubleshooting
-    debugPrint('[AlarmRingScreen] Alarm triggered: ID=${widget.alarmSettings.id}');
-    debugPrint('[AlarmRingScreen] Audio path: ${widget.alarmSettings.assetAudioPath}');
-    debugPrint('[AlarmRingScreen] DateTime: ${widget.alarmSettings.dateTime}');
   }
 
   Future<void> _loadTask() async {
@@ -46,51 +37,51 @@ class _AlarmRingScreenState extends State<AlarmRingScreen> {
       setState(() => _loading = true);
       
       final taskService = Provider.of<TaskService>(context, listen: false);
-      final task = await taskService.getTaskById(widget.alarmSettings.id);
+      final task = await taskService.getTaskById(widget.alarmId);
       
       if (mounted) {
         setState(() {
           _task = task;
           _loading = false;
+          _error = task == null;
         });
-        
-        debugPrint('[AlarmRingScreen] Loaded task: ${task?.title}');
       }
     } catch (e) {
-      debugPrint('[AlarmRingScreen] Error loading task: $e');
       if (mounted) {
         setState(() {
+          _error = true;
           _loading = false;
         });
+        debugPrint('Error loading task: $e');
       }
     }
   }
 
   void _stopAlarm() {
     try {
-      debugPrint('[AlarmRingScreen] Stopping alarm ID: ${widget.alarmSettings.id}');
-      Alarm.stop(widget.alarmSettings.id);
-      Navigator.of(context).pop();
+      debugPrint('Mencoba menghentikan alarm dengan ID: ${widget.alarmId}');
+      Alarm.stop(widget.alarmId);
+      Navigator.pop(context);
     } catch (e) {
-      debugPrint('[AlarmRingScreen] Error stopping alarm: $e');
-      Navigator.of(context).pop();
+      debugPrint('Error stopping alarm: $e');
+      if (mounted) Navigator.pop(context);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final time = widget.alarmSettings.dateTime != null 
-        ? timeFormat.format(widget.alarmSettings.dateTime)
+    final time = _task?.alarmDateTime != null 
+        ? timeFormat.format(_task!.alarmDateTime!)
         : timeFormat.format(now);
-    final date = widget.alarmSettings.dateTime != null
-        ? dateFormat.format(widget.alarmSettings.dateTime)
+    final date = _task?.alarmDateTime != null
+        ? dateFormat.format(_task!.alarmDateTime!)
         : dateFormat.format(now);
-    
     final taskName = _task?.title ?? 'Waktunya mengerjakan tugas!';
     final category = _getCategoryName(_task?.category ?? 'akademik');
 
     return WillPopScope(
+      // Pastikan alarm dihentikan jika user menavigasi kembali
       onWillPop: () async {
         _stopAlarm();
         return true;
@@ -119,24 +110,11 @@ class _AlarmRingScreenState extends State<AlarmRingScreen> {
                       const SizedBox(height: 16),
                       CategoryTag(category: category),
                       const SizedBox(height: 72),
-                      
-                      // Cancel alarm slider
+                      // Cancel alarm slider dengan callback
                       CancelSlider(
                         text: "Matikan Alarm",
                         description: "Geser ke kanan untuk mematikan alarm",
                         onCancelled: _stopAlarm,
-                      ),
-                      
-                      // Tambahkan tombol alternatif untuk mematikan alarm
-                      TextButton(
-                        onPressed: _stopAlarm,
-                        child: const Text(
-                          "Ketuk disini untuk mematikan",
-                          style: TextStyle(
-                            color: Colors.blue,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
                       ),
                       const SizedBox(height: 20),
                     ],

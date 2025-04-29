@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 class CancelSlider extends StatefulWidget {
   final String text;
   final String description;
+  final VoidCallback? onCancelled;
 
   const CancelSlider({
     Key? key,
     required this.text,
     required this.description,
+    this.onCancelled,
   }) : super(key: key);
 
   @override
@@ -66,6 +68,12 @@ class _CancelSliderState extends State<CancelSlider> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Alarm dimatikan!')),
                       );
+                      
+                      // Jalankan callback onCancelled jika tersedia
+                      if (widget.onCancelled != null) {
+                        widget.onCancelled!();
+                      }
+                      
                       // Reset position after a delay
                       Future.delayed(const Duration(seconds: 1), () {
                         if (mounted) {
