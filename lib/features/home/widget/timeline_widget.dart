@@ -40,20 +40,20 @@ class TimelineWidget extends StatelessWidget {
         startConnector:
             index == 0
                 ? null
-                : const DashedLineConnector(
+                : DashedLineConnector(
                   color: Colors.grey,
-                  dash: 2,
-                  gap: 3,
-                  endIndent: 0, // jarak dari indicator sebelumnya
+                  dash: 5,
+                  gap: 6, 
+                  indent: 5.5,
                 ),
         endConnector:
             isLast
                 ? null
                 : const DashedLineConnector(
                   color: Colors.grey,
-                  dash: 2,
-                  gap: 3,
-                  indent: 2, // jarak dari indicator selanjutnya
+                  dash: 5,
+                  gap: 6,
+                  indent: 1,
                 ),
       ),
       contents: Container(
