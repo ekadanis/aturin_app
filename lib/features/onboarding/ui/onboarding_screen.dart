@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:sizer/sizer.dart';
 
 import 'package:aturin_app/routers/app_router.dart';
 import 'package:aturin_app/features/onboarding/models/on_boarding_content.dart';
@@ -44,153 +45,160 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        color: Colors.white,
-        child: SafeArea(
-          child: Column(
-            children: [
-              const Spacer(flex: 1),
-              SizedBox(
-                height: 500,
-                child: PageView.builder(
-                  controller: _pageController,
-                  itemCount: contents.length,
-                  onPageChanged: (int page) {
-                    setState(() {
-                      currentPage = page;
-                    });
-                  },
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 40.0),
-                      child: Column(
-                        children: [
-                          SizedBox(
-                            height: 350,
-                            child: Center(
-                              child: Image.asset(
-                                contents[index].image,
-                                fit: BoxFit.contain,
-                                height: 350,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            contents[index].title,
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 34,
-                              height: 1.3,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          // Description with consistent styling
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Text(
-                              contents[index].description,
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 18,
-                                height: 1.5,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const Spacer(flex: 1),
-              Container(
-                height: 100,
-                margin: const EdgeInsets.symmetric(horizontal: 40),
+    return Sizer(
+      builder: (context, orientationm, deviceType){
+        return Scaffold(
+          body: Expanded(
+            child: Container(
+              color: Colors.white,
+              child: SafeArea(
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    const Spacer(flex: 1),
                     SizedBox(
-                      width: 200,
-                      height: 50,
-                      child: ElevatedButtonTheme(
-                        data: ElevatedButtonThemeData(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            if (currentPage == contents.length - 1) {
-                              await _storeOnboardInfo();
-                            }
-                            _pageController.nextPage(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeInOut,
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                          ),
-                          child: Text(
-                            currentPage == contents.length - 1
-                                ? "Mulai"
-                                : "Lanjut",
-                            style: GoogleFonts.plusJakartaSans(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 40,
-                      child:
-                          currentPage > 0
-                              ? TextButtonTheme(
-                                data: TextButtonThemeData(
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: Colors.transparent,
-                                    backgroundColor: Colors.transparent,
-                                    overlayColor: Colors.transparent,
-                                  ),
-                                ),
-                                child: TextButton(
-                                  onPressed: () {
-                                    _pageController.previousPage(
-                                      duration: const Duration(
-                                        milliseconds: 300,
-                                      ),
-                                      curve: Curves.easeInOut,
-                                    );
-                                  },
-                                  child: const Text(
-                                    "Sebelumnya",
-                                    style: TextStyle(
-                                      color: AppTheme.primaryColor,
-                                      fontSize: 14
+                      height: 65.h,
+                      child: PageView.builder(
+                        controller: _pageController,
+                        itemCount: contents.length,
+                        onPageChanged: (int page) {
+                          setState(() {
+                            currentPage = page;
+                          });
+                        },
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 7.w),
+                            child: Column(
+                              children: [
+                                SizedBox(
+                                  height: 40.h,
+                                  child: Center(
+                                    child: Image.asset(
+                                      contents[index].image,
+                                      fit: BoxFit.contain,
+                                      height: 40.h,
                                     ),
                                   ),
                                 ),
-                              )
-                              : const SizedBox(),
+                                SizedBox(height: 2.h),
+                                Text(
+                                  overflow: TextOverflow.visible,
+                                  contents[index].title,
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 24.sp,
+                                    height: 1.3,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 2.h),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 2.w),
+                                  child: Text(
+                                    overflow: TextOverflow.visible,
+                                    contents[index].description,
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 18.sp,
+                                      height: 1.5,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     ),
+                    const Spacer(flex: 1),
+                    Container(
+                      height: 12.h,
+                      margin: EdgeInsets.symmetric(horizontal: 5.w),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          SizedBox(
+                            width: 50.w,
+                            height: 6.h,
+                            child: ElevatedButtonTheme(
+                              data: ElevatedButtonThemeData(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryColor,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  if (currentPage == contents.length - 1) {
+                                    await _storeOnboardInfo();
+                                  }
+                                  _pageController.nextPage(
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryColor,
+                                ),
+                                child: Text(
+                                  currentPage == contents.length - 1
+                                      ? "Mulai"
+                                      : "Lanjut",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    color: Colors.white,
+                                    fontSize: 17.sp,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            height: 4.h,
+                            child:
+                                currentPage > 0
+                                    ? TextButtonTheme(
+                                      data: TextButtonThemeData(
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: Colors.transparent,
+                                          backgroundColor: Colors.transparent,
+                                          overlayColor: Colors.transparent,
+                                        ),
+                                      ),
+                                      child: TextButton(
+                                        onPressed: () {
+                                          _pageController.previousPage(
+                                            duration: const Duration(
+                                              milliseconds: 300,
+                                            ),
+                                            curve: Curves.easeInOut,
+                                          );
+                                        },
+                                        child: Text(
+                                          "Sebelumnya",
+                                          style: TextStyle(
+                                            color: AppTheme.primaryColor,
+                                            fontSize: 16.sp
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                    : const SizedBox(),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(flex: 1),
                   ],
                 ),
               ),
-              const Spacer(flex: 1),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      }
     );
   }
 }

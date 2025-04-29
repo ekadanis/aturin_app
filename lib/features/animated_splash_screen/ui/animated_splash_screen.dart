@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:aturin_app/routers/app_router.dart';
 import 'package:aturin_app/core/database/database_helper.dart';
+import 'package:sizer/sizer.dart';
 
 @RoutePage()
 class SplashScreen extends StatefulWidget {
@@ -86,17 +87,22 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: FadeTransition(
-          opacity: _animation,
-          child: Image.asset(
-            'assets/images/splash_screen/splashscreen.gif',
-            fit: BoxFit.contain,
+    return Sizer(
+      builder: (context, orientation, deviceType) {
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: Center(
+            child: FadeTransition(
+              opacity: _animation,
+              child: Image.asset(
+                'assets/images/splash_screen/splashscreen.gif',
+                fit: BoxFit.contain,
+                width: 95.w,
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

@@ -5,21 +5,19 @@ import 'package:aturin_app/features/profile/ui/profile_page.dart';
 import 'package:aturin_app/features/profile/ui/profile_edit_page.dart';
 import 'package:aturin_app/features/profile/models/user.dart';
 import 'package:aturin_app/features/onboarding/ui/onboarding_screen.dart';
+import 'package:aturin_app/features/animated_splash_screen/ui/animated_splash_screen.dart';
 import 'package:aturin_app/features/splash_screen/ui/splash_screen.dart';
 import 'package:aturin_app/features/task/ui/screens/task_list_screen.dart';
 import 'package:aturin_app/features/task/ui/screens/add_task_screen.dart';
 import 'package:aturin_app/features/task/ui/screens/task_detail_screen.dart';
 import 'package:aturin_app/features/task/models/task.dart'; // Menambahkan import model Task
+
 part 'app_router.gr.dart';
 
 @AutoRouterConfig()
 class AppRouter extends RootStackRouter{
   @override
   RouteType get defaultRouteType => RouteType.material(
-    //Predictive Back Gesture?? Wowww!!!!
-    //Ini cuma fitur animasi buat android 13+ doang sih, (menurutku keren)
-    //kalau memang mau dipake jangan lupa tambahin
-    //<activity android:enableOnBackInvokedCallback="true" ...> di android manifest
     enablePredictiveBackGesture: true,
   );
 
