@@ -50,7 +50,7 @@ class Task {
     this.status = status ?? _calculateStatus(deadline),
     this.isCompleted = isCompleted ?? isDone,
     this.isAlarmActive = isAlarmActive ?? isAlarmEnabled,
-    this.estimatedHours = estimatedHours ?? (estimatedDuration.inMinutes / 60);
+    this.estimatedHours = estimatedHours ?? (estimatedDuration.inMinutes / 60.0);
 
   static TaskStatus _calculateStatus(DateTime deadline) {
     final now = DateTime.now();

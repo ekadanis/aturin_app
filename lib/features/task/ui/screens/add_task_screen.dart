@@ -323,7 +323,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 value:
                     _estimatedDuration == null
                         ? 'Pilih durasi'
-                        : '${_estimatedDuration!.inHours}j : ${_estimatedDuration!.inMinutes % 60}m',
+                        : '${_estimatedDuration!.inHours};${(_estimatedDuration!.inMinutes % 60).toString().padLeft(2, '0')}',
                 onTap: () async {
                   final result = await showDurationPickerBottomSheet(context);
                   if (result != null) {
