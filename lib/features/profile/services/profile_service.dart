@@ -3,8 +3,11 @@ import 'package:aturin_app/features/profile/database/profile_database.dart';
 import 'package:aturin_app/core/database/seeders/profile_seeder.dart';
 import 'package:flutter/material.dart';
 
-class ProfileService {
+class ProfileService extends ChangeNotifier {
   final ProfileDatabase _profileDatabase = ProfileDatabase();
+  User? _currentUser;
+
+  User? get currentUser => _currentUser;
 
   Future<User?> getUser() async {
     // Coba ambil user dengan ID=1 (user default)
@@ -29,6 +32,8 @@ class ProfileService {
       }
     }
     
+    _currentUser = user;
+    notifyListeners();
     return user;
   }
 
@@ -44,26 +49,50 @@ class ProfileService {
   }
 
   Future<User?> getUserById(int id) async {
-    return await _profileDatabase.getUserById(id);
+    final user = await _profileDatabase.getUserById(id);
+    return user;
   }
 
 
   Future<int> updateUser(User user) async {
-    return await _profileDatabase.updateUser(user);
+    final result = await _profileDatabase.updateUser(user);
+    _currentUser = user;
+    notifyListeners();
+    return result;
   }
 
 
   Future<void> changeUsername(int userId, String newUsername) async {
-    final user = await getUserById(userId);
-    if (user != null && user.username != newUsername) {
-      await _profileDatabase.updateUsername(userId, newUsername);
+    try {
+      final user = await getUserById(userId);
+      if (user != null && user.username != newUsername) {
+        await _profileDatabase.updateUsername(userId, newUsername);
+        // Dapatkan user yang sudah diupdate dari database
+        final updatedUser = await getUserById(userId);
+        if (updatedUser != null && _currentUser != null && _currentUser!.id == userId) {
+          _currentUser = updatedUser;
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint("Error changing username: $e");
     }
   }
 
   Future<void> changeAvatar(int userId, String newAvatar) async {
-    final user = await getUserById(userId);
-    if (user != null && user.avatar != newAvatar) {
-      await _profileDatabase.updateAvatar(userId, newAvatar);
+    try {
+      final user = await getUserById(userId);
+      if (user != null && user.avatar != newAvatar) {
+        await _profileDatabase.updateAvatar(userId, newAvatar);
+        // Dapatkan user yang sudah diupdate dari database
+        final updatedUser = await getUserById(userId);
+        if (updatedUser != null && _currentUser != null && _currentUser!.id == userId) {
+          _currentUser = updatedUser;
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint("Error changing avatar: $e");
     }
   }
 }

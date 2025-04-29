@@ -22,7 +22,7 @@ class BottomNavbar extends StatelessWidget {
         context.router.replace(const HomeRoute());
         break;
       case 1:
-        context.router.replace(const TaskRoute());
+        context.router.replace(const TaskListRoute());
         break;
       case 2:
         context.router.replace(const ProfileRoute());

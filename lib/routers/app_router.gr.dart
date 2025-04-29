@@ -11,6 +11,42 @@
 part of 'app_router.dart';
 
 /// generated route for
+/// [AddTaskScreen]
+class AddTaskRoute extends PageRouteInfo<AddTaskRouteArgs> {
+  AddTaskRoute({Key? key, Task? existingTask, List<PageRouteInfo>? children})
+    : super(
+        AddTaskRoute.name,
+        args: AddTaskRouteArgs(key: key, existingTask: existingTask),
+        initialChildren: children,
+      );
+
+  static const String name = 'AddTaskRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<AddTaskRouteArgs>(
+        orElse: () => const AddTaskRouteArgs(),
+      );
+      return AddTaskScreen(key: args.key, existingTask: args.existingTask);
+    },
+  );
+}
+
+class AddTaskRouteArgs {
+  const AddTaskRouteArgs({this.key, this.existingTask});
+
+  final Key? key;
+
+  final Task? existingTask;
+
+  @override
+  String toString() {
+    return 'AddTaskRouteArgs{key: $key, existingTask: $existingTask}';
+  }
+}
+
+/// generated route for
 /// [HomePage]
 class HomeRoute extends PageRouteInfo<void> {
   const HomeRoute({List<PageRouteInfo>? children})
@@ -112,17 +148,51 @@ class SplashRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [TaskPage]
-class TaskRoute extends PageRouteInfo<void> {
-  const TaskRoute({List<PageRouteInfo>? children})
-    : super(TaskRoute.name, initialChildren: children);
+/// [TaskDetailScreen]
+class TaskDetailRoute extends PageRouteInfo<TaskDetailRouteArgs> {
+  TaskDetailRoute({Key? key, required Task task, List<PageRouteInfo>? children})
+    : super(
+        TaskDetailRoute.name,
+        args: TaskDetailRouteArgs(key: key, task: task),
+        initialChildren: children,
+      );
 
-  static const String name = 'TaskRoute';
+  static const String name = 'TaskDetailRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const TaskPage();
+      final args = data.argsAs<TaskDetailRouteArgs>();
+      return TaskDetailScreen(key: args.key, task: args.task);
+    },
+  );
+}
+
+class TaskDetailRouteArgs {
+  const TaskDetailRouteArgs({this.key, required this.task});
+
+  final Key? key;
+
+  final Task task;
+
+  @override
+  String toString() {
+    return 'TaskDetailRouteArgs{key: $key, task: $task}';
+  }
+}
+
+/// generated route for
+/// [TaskListScreen]
+class TaskListRoute extends PageRouteInfo<void> {
+  const TaskListRoute({List<PageRouteInfo>? children})
+    : super(TaskListRoute.name, initialChildren: children);
+
+  static const String name = 'TaskListRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const TaskListScreen();
     },
   );
 }
