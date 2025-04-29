@@ -6,8 +6,6 @@ import 'package:numberpicker/numberpicker.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 Future<DateTime?> showDeadlinePickerBottomSheet(BuildContext context) async {
-
-  
   DateTime now = DateTime.now();
   DateTime selectedDate = DateTime(now.year, now.month, now.day);
   int selectedHour = now.hour;
@@ -132,7 +130,13 @@ Future<DateTime?> showDeadlinePickerBottomSheet(BuildContext context) async {
                             Row(
                               children: [
                                 NumberPicker(
-                                  minValue: 0,
+                                  minValue:
+                                      selectedDate.day == now.day &&
+                                              selectedDate.month == now.month &&
+                                              selectedDate.year == now.year
+                                          ? now
+                                              .hour // kalau hari ini, mulai dari jam sekarang
+                                          : 0, // kalau bukan hari ini, dari jam 0
                                   maxValue: 23,
                                   value: selectedHour,
                                   zeroPad: true,
@@ -148,12 +152,30 @@ Future<DateTime?> showDeadlinePickerBottomSheet(BuildContext context) async {
                                         color: AppTheme.primaryColor,
                                       ),
                                   onChanged:
-                                      (value) =>
-                                          setState(() => selectedHour = value),
+                                      (value) => setState(() {
+                                        selectedHour = value;
+
+                                        // Reset menit kalau jam berubah (supaya valid)
+                                        if (selectedDate.day == now.day &&
+                                            selectedDate.month == now.month &&
+                                            selectedDate.year == now.year &&
+                                            selectedHour == now.hour &&
+                                            selectedMinute < now.minute) {
+                                          selectedMinute = now.minute;
+                                        }
+                                      }),
                                 ),
+
                                 const SizedBox(width: 8),
                                 NumberPicker(
-                                  minValue: 0,
+                                  minValue:
+                                      selectedDate.day == now.day &&
+                                              selectedDate.month == now.month &&
+                                              selectedDate.year == now.year &&
+                                              selectedHour == now.hour
+                                          ? now
+                                              .minute // kalau jam sama dengan sekarang, menit mulai dari sekarang
+                                          : 0, // kalau tidak, mulai dari 0
                                   maxValue: 59,
                                   value: selectedMinute,
                                   zeroPad: true,
@@ -169,9 +191,9 @@ Future<DateTime?> showDeadlinePickerBottomSheet(BuildContext context) async {
                                         color: AppTheme.primaryColor,
                                       ),
                                   onChanged:
-                                      (value) => setState(
-                                        () => selectedMinute = value,
-                                      ),
+                                      (value) => setState(() {
+                                        selectedMinute = value;
+                                      }),
                                 ),
                               ],
                             ),
@@ -193,8 +215,8 @@ Future<DateTime?> showDeadlinePickerBottomSheet(BuildContext context) async {
                               color: AppTheme.primaryColor,
                             ),
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 35,
-                              vertical: 12,
+                              horizontal: 55,
+                              vertical: 18,
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -223,8 +245,8 @@ Future<DateTime?> showDeadlinePickerBottomSheet(BuildContext context) async {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primaryColor,
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 40,
-                              vertical: 12,
+                              horizontal: 65,
+                              vertical: 18,
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),

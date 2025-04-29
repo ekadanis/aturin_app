@@ -1,29 +1,12 @@
 import 'package:flutter/material.dart';
 import '../database/task_database.dart';
 import '../models/task.dart';
-import '../../alarm/services/alarm_service.dart';
-import 'package:alarm/alarm.dart' as alarm_package;
 
 class TaskService extends ChangeNotifier {
   final taskDatabase = TaskDatabase();
-  final AlarmService _alarmService = AlarmService();
   List<Task> _tasks = [];
-  bool _isAlarmInitialized = false;
 
   List<Task> get tasks => _tasks;
-
-  // Konstruktor dengan inisialisasi alarm
-  TaskService() {
-    _initializeAlarm();
-  }
-
-  // Inisialisasi alarm package
-  Future<void> _initializeAlarm() async {
-    if (!_isAlarmInitialized) {
-      await alarm_package.Alarm.init();
-      _isAlarmInitialized = true;
-    }
-  }
 
   // Fetch all tasks from the database
   Future<void> fetchTasks() async {
@@ -80,10 +63,6 @@ class TaskService extends ChangeNotifier {
       );
       
       await taskDatabase.update(updatedTask.toMap());
-      
-      // Update alarm status
-      await _alarmService.updateAlarmStatus(updatedTask);
-      
       _tasks[index] = updatedTask;
       notifyListeners();
     }
@@ -106,38 +85,16 @@ class TaskService extends ChangeNotifier {
     return null;
   }
 
-  // Add a new task with automatic alarm setup
+  // Add a new task
   Future<int> addTask(Task task) async {
-    // Simpan task di database
     final id = await taskDatabase.insert(task.toMap());
-    
-    // Buat task baru dengan ID yang baru saja diberikan database
-    final newTask = Task(
-      id: id,
-      title: task.title,
-      deadline: task.deadline,
-      estimatedDuration: task.estimatedDuration,
-      category: task.category,
-      isAlarmEnabled: task.isAlarmEnabled,
-      alarmDateTime: task.alarmDateTime,
-    );
-    
-    // Setup alarm if enabled
-    if (task.isAlarmEnabled && task.alarmDateTime != null) {
-      await _alarmService.setAlarmForTask(newTask);
-    }
-    
     await fetchTasks(); // Refresh the task list
     return id;
   }
 
-  // Update an existing task with automatic alarm update
+  // Update an existing task
   Future<int> updateTask(Task task) async {
     final result = await taskDatabase.update(task.toMap());
-    
-    // Update alarm status
-    await _alarmService.updateAlarmStatus(task);
-    
     await fetchTasks(); // Refresh the task list
     return result;
   }
@@ -145,10 +102,6 @@ class TaskService extends ChangeNotifier {
   // Delete a task
   Future<int> deleteTask(int? id) async {
     if (id == null) return 0;
-    
-    // Remove alarm if exists
-    await _alarmService.removeAlarmForTask(id);
-    
     final result = await taskDatabase.delete(id);
     await fetchTasks(); // Refresh the task list
     return result;
@@ -156,13 +109,6 @@ class TaskService extends ChangeNotifier {
 
   // Clear all tasks
   Future<void> clearAllTasks() async {
-    // Stop all alarms for these tasks
-    for (final task in _tasks) {
-      if (task.id != null) {
-        await _alarmService.removeAlarmForTask(task.id!);
-      }
-    }
-    
     await taskDatabase.deleteAll();
     await fetchTasks(); // Refresh the task list
   }

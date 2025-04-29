@@ -1,4 +1,6 @@
+import 'package:aturin_app/features/task/ui/screens/categories.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../models/task.dart';
@@ -18,54 +20,22 @@ class TaskListScreen extends StatefulWidget {
   State<TaskListScreen> createState() => _TaskListScreenState();
 }
 
-class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObserver {
+class _TaskListScreenState extends State<TaskListScreen> {
   String _selectedFilter = 'Semua';
-  final List<String> _filters = ['Semua', 'Terlambat', 'Belum Selesai', 'Selesai'];
+  final List<String> _filters = [
+    'Semua',
+    'Terlambat',
+    'Belum Selesai',
+    'Selesai',
+  ];
   bool _showSuccessMessage = false;
   String _successMessage = '';
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    
-    // Load data on initial load
-    _loadTasks();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Fetch tasks when dependencies change
-    _loadTasks();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Refresh task list when app comes to foreground
-    if (state == AppLifecycleState.resumed) {
-      _loadTasks();
-    }
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  // Centralized method to load tasks with error handling
-  void _loadTasks() {
-    // Use Future.microtask to avoid setState during build
-    Future.microtask(() {
-      if (mounted) {
-        try {
-          Provider.of<TaskService>(context, listen: false).fetchTasks();
-        } catch (e) {
-          // Handle errors if needed
-          debugPrint('Error fetching tasks: $e');
-        }
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<TaskService>(context, listen: false).fetchTasks();
     });
   }
 
@@ -74,7 +44,7 @@ class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObse
       _showSuccessMessage = true;
       _successMessage = message;
     });
-    
+
     // Sembunyikan pesan setelah 3 detik
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
@@ -97,8 +67,10 @@ class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObse
             fontSize: 20,
           ),
         ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
-      
+
       body: Column(
         children: [
           // Pesan sukses
@@ -142,7 +114,7 @@ class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObse
                 ],
               ),
             ),
-          
+
           // Filter tabs
           FilterTabs(
             filters: _filters,
@@ -153,111 +125,88 @@ class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObse
               });
             },
           ),
-          
+
           // Task list
           Expanded(
             child: Consumer<TaskService>(
               builder: (context, taskService, child) {
-                // // Check if tasks are loading
-                // if (taskService.isLoading) {
-                //   return const Center(
-                //     child: CircularProgressIndicator(),
-                //   );
-                // }
-                
-                final filteredTasks = taskService.getTasksByFilter(_selectedFilter);
-                
+                final filteredTasks = taskService.getTasksByFilter(
+                  _selectedFilter,
+                );
+
                 if (filteredTasks.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.assignment_outlined,
-                          size: 56,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Tidak ada tugas',
-                          style: GoogleFonts.plusJakartaSans(
-                            color: Colors.grey,
-                            fontSize: 16,
-                          ),
-                        ),
-                        if (_selectedFilter != 'Semua')
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Text(
-                              'Coba pilih filter lain',
-                              style: GoogleFonts.plusJakartaSans(
-                                color: Colors.grey,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                      ],
+                  return const Center(
+                    child: Text(
+                      'Tidak ada tugas',
+                      style: TextStyle(color: Colors.grey, fontSize: 16),
                     ),
                   );
                 }
-                
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    await Provider.of<TaskService>(context, listen: false).fetchTasks();
-                  },
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: filteredTasks.length,
-                    itemBuilder: (context, index) {
-                      final task = filteredTasks[index];
-                      
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        child: Slidable(
-                          endActionPane: ActionPane(
-                            motion: const ScrollMotion(),
-                            extentRatio: 0.3,
-                            children: [
-                              SlidableAction(
-                                onPressed: (_) {
-                                  // Menggunakan AutoRoute untuk navigasi ke halaman detail
-                                  context.router.push(TaskDetailRoute(task: task)).then((_) {
-                                    // Refresh tasks when returning from detail screen
-                                    _loadTasks();
-                                  });
-                                },
-                                backgroundColor: Colors.white,
-                                foregroundColor: Colors.grey.shade600,
-                                icon: Icons.info_outline,
-                                label: 'Detail',
-                              ),
-                              SlidableAction(
-                                onPressed: (_) async {
-                                  await Provider.of<TaskService>(context, listen: false)
-                                      .deleteTask(task.id);
-                                  // Force refresh after deletion
-                                  _loadTasks();
-                                  _showSuccess('Berhasil menghapus tugas');
-                                },
-                                backgroundColor: const Color(0xFFFFCDD2),
-                                foregroundColor: Colors.red,
-                                icon: Icons.delete_outline,
-                                label: 'Hapus',
-                              ),
-                            ],
-                          ),
-                          child: _buildTaskCard(task),
+
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: filteredTasks.length,
+                  itemBuilder: (context, index) {
+                    final task = filteredTasks[index];
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
+                      child: Slidable(
+                        endActionPane: ActionPane(
+                          motion: const ScrollMotion(),
+                          extentRatio: 0.3,
+                          children: [
+                            SlidableAction(
+                              onPressed: (_) {
+                                // Menggunakan AutoRoute untuk navigasi ke halaman detail
+                                context.router
+                                    .push(TaskDetailRoute(task: task))
+                                    .then((result) {
+                                      if (result == true) {
+                                        Provider.of<TaskService>(
+                                          context,
+                                          listen: false,
+                                        ).fetchTasks();
+                                        _showSuccess(
+                                          'Tugas berhasil diperbarui',
+                                        );
+                                      }
+                                    });
+                              },
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.grey.shade600,
+                              icon: Icons.info_outline,
+                              label: 'Detail',
+                            ),
+                            SlidableAction(
+                              onPressed: (_) {
+                                Provider.of<TaskService>(
+                                  context,
+                                  listen: false,
+                                ).deleteTask(task.id);
+                                _showSuccess('Berhasil menghapus tugas');
+                              },
+                              backgroundColor: const Color(0xFFFFCDD2),
+                              foregroundColor: Colors.red,
+                              icon: Icons.delete_outline,
+                              label: 'Hapus',
+                            ),
+                          ],
                         ),
-                      );
-                    },
-                  ),
+                        child: _buildTaskCard(task),
+                      ),
+                    );
+                  },
                 );
               },
             ),
           ),
         ],
       ),
-      
+
       floatingActionButton: ClipRRect(
         borderRadius: BorderRadius.circular(100),
         child: FloatingActionButton(
@@ -265,7 +214,7 @@ class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObse
             // Menggunakan AutoRoute alih-alih Navigator.push
             context.pushRoute(AddTaskRoute()).then((result) {
               if (result == true) {
-                _loadTasks();
+                Provider.of<TaskService>(context, listen: false).fetchTasks();
                 _showSuccess('Berhasil menambahkan tugas');
               }
             });
@@ -274,7 +223,7 @@ class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObse
           child: const Icon(Icons.add, color: AppTheme.buttonBackgroundColor),
         ),
       ),
-      
+
       // Menggunakan bottom navbar custom yang sudah ada
       bottomNavigationBar: const BottomNavbar(currentIndex: 1),
     );
@@ -301,11 +250,11 @@ class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObse
               children: [
                 // Checkbox atau indikator status
                 GestureDetector(
-                  onTap: () async {
-                    await Provider.of<TaskService>(context, listen: false)
-                        .toggleTaskCompletion(task.id);
-                    // Force refresh after updating completion status
-                    _loadTasks();
+                  onTap: () {
+                    Provider.of<TaskService>(
+                      context,
+                      listen: false,
+                    ).toggleTaskCompletion(task.id);
                     if (!task.isCompleted) {
                       _showSuccess('Berhasil Menyelesaikan Tugas');
                     }
@@ -314,24 +263,31 @@ class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObse
                     width: 24,
                     height: 24,
                     decoration: BoxDecoration(
-                      color: task.isCompleted ? AppTheme.primaryColor : Colors.transparent,
+                      color:
+                          task.isCompleted
+                              ? AppTheme.primaryColor
+                              : Colors.transparent,
                       border: Border.all(
-                        color: task.isCompleted ? AppTheme.primaryColor : AppTheme.primaryColor,
+                        color:
+                            task.isCompleted
+                                ? AppTheme.primaryColor
+                                : AppTheme.primaryColor,
                         width: 2,
                       ),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: task.isCompleted
-                        ? const Icon(
-                            Icons.check,
-                            size: 16,
-                            color: AppTheme.lightCardColor,
-                          )
-                        : null,
+                    child:
+                        task.isCompleted
+                            ? const Icon(
+                              Icons.check,
+                              size: 16,
+                              color: AppTheme.lightCardColor,
+                            )
+                            : null,
                   ),
                 ),
                 const SizedBox(width: 12),
-                
+
                 // Informasi tugas
                 Expanded(
                   child: Column(
@@ -340,33 +296,35 @@ class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObse
                       // Kategori
                       Row(
                         children: [
-                          const Icon(
-                            Icons.school,
-                            size: 14,
-                            color: AppTheme.primaryColor,
+                          SvgPicture.asset(
+                            _getCategoryIcon(task.category),
+                            width: 14,
+                            height: 14,
+                            color: _getCategoryColor(task.category),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             _getCategoryName(task.category),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppTheme.primaryColor,
+                              color: _getCategoryColor(task.category),
                             ),
                           ),
                         ],
                       ),
+
                       const SizedBox(height: 4),
-                      
+
                       // Judul tugas
                       Text(
                         task.title,
-                        style: GoogleFonts.plusJakartaSans(
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      
+
                       // Estimasi waktu
                       Row(
                         children: [
@@ -377,7 +335,7 @@ class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObse
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            'Estimasi: ${task.estimatedDuration.inHours};${(task.estimatedDuration.inMinutes % 60).toString().padLeft(2, '0')}',
+                            'Estimasi: ${task.estimatedHours}jam',
                             style: const TextStyle(
                               fontSize: 12,
                               color: Colors.black54,
@@ -388,10 +346,13 @@ class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObse
                     ],
                   ),
                 ),
-                
+
                 // Status badge
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: _getStatusColor(task.status),
                     borderRadius: BorderRadius.circular(16),
@@ -408,7 +369,7 @@ class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObse
               ],
             ),
           ),
-          
+
           // Alarm indicator if active
           if (task.isAlarmActive)
             Container(
@@ -416,27 +377,15 @@ class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObse
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: const BoxDecoration(
                 border: Border(
-                  top: BorderSide(
-                    color: Color(0xFFEEEEEE),
-                    width: 1,
-                  ),
+                  top: BorderSide(color: Color(0xFFEEEEEE), width: 1),
                 ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: const [
-                  Icon(
-                    Icons.alarm,
-                    size: 12,
-                    color: Colors.blue,
-                  ),
-                  SizedBox(width: 4),
                   Text(
                     'Alarm Aktif',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue,
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.blue),
                   ),
                 ],
               ),
@@ -451,7 +400,7 @@ class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObse
       final taskCategory = TaskCategory.values.firstWhere(
         (e) => e.toString() == 'TaskCategory.$category',
       );
-      
+
       switch (taskCategory) {
         case TaskCategory.akademik:
           return 'Akademik';
@@ -489,7 +438,11 @@ class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObse
         if (task != null) {
           final now = DateTime.now();
           final today = DateTime(now.year, now.month, now.day);
-          final deadlineDay = DateTime(task.deadline.year, task.deadline.month, task.deadline.day);
+          final deadlineDay = DateTime(
+            task.deadline.year,
+            task.deadline.month,
+            task.deadline.day,
+          );
           final daysRemaining = deadlineDay.difference(today).inDays;
           return '$daysRemaining hari lagi';
         }
@@ -525,5 +478,23 @@ class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObse
       case TaskStatus.upcoming:
         return const Color(0xFF9E9E9E);
     }
+  }
+
+  String _getCategoryIcon(String categoryName) {
+    return categories
+        .firstWhere(
+          (c) => c.name == categoryName,
+          orElse: () => categories.first,
+        )
+        .iconPath;
+  }
+
+  Color _getCategoryColor(String categoryName) {
+    return categories
+        .firstWhere(
+          (c) => c.name == categoryName,
+          orElse: () => categories.first,
+        )
+        .color;
   }
 }
