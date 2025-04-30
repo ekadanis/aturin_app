@@ -11,6 +11,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:auto_route/auto_route.dart';
 import '../../../../core/widgets/bottom_navbar.dart';
 import '../../../../routers/app_router.dart';
+import '../widgets/snackbar.dart';
 
 @RoutePage()
 class TaskListScreen extends StatefulWidget {
@@ -74,46 +75,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
       body: Column(
         children: [
           // Pesan sukses
-          if (_showSuccessMessage)
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE3F2E9),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFF4CAF50), width: 1),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.check_circle_outline,
-                    color: Color(0xFF4CAF50),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _successMessage,
-                      style: const TextStyle(
-                        color: Color(0xFF4CAF50),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _showSuccessMessage = false;
-                      });
-                    },
-                    child: const Icon(
-                      Icons.close,
-                      color: Color(0xFF4CAF50),
-                      size: 20,
-                    ),
-                  ),
-                ],
-              ),
-            ),
 
           // Filter tabs
           FilterTabs(
@@ -170,8 +131,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
                                           context,
                                           listen: false,
                                         ).fetchTasks();
-                                        _showSuccess(
-                                          'Tugas berhasil diperbarui',
+                                        showCustomTopSnackbar(
+                                          context: context,
+                                          message: 'Tugas berhasil diperbarui',
                                         );
                                       }
                                     });
@@ -187,7 +149,10 @@ class _TaskListScreenState extends State<TaskListScreen> {
                                   context,
                                   listen: false,
                                 ).deleteTask(task.id);
-                                _showSuccess('Berhasil menghapus tugas');
+                                showCustomTopSnackbar(
+                                  context: context,
+                                  message: 'Berhasil menghapus tugas',
+                                );
                               },
                               backgroundColor: const Color(0xFFFFCDD2),
                               foregroundColor: Colors.red,
@@ -215,7 +180,10 @@ class _TaskListScreenState extends State<TaskListScreen> {
             context.pushRoute(AddTaskRoute()).then((result) {
               if (result == true) {
                 Provider.of<TaskService>(context, listen: false).fetchTasks();
-                _showSuccess('Berhasil menambahkan tugas');
+                showCustomTopSnackbar(
+                  context: context,
+                  message: 'Berhasil menambahkan tugas',
+                );
               }
             });
           },
@@ -256,7 +224,10 @@ class _TaskListScreenState extends State<TaskListScreen> {
                       listen: false,
                     ).toggleTaskCompletion(task.id);
                     if (!task.isCompleted) {
-                      _showSuccess('Berhasil Menyelesaikan Tugas');
+                      showCustomTopSnackbar(
+                        context: context,
+                        message: 'Berhasil Menyelesaikan Tugas',
+                      );
                     }
                   },
                   child: Container(
