@@ -33,7 +33,7 @@ class TaskService extends ChangeNotifier {
   // Toggle task completion status
   Future<void> toggleTaskCompletion(int? id) async {
     if (id == null) return;
-    
+
     final index = _tasks.indexWhere((task) => task.id == id);
     if (index != -1) {
       final task = _tasks[index];
@@ -43,7 +43,7 @@ class TaskService extends ChangeNotifier {
         isCompleted: !task.isCompleted,
         completedAt: !task.isCompleted ? now : null,
       );
-      
+
       await taskDatabase.update(updatedTask.toMap());
       _tasks[index] = updatedTask;
       notifyListeners();
@@ -53,7 +53,7 @@ class TaskService extends ChangeNotifier {
   // Toggle alarm status
   Future<void> toggleAlarm(int? id) async {
     if (id == null) return;
-    
+
     final index = _tasks.indexWhere((task) => task.id == id);
     if (index != -1) {
       final task = _tasks[index];
@@ -61,7 +61,7 @@ class TaskService extends ChangeNotifier {
         isAlarmEnabled: !task.isAlarmEnabled,
         isAlarmActive: !task.isAlarmActive,
       );
-      
+
       await taskDatabase.update(updatedTask.toMap());
       _tasks[index] = updatedTask;
       notifyListeners();
@@ -112,4 +112,70 @@ class TaskService extends ChangeNotifier {
     await taskDatabase.deleteAll();
     await fetchTasks(); // Refresh the task list
   }
+
+  String? validateTitle(String? value) {
+  final trimmed = value?.trim() ?? '';
+  if (trimmed.isEmpty) return 'Judul wajib diisi';
+  if (trimmed.length > 20) return 'Judul maksimal 20 karakter';
+  return null;
+}
+
+
+  String? validateDeadline(DateTime? deadline) {
+    if (deadline == null) return 'Deadline wajib diisi';
+    return null;
+  }
+
+  String? validateDuration(Duration? duration) {
+    if (duration == null) return 'Estimasi waktu wajib diisi';
+    return null;
+  }
+
+  String? validateCategory(dynamic category) {
+    if (category == null) return 'Kategori wajib diisi';
+    return null;
+  }
+
+  String? validateAlarm(DateTime? deadline, DateTime? alarm) {
+    if (alarm == null) return 'Waktu alarm wajib diisi';
+    if (deadline != null && alarm.isAfter(deadline)) {
+      return 'Alarm harus sebelum deadline';
+    }
+    return null;
+  }
+
+  bool canEnableAlarm(DateTime? deadline) {
+    return deadline != null &&
+        deadline.isAfter(DateTime.now().add(Duration(hours: 1)));
+  }
+
+  Future<void> saveTaskForm({required bool isEdit, required Task task}) async {
+    if (isEdit) {
+      await updateTask(task);
+    } else {
+      await addTask(task);
+    }
+  }
+
+  Future<void> handleSaveForm({
+  required GlobalKey<FormState> formKey,
+  required Task task,
+  required bool isEdit,
+  required VoidCallback onSuccess,
+  required void Function(String message) onError,
+}) async {
+  if (!formKey.currentState!.validate()) return;
+
+  try {
+    await saveTaskForm(isEdit: isEdit, task: task);
+    onSuccess();
+  } catch (e) {
+    onError('Gagal menyimpan tugas');
+  }
+}
+bool isDeadlineValid(DateTime? deadline) {
+  return deadline != null &&
+         deadline.isAfter(DateTime.now().add(Duration(hours: 1)));
+}
+
 }
