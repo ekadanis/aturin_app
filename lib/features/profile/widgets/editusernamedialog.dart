@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:aturin_app/features/profile/services/profile_service.dart';
 
 class EditUsernameDialog extends StatefulWidget {
@@ -23,6 +22,7 @@ class _EditUsernameDialogState extends State<EditUsernameDialog> {
   late TextEditingController _controller;
   bool _isError = false;
   String _errorMessage = '';
+  final ProfileService _profileService = ProfileService();
   int _characterCount = 0;
 
   @override
@@ -60,16 +60,9 @@ class _EditUsernameDialogState extends State<EditUsernameDialog> {
       });
     } else {
       try {
-        // Get ProfileService from Provider
-        final profileService = Provider.of<ProfileService>(context, listen: false);
-        await profileService.changeUsername(widget.userId, newUsername);
-        
-        // Call the callback with the new username
+        await _profileService.changeUsername(widget.userId, newUsername);
         widget.onUsernameUpdated(newUsername);
-        
-        if (mounted) {
-          Navigator.pop(context);
-        }
+        Navigator.pop(context);
       } catch (e) {
         setState(() {
           _isError = true;

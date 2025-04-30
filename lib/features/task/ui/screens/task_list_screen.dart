@@ -1,4 +1,6 @@
+import 'package:aturin_app/features/task/ui/screens/categories.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import '../../services/task_services.dart';
 import '../widgets/filter_tabs.dart';
@@ -27,8 +29,6 @@ class _TaskListScreenState extends State<TaskListScreen>
     'Belum Selesai',
     'Selesai',
   ];
-  bool _showSuccessMessage = false;
-  String _successMessage = '';
 
   @override
   void initState() {
@@ -51,6 +51,7 @@ class _TaskListScreenState extends State<TaskListScreen>
             fontSize: 20,
           ),
         ),
+        elevation: 0,
       ),
 
       body: Column(

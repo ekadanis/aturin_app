@@ -11,7 +11,11 @@ class CategoryPickerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Pilih Kategori')),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text('Pilih Kategori'),
+        backgroundColor: Colors.white,
+      ),
       body: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: categories.length,
@@ -27,7 +31,8 @@ class CategoryPickerScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isSelected ? AppTheme.primaryColor : Colors.grey.shade300,
+                  color:
+                      isSelected ? AppTheme.primaryColor : Colors.grey.shade300,
                   width: isSelected ? 2 : 1,
                 ),
               ),
@@ -37,7 +42,10 @@ class CategoryPickerScreen extends StatelessWidget {
                     category.iconPath,
                     width: 24,
                     height: 24,
-                    colorFilter: ColorFilter.mode(category.color, BlendMode.srcIn),
+                    colorFilter: ColorFilter.mode(
+                      category.color,
+                      BlendMode.srcIn,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -50,7 +58,7 @@ class CategoryPickerScreen extends StatelessWidget {
                     ),
                   ),
                   if (isSelected)
-                    Icon(Icons.check, color: AppTheme.primaryColor)
+                    Icon(Icons.check, color: AppTheme.primaryColor),
                 ],
               ),
             ),
