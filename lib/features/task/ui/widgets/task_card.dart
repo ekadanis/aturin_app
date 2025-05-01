@@ -146,7 +146,7 @@ class TaskCard extends StatelessWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              'Estimasi: ${task.estimatedDuration.inHours};${(task.estimatedDuration.inMinutes % 60).toString().padLeft(2, '0')}',
+                              'Estimasi: ${task.estimatedDuration.inHours}:${(task.estimatedDuration.inMinutes % 60).toString().padLeft(2, '0')}',
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: Colors.black54,
