@@ -31,7 +31,6 @@ dependencies:
   shimmer: ^3.0.0
   animated_toggle_switch: ^0.8.5
   panara_dialogs: ^0.1.5
-  slider_button: ^2.1.0
 
 dev_dependencies:
   flutter_test:
