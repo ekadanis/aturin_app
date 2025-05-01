@@ -47,6 +47,46 @@ class AddTaskRouteArgs {
 }
 
 /// generated route for
+/// [AlarmRingingScreen]
+class AlarmRingingRoute extends PageRouteInfo<AlarmRingingRouteArgs> {
+  AlarmRingingRoute({
+    Key? key,
+    required AlarmSettings alarmSettings,
+    List<PageRouteInfo>? children,
+  }) : super(
+         AlarmRingingRoute.name,
+         args: AlarmRingingRouteArgs(key: key, alarmSettings: alarmSettings),
+         initialChildren: children,
+       );
+
+  static const String name = 'AlarmRingingRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<AlarmRingingRouteArgs>();
+      return AlarmRingingScreen(
+        key: args.key,
+        alarmSettings: args.alarmSettings,
+      );
+    },
+  );
+}
+
+class AlarmRingingRouteArgs {
+  const AlarmRingingRouteArgs({this.key, required this.alarmSettings});
+
+  final Key? key;
+
+  final AlarmSettings alarmSettings;
+
+  @override
+  String toString() {
+    return 'AlarmRingingRouteArgs{key: $key, alarmSettings: $alarmSettings}';
+  }
+}
+
+/// generated route for
 /// [HomePage]
 class HomeRoute extends PageRouteInfo<void> {
   const HomeRoute({List<PageRouteInfo>? children})

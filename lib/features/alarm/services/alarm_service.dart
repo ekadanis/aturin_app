@@ -59,7 +59,7 @@ class AlarmService {
         vibrate: true,
         warningNotificationOnKill: Platform.isAndroid,
         androidFullScreenIntent: true,
-        allowAlarmOverlap: true,
+        allowAlarmOverlap: false,
         volumeSettings: VolumeSettings.staircaseFade(
           volume: null, // null berarti menggunakan volume sistem
           fadeSteps: [

@@ -9,11 +9,19 @@ import '../widgets/alarm_time_display.dart';
 import '../widgets/task_description.dart';
 import '../widgets/category_tag.dart';
 import '../widgets/cancel_slider.dart';
+import 'package:auto_route/auto_route.dart';
 
+@RoutePage()
 class AlarmRingingScreen extends StatefulWidget {
-  final int alarmId;
+  final AlarmSettings alarmSettings;
+  // Callback untuk memanggil saat alarm dimatikan dari standalone mode
+  final VoidCallback? onDismiss;
 
-  const AlarmRingingScreen({Key? key, required this.alarmId}) : super(key: key);
+  const AlarmRingingScreen({
+    Key? key,
+    required this.alarmSettings,
+    this.onDismiss,
+  }) : super(key: key);
 
   @override
   State<AlarmRingingScreen> createState() => _AlarmRingingScreenState();
@@ -35,10 +43,10 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen> {
   Future<void> _loadTask() async {
     try {
       setState(() => _loading = true);
-      
+
       final taskService = Provider.of<TaskService>(context, listen: false);
-      final task = await taskService.getTaskById(widget.alarmId);
-      
+      final task = await taskService.getTaskById(widget.alarmSettings.id);
+
       if (mounted) {
         setState(() {
           _task = task;
@@ -59,24 +67,44 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen> {
 
   void _stopAlarm() {
     try {
-      debugPrint('Mencoba menghentikan alarm dengan ID: ${widget.alarmId}');
-      Alarm.stop(widget.alarmId);
-      Navigator.pop(context);
+      debugPrint(
+        'Mencoba menghentikan alarm dengan ID: ${widget.alarmSettings.id}',
+      );
+      Alarm.stop(widget.alarmSettings.id);
+
+      // Jika onDismiss tersedia (mode standalone), gunakan itu untuk kembali ke aplikasi
+      if (widget.onDismiss != null) {
+        debugPrint(
+          'Menggunakan onDismiss callback untuk kembali ke aplikasi utama',
+        );
+        widget.onDismiss!();
+      } else {
+        // Jika tidak, berarti kita berada dalam aplikasi utama, cukup pop screen
+        debugPrint('Kembali dengan Navigator.pop');
+        context.router.pop();
+      }
     } catch (e) {
       debugPrint('Error stopping alarm: $e');
-      if (mounted) Navigator.pop(context);
+      // Fallback jika terjadi error
+      if (widget.onDismiss != null) {
+        widget.onDismiss!();
+      } else if (mounted) {
+        context.router.pop();
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final time = _task?.alarmDateTime != null 
-        ? timeFormat.format(_task!.alarmDateTime!)
-        : timeFormat.format(now);
-    final date = _task?.alarmDateTime != null
-        ? dateFormat.format(_task!.alarmDateTime!)
-        : dateFormat.format(now);
+    final time =
+        _task?.alarmDateTime != null
+            ? timeFormat.format(_task!.alarmDateTime!)
+            : timeFormat.format(now);
+    final date =
+        _task?.alarmDateTime != null
+            ? dateFormat.format(_task!.alarmDateTime!)
+            : dateFormat.format(now);
     final taskName = _task?.title ?? 'Waktunya mengerjakan tugas!';
     final category = _getCategoryName(_task?.category ?? 'akademik');
 
@@ -99,10 +127,7 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen> {
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       const SizedBox(height: 85),
-                      AlarmTimeDisplay(
-                        time: time,
-                        date: date,
-                      ),
+                      AlarmTimeDisplay(time: time, date: date),
                       const SizedBox(height: 10),
                       const AlarmClockImage(),
                       const SizedBox(height: 10),
@@ -127,14 +152,14 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen> {
       ),
     );
   }
-  
+
   String _getCategoryName(String category) {
     try {
       final taskCategory = TaskCategory.values.firstWhere(
         (e) => e.toString() == 'TaskCategory.$category',
         orElse: () => TaskCategory.akademik,
       );
-      
+
       switch (taskCategory) {
         case TaskCategory.akademik:
           return 'Akademik';
