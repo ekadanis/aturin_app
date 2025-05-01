@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:aturin_app/features/profile/services/profile_service.dart';
+import 'package:aturin_app/core/theme/app_theme.dart';
 
 class EditUsernameDialog extends StatefulWidget {
   final String currentUsername;
   final int userId;
   final void Function(String newUsername) onUsernameUpdated;
+  final ProfileService profileService;
 
   const EditUsernameDialog({
     super.key,
     required this.currentUsername,
     required this.userId,
     required this.onUsernameUpdated,
+    required this.profileService,
   });
 
   @override
@@ -60,9 +62,8 @@ class _EditUsernameDialogState extends State<EditUsernameDialog> {
       });
     } else {
       try {
-        // Get ProfileService from Provider
-        final profileService = Provider.of<ProfileService>(context, listen: false);
-        await profileService.changeUsername(widget.userId, newUsername);
+        // Use the profileService passed from the parent widget
+        await widget.profileService.changeUsername(widget.userId, newUsername);
         
         // Call the callback with the new username
         widget.onUsernameUpdated(newUsername);
@@ -82,7 +83,7 @@ class _EditUsernameDialogState extends State<EditUsernameDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: AppTheme.lightBackgroundColor,
       insetPadding: const EdgeInsets.all(16.0),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
@@ -92,7 +93,7 @@ class _EditUsernameDialogState extends State<EditUsernameDialog> {
           children: [
             TextField(
               controller: _controller,
-              style: const TextStyle(color: Color(0xFF131927)),
+              style: TextStyle(color: AppTheme.lightTextColor),
               maxLength: 20,
               maxLengthEnforcement: MaxLengthEnforcement.enforced,
               decoration: InputDecoration(
@@ -103,19 +104,20 @@ class _EditUsernameDialogState extends State<EditUsernameDialog> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(
-                    color: _isError ? const Color(0xFFEF4444) : const Color(0xFFE5E7EA),
+                    color: _isError ? AppTheme.lightErrorColor : AppTheme.lightDividerColor,
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(
-                    color: _isError ? const Color(0xFFEF4444) : const Color(0xFFE5E7EA),
+                    color: _isError ? AppTheme.lightErrorColor : AppTheme.lightDividerColor,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(
-                    color: _isError ? const Color(0xFFEF4444) : const Color(0xFFE5E7EA),
+                    color: _isError ? AppTheme.lightErrorColor : AppTheme.primaryColor,
+                    width: 1.5,
                   ),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
@@ -131,8 +133,8 @@ class _EditUsernameDialogState extends State<EditUsernameDialog> {
                 padding: const EdgeInsets.only(top: 4.0),
                 child: Text(
                   '$_characterCount/20',
-                  style: const TextStyle(
-                    color: Color(0xFF71717A),
+                  style: TextStyle(
+                    color: AppTheme.lightSecondaryTextColor,
                     fontSize: 12,
                   ),
                 ),
@@ -145,8 +147,8 @@ class _EditUsernameDialogState extends State<EditUsernameDialog> {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     _errorMessage,
-                    style: const TextStyle(
-                      color: Color(0xFFEF4444),
+                    style: TextStyle(
+                      color: AppTheme.lightErrorColor,
                       fontSize: 12,
                     ),
                   ),
@@ -159,11 +161,11 @@ class _EditUsernameDialogState extends State<EditUsernameDialog> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(
-                        color: Color(0xFF5263F3),
+                      side: BorderSide(
+                        color: AppTheme.primaryColor,
                         width: 1.5,
                       ),
-                      foregroundColor: const Color(0xFF5263F3),
+                      foregroundColor: AppTheme.primaryColor,
                       backgroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -184,7 +186,7 @@ class _EditUsernameDialogState extends State<EditUsernameDialog> {
                   child: ElevatedButton(
                     onPressed: _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF5263F3),
+                      backgroundColor: AppTheme.primaryColor,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),

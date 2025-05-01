@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
+import 'package:intl/intl.dart';
 
 class TaskCard extends StatelessWidget {
   final Task task;
@@ -16,123 +17,184 @@ class TaskCard extends StatelessWidget {
     final categoryIcon = getCategoryIcon(task.category);
     final categoryLabel = getCategoryLabel(task.category);
 
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(20), // Padding yang lebih besar
-          decoration: ShapeDecoration(
-            color: Colors.white,
-            shape: RoundedRectangleBorder(
-              side: BorderSide(width: 1, color: AppTheme.lightDividerColor),
-              borderRadius: BorderRadius.circular(12), // Border radius yang lebih besar
-            ),
-            shadows: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+    // Format deadline untuk menampilkan waktu saja (HH:mm)
+    final timeFormat = DateFormat('HH:mm');
+    final deadlineText = timeFormat.format(task.deadline);
+
+    return Container(
+      decoration: ShapeDecoration(
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(width: 1, color: AppTheme.lightDividerColor),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        shadows: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center, // Mengubah dari start menjadi center
-            children: [
-              // LEFT SIDE (info tugas)
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Kategori + Icon
-                    Row(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(right: 4),
-                          child: SvgPicture.asset(categoryIcon, width: 22), // Icon kategori yang lebih besar
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          categoryLabel, //kategori
-                          style: GoogleFonts.plusJakartaSans(
-                            color: AppTheme.lightSecondaryTextColor,
-                            fontSize: 14, // Font kategori yang lebih besar
-                            fontWeight: FontWeight.w500,
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // LEFT SIDE (info tugas)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Kategori + Icon
+                      Row(
+                        children: [
+                          SvgPicture.asset(
+                            categoryIcon,
+                            width: 16,
+                            height: 16,
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10), // Space yang lebih besar
-                    Text(
-                      task.title, //judul
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 18, // Font judul yang lebih besar
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.lightTextColor,
+                          const SizedBox(width: 4),
+                          Text(
+                            categoryLabel,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11,
+                              color: AppTheme.lightSecondaryTextColor,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 10), // Space yang lebih besar
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.access_time_filled,
-                          size: 20, // Icon jam yang lebih besar
-                          color: task.status == TaskStatus.terlambat
-                                ? AppTheme.dangerColor
-                                : const Color(0xFF1A1B4C),
+                      const SizedBox(height: 4),
+                      
+                      // Judul tugas
+                      Text(
+                        task.title,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          task.timeRange, //waktu
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 14, // Font waktu yang lebih besar
-                            fontWeight: FontWeight.w600, // Lebih bold
-                            color: task.status == TaskStatus.terlambat
-                                ? AppTheme.dangerColor
-                                : const Color(0xFF1A1B4C),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+  
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.access_time_filled, 
+                            size: 12, // Ukuran ikon dikurangi
+                            color: task.status == TaskStatus.belumDikerjakan
+                              ? AppTheme.dangerColor
+                              : Colors.black54,
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                          const SizedBox(width: 4),
+                          Text(
+                            deadlineText,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11, // Font size dikurangi
+                              color: task.status == TaskStatus.belumDikerjakan
+                                ? AppTheme.dangerColor
+                                : Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              // RIGHT SIDE (Status badge)
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center, // Memastikan badge di tengah secara vertikal
-                children: [
-                  Container(
-                    width: 90,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      statusLabel, //status
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 14, // Font status yang lebih besar
-                        fontWeight: FontWeight.w600,
-                        color: statusColor,
-                      ),
+                
+                // RIGHT SIDE (Status badge)
+                Container(
+                  alignment: Alignment.center,
+                  width: 80, // Lebar badge dikurangi
+                  height:32, // Tinggi badge dikurangi
+                  margin: const EdgeInsets.only(left: 8), // Menambah margin dari konten kiri
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8), // Radius border dikurangi
+                  ),
+                  child: Text(
+                    statusLabel,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 10, // Font size dikurangi
+                      color: statusColor,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
+          ),
+          
+          // Indikator tambahan (alarm atau terlambat) dengan ukuran yang lebih kecil
+          if (task.isAlarmEnabled)
+            _buildIndicator(
+              AppTheme.alarmActiveColor,
+              Icons.alarm,
+              'Alarm aktif',
+              isLateCompletion: false,
+            ),
+          
+          // "Diselesaikan terlambat" indicator if applicable
+          if (task.status == TaskStatus.selesai && task.isLateCompletion)
+            _buildIndicator(
+              AppTheme.lateTextColor,
+              null,
+              '* Diselesaikan terlambat',
+              isLateCompletion: true,
+            ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method untuk membuat indikator (alarm atau terlambat)
+  Widget _buildIndicator(Color textColor, IconData? icon, String text, {required bool isLateCompletion}) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        bottomLeft: Radius.circular(12),
+        bottomRight: Radius.circular(12),
+      ),
+      child: Container(
+        height: 20, // Tinggi indikator dikurangi
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: isLateCompletion ? const Color(0xFFFFF0F0) : null,
+          border: const Border(
+            top: BorderSide(color: AppTheme.lightDividerColor),
           ),
         ),
-      ],
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 10, color: textColor),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              text,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 10, // Font size dikurangi
+                color: textColor,
+                fontStyle: isLateCompletion ? FontStyle.italic : FontStyle.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   static Color getStatusColor(TaskStatus status) {
     switch (status) {
       case TaskStatus.selesai:
-        return const Color(0xFF3DA755); // Green
-      case TaskStatus.terlambat:
-        return const Color(0xFFD34141); // Red
-      case TaskStatus.besok:
-        return const Color(0xFFE6A73C); // Yellow
+        return const Color(0xFF4CAF50);
+      case TaskStatus.belumDikerjakan:
+        return  Color(0xFFFF6B6B);
     }
   }
 
@@ -140,31 +202,29 @@ class TaskCard extends StatelessWidget {
     switch (status) {
       case TaskStatus.selesai:
         return 'Selesai';
-      case TaskStatus.terlambat:
-        return 'Terlambat';
-      case TaskStatus.besok:
-        return 'Besok';
+      case TaskStatus.belumDikerjakan:
+        return 'Belum Dikerjakan';
     }
   }
 
   static String getCategoryIcon(TaskCategory category) {
     switch (category) {
       case TaskCategory.akademik:
-        return 'assets/icons/graduation-cap.svg';
+        return 'assets/images/akademik.svg';
       case TaskCategory.hiburan:
-        return 'assets/icons/gamepad.svg';
+        return 'assets/images/hiburan.svg';
       case TaskCategory.istirahat:
-        return 'assets/icons/half-moon.svg';
+        return 'assets/images/istirahat.svg';
       case TaskCategory.olahraga:
-        return 'assets/icons/gym.svg';
+        return 'assets/images/olahraga.svg';
       case TaskCategory.pekerjaan:
-        return 'assets/icons/handbag.svg';
+        return 'assets/images/pekerjaan.svg';
       case TaskCategory.pribadi:
-        return 'assets/icons/user-square.svg';
+        return 'assets/images/pribadi.svg';
       case TaskCategory.sosial:
-        return 'assets/icons/community.svg';
+        return 'assets/images/sosial.svg';
       case TaskCategory.spiritual:
-        return 'assets/icons/pray.svg';
+        return 'assets/images/spiritual.svg';
     }
   }
 

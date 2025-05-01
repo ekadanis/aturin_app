@@ -2,6 +2,7 @@ import 'package:aturin_app/features/home/models/task_model.dart';
 import 'package:aturin_app/features/home/widget/task_card.dart';
 import 'package:flutter/material.dart';
 import 'package:timelines_plus/timelines_plus.dart';
+import 'package:aturin_app/core/theme/app_theme.dart';
 
 class TimelineWidget extends StatelessWidget {
   const TimelineWidget({
@@ -20,23 +21,17 @@ class TimelineWidget extends StatelessWidget {
     return TimelineTile(
       nodeAlign: TimelineNodeAlign.start,
       node: TimelineNode(
-        indicator: switch (task.status) {
-          TaskStatus.terlambat => const DotIndicator(
-            size: 24,
-            color: Colors.red,
-            child: Icon(Icons.priority_high, size: 16, color: Colors.white),
-          ),
-          TaskStatus.selesai => const DotIndicator(
-            size: 24,
-            color: Colors.green,
-            child: Icon(Icons.check, size: 16, color: Colors.white),
-          ),
-          TaskStatus.besok => const OutlinedDotIndicator(
-            size: 24,
-            borderWidth: 2,
-            color: Colors.grey,
-          ),
-        },
+        indicator: task.status == TaskStatus.selesai
+            ? const DotIndicator(
+                size: 24,
+                color: Colors.green,
+                child: Icon(Icons.check, size: 16, color: Colors.white),
+              )
+            : const OutlinedDotIndicator(
+                size: 24,
+                borderWidth: 2,
+                color: Colors.red,
+              ),
         startConnector:
             index == 0
                 ? null
@@ -57,11 +52,14 @@ class TimelineWidget extends StatelessWidget {
                 ),
       ),
       contents: Container(
-        margin: const EdgeInsets.only(bottom: 15),
+        // Menambahkan margin atas dan bawah untuk membuat gap antar card
+        margin: EdgeInsets.only(
+          top: index == 0 ? 0 : 4.0,  // Tidak perlu margin atas untuk card pertama
+          bottom: isLast ? 0 : 4.0,   // Tidak perlu margin bawah untuk card terakhir
+        ),
         padding: const EdgeInsets.only(left: 8.0),
         child: TaskCard(task: task),
       ),
     );
-    
   }
 }

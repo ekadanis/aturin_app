@@ -3,7 +3,7 @@ import 'package:aturin_app/features/profile/models/user.dart';
 import 'package:aturin_app/features/profile/services/profile_service.dart';
 import 'package:aturin_app/features/profile/widgets/profile_card.dart';
 import 'package:aturin_app/features/profile/ui/profile_edit_page.dart';
-import 'package:aturin_app/features/profile/widgets/notification_card.dart';
+import 'package:aturin_app/features/profile/widgets/pengaturan_card.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:aturin_app/core/widgets/bottom_navbar.dart';
 import 'package:aturin_app/routers/app_router.dart';
@@ -104,20 +104,25 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      top: 16,
+                      bottom: 4,
+                    ),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'Notifikasi',
+                        'Pengaturan',
                         style: GoogleFonts.plusJakartaSans(
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                           color: AppTheme.lightTextColor,
-                          fontSize: 20,
+                          fontSize: 16,
                         ),
                       ),
                     ),
                   ),
-                  NotificationCard(
+                  PengaturanCard(
                     Title: 'Alarm',
                     Description: 'Atur Alarm kamu',
                   ),

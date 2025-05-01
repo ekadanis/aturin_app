@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../../../core/theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class FilterTabs extends StatelessWidget {
@@ -18,7 +18,7 @@ class FilterTabs extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Row(
         children: filters.map((filter) {
           final isSelected = selectedFilter == filter;

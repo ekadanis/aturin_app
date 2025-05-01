@@ -20,21 +20,17 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    
-    // Setup animation
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     );
-    
     _animation = CurvedAnimation(
       parent: _controller,
       curve: Curves.easeIn,
     );
     
     _controller.forward();
-    
-    // Initialize data and navigate
+
     _initializeData();
   }
   
@@ -48,15 +44,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     try {
       // Memastikan database sudah diinisialisasi sebelum melanjutkan
       await DatabaseHelper.instance.database;
-      
-      // Tunggu minimal 3 detik untuk splash screen
+
       await Future.delayed(const Duration(milliseconds: 3000));
-      
+
       if (!mounted) return;
       _checkFirstTime();
     } catch (e) {
       debugPrint("Error initializing database: $e");
-      // Tetap coba melanjutkan meskipun ada error
       await Future.delayed(const Duration(milliseconds: 3000));
       if (mounted) _checkFirstTime();
     }
@@ -64,11 +58,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   Future<void> _checkFirstTime() async {
     if (!mounted) return;
-    
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       bool isFirstTime = prefs.getBool('isFirstTime') ?? true;
-      
+
       if (!mounted) return;
 
       if (isFirstTime) {
@@ -78,7 +71,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       }
     } catch (e) {
       debugPrint("Error checking first time: $e");
-      // Default ke OnboardingRoute jika terjadi error
       if (mounted) {
         context.router.replace(const OnboardingRoute());
       }

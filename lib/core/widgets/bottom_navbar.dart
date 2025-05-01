@@ -5,8 +5,9 @@ import 'package:auto_route/auto_route.dart';
 
 import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:aturin_app/routers/app_router.dart';
+import 'package:aturin_app/core/utils/debouncer.dart';
 
-class BottomNavbar extends StatelessWidget {
+class BottomNavbar extends StatefulWidget {
   final int currentIndex;
 
   const BottomNavbar({
@@ -14,20 +15,35 @@ class BottomNavbar extends StatelessWidget {
     required this.currentIndex
   });
 
-  void _handleNavigation(BuildContext context, int index){
-    if (index == currentIndex) return;
+  @override
+  State<BottomNavbar> createState() => _BottomNavbarState();
+}
 
-    switch (index) {
-      case 0:
-        context.router.replace(const HomeRoute());
-        break;
-      case 1:
-        context.router.replace(const TaskListRoute());
-        break;
-      case 2:
-        context.router.replace(const ProfileRoute());
-        break;
-    }
+class _BottomNavbarState extends State<BottomNavbar> {
+  final _navigationThrottle = Throttle(milliseconds: 800);
+
+  void _handleNavigation(BuildContext context, int index) {
+    if (index == widget.currentIndex) return;
+
+    _navigationThrottle.run(() {
+      switch (index) {
+        case 0:
+          context.router.replace(const HomeRoute());
+          break;
+        case 1:
+          context.router.replace(const TaskListRoute());
+          break;
+        case 2:
+          context.router.replace(const ProfileRoute());
+          break;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _navigationThrottle.dispose();
+    super.dispose();
   }
 
   @override
@@ -77,7 +93,7 @@ class BottomNavbar extends StatelessWidget {
           }),
         ),
         child: NavigationBar(
-          selectedIndex: currentIndex,
+          selectedIndex: widget.currentIndex,
           onDestinationSelected: (index) => _handleNavigation(context, index),
           destinations: [
             NavigationDestination(

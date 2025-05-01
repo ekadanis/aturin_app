@@ -1,8 +1,10 @@
 import 'package:aturin_app/core/theme/app_theme.dart';
+import 'package:aturin_app/features/task/ui/widgets/alarm_picker.dart';
+import 'package:aturin_app/features/task/ui/widgets/task_title_field.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:auto_route/auto_route.dart'; // Menambahkan import auto_route
+import 'package:auto_route/auto_route.dart';
 import 'categories.dart';
 import '../../models/task.dart';
 import '../../services/task_services.dart';
@@ -10,8 +12,9 @@ import '../widgets/deadline_picker_bottom.dart';
 import '../widgets/duration_picker_bottom.dart';
 import '../widgets/category_list.dart';
 import 'category_picker_screen.dart';
-import '../../../../routers/app_router.dart';
+import '../../../../../../routers/app_router.dart';
 import 'package:aturin_app/features/task/ui/widgets/alarm_picker_bottom.dart';
+import 'package:aturin_app/features/task/ui/widgets/field_tile.dart';
 
 @RoutePage()
 class AddTaskScreen extends StatefulWidget {
@@ -26,11 +29,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
 
-  // Variabel untuk pesan error
   String? _deadlineError;
   String? _durationError;
   String? _categoryError;
   String? _alarmDateTimeError;
+  String? _alarmToggleError;
 
   DateTime? _deadline;
   Duration? _estimatedDuration;
@@ -52,11 +55,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       _isAlarmEnabled = task.isAlarmEnabled;
       _alarmDateTime = task.alarmDateTime;
     }
-
-    // Initialize word count right away
     _updateWordCount();
-
-    // Add listener for text changes
     _titleController.addListener(_updateWordCount);
   }
 
@@ -71,155 +70,77 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
   void _updateWordCount() {
     final text = _titleController.text;
-
-    if (text.isEmpty) {
-      setState(() {
-        _currentWordCount = 0;
-      });
-      return;
-    }
-
-    final cleanText = text.trim().replaceAll(RegExp(r'\s+'), ' ');
-    final wordList = cleanText.isEmpty ? [] : cleanText.split(' ');
-
-    if (mounted) {
-      setState(() {
-        _currentWordCount = wordList.length;
-      });
-    }
-
-    // Prevent typing if word count exceeds 20
-    if (wordList.length > 20) {
-      final limitedText = wordList.sublist(0, 20).join(' ');
-
-      // Keep cursor position or place at end
-      final currentPosition = _titleController.selection.baseOffset;
-      final newPosition =
-          currentPosition > limitedText.length
-              ? limitedText.length
-              : currentPosition;
-
+    setState(() {
+      _currentWordCount = text.length;
+    });
+    if (text.length > 20) {
+      final limitedText = text.substring(0, 20);
       _titleController.value = TextEditingValue(
         text: limitedText,
-        selection: TextSelection.collapsed(offset: newPosition),
+        selection: TextSelection.collapsed(offset: limitedText.length),
       );
     }
   }
 
   bool _validateInputs() {
-    bool isValid = true;
+    setState(() {
+      _deadlineError = _taskService.validateDeadline(_deadline);
+      _durationError = _taskService.validateDuration(_estimatedDuration);
+      _categoryError = _taskService.validateCategory(_selectedCategory);
+      _alarmDateTimeError =
+          _isAlarmEnabled
+              ? _taskService.validateAlarm(_deadline, _alarmDateTime)
+              : null;
+    });
 
-    // Validasi deadline
-    if (_deadline == null) {
-      setState(() {
-        _deadlineError = 'Deadline wajib diisi';
-      });
-      isValid = false;
-    } else {
-      setState(() {
-        _deadlineError = null;
-      });
-    }
-
-    // Validasi durasi
-    if (_estimatedDuration == null) {
-      setState(() {
-        _durationError = 'Estimasi waktu wajib diisi';
-      });
-      isValid = false;
-    } else {
-      setState(() {
-        _durationError = null;
-      });
-    }
-
-    // Validasi kategori
-    if (_selectedCategory == null) {
-      setState(() {
-        _categoryError = 'Kategori wajib diisi';
-      });
-      isValid = false;
-    } else {
-      setState(() {
-        _categoryError = null;
-      });
-    }
-
-    // Validasi alarm jika diaktifkan
-    if (_isAlarmEnabled && _alarmDateTime == null) {
-      setState(() {
-        _alarmDateTimeError = 'Waktu alarm wajib diisi';
-      });
-      isValid = false;
-    } else if (_isAlarmEnabled && _deadline != null && _alarmDateTime != null) {
-      // Pastikan alarm sebelum deadline
-      if (_alarmDateTime!.isAfter(_deadline!)) {
-        setState(() {
-          _alarmDateTimeError = 'Waktu alarm harus sebelum deadline';
-        });
-        isValid = false;
-      } else {
-        setState(() {
-          _alarmDateTimeError = null;
-        });
-      }
-    } else {
-      setState(() {
-        _alarmDateTimeError = null;
-      });
-    }
-
-    return isValid && _formKey.currentState!.validate();
+    return _deadlineError == null &&
+        _durationError == null &&
+        _categoryError == null &&
+        _alarmDateTimeError == null &&
+        _formKey.currentState!.validate();
   }
 
-  void _saveTask() async {
-    if (!_validateInputs()) {
-      return;
-    }
+  void _saveTask() {
+    if (!_validateInputs()) return;
 
-    final task = Task(
-      id: widget.existingTask?.id,
-      title: _titleController.text,
-      deadline: _deadline!,
-      estimatedDuration: _estimatedDuration!,
-      category: _selectedCategory!.name,
-      isAlarmEnabled: _isAlarmEnabled,
-      alarmDateTime: _isAlarmEnabled ? _alarmDateTime : null,
+    _taskService.handleSaveForm(
+      formKey: _formKey,
+      task: Task(
+        id: widget.existingTask?.id,
+        title: _titleController.text.trim(),
+        deadline: _deadline!,
+        estimatedDuration: _estimatedDuration!,
+        category: _selectedCategory!.name,
+        isAlarmEnabled: _isAlarmEnabled,
+        alarmDateTime: _isAlarmEnabled ? _alarmDateTime : null,
+      ),
+      isEdit: widget.existingTask != null,
+      onSuccess: () {
+        if (mounted) Navigator.pop(context, true);
+      },
+      onError: (msg) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
+      },
     );
-
-    try {
-      if (widget.existingTask != null) {
-        // EDIT mode
-        await _taskService.updateTask(task);
-      } else {
-        // ADD mode
-        await _taskService.addTask(task);
-      }
-    } catch (e) {
-      print('Error saat menyimpan tugas: $e');
-    }
-
-    if (mounted) {
-      Navigator.pop(context, true);
-    }
-  }
-
-  bool _isTitleExceeds20Words(String text) {
-    final cleanText = text.trim().replaceAll(RegExp(r'\s+'), ' ');
-    final words = cleanText.split(' ');
-    return words.length > 20;
   }
 
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final isDeadlineValid = _taskService.isDeadlineValid(_deadline);
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Tambah Tugas'),
+        title: Text(widget.existingTask != null ? 'Edit Tugas' : 'Tambah Tugas'),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: Colors.white,
         actions: [
           IconButton(icon: const Icon(Icons.check), onPressed: _saveTask),
         ],
-        backgroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -228,68 +149,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           child: ListView(
             children: [
               const SizedBox(height: 16),
-
-              // TextFormField dengan word counter
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  TextFormField(
-                    controller: _titleController,
-                    maxLines: 1,
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: Colors.white,
-                      hintText: 'Judul Tugas (maks. 20 kata)',
-                      hintStyle: GoogleFonts.plusJakartaSans(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                    ),
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Judul tugas wajib diisi';
-                      }
-                      if (_isTitleExceeds20Words(value)) {
-                        return 'Judul tidak boleh lebih dari 20 kata';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  // Word counter yang diposisikan di kanan
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4, right: 4),
-                    child: Text(
-                      '$_currentWordCount/20',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ),
-                ],
+              TaskTitleField(
+                controller: _titleController,
+                currentWordCount: _currentWordCount,
+                validator: _taskService.validateTitle,
               ),
-
-              const SizedBox(height: 45),
-
-              buildFieldTile(
+              const SizedBox(height: 32),
+              FieldTile(
                 title: 'Deadline',
                 value:
                     _deadline == null
@@ -304,8 +170,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     setState(() {
                       _deadline = result;
                       _deadlineError = null;
-
-                      // Reset alarm jika deadline berubah dan alarm setelah deadline
                       if (_alarmDateTime != null &&
                           _alarmDateTime!.isAfter(result)) {
                         _alarmDateTime = null;
@@ -315,15 +179,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 },
                 error: _deadlineError,
               ),
-
-              const SizedBox(height: 45),
-
-              buildFieldTile(
+              const SizedBox(height: 32),
+              FieldTile(
                 title: 'Estimasi waktu pengerjaan',
                 value:
                     _estimatedDuration == null
                         ? 'Pilih durasi'
-                        : '${_estimatedDuration!.inHours};${(_estimatedDuration!.inMinutes % 60).toString().padLeft(2, '0')}',
+                        : '${_estimatedDuration!.inHours}j : ${_estimatedDuration!.inMinutes % 60}m',
                 onTap: () async {
                   final result = await showDurationPickerBottomSheet(context);
                   if (result != null) {
@@ -335,10 +197,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 },
                 error: _durationError,
               ),
-
-              const SizedBox(height: 45),
-
-              buildFieldTile(
+              const SizedBox(height: 32),
+              FieldTile(
                 title: 'Kategori',
                 value: _selectedCategory?.name ?? 'Pilih Kategori',
                 onTap: () async {
@@ -362,193 +222,50 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 },
                 error: _categoryError,
               ),
-
-              const SizedBox(height: 45),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Alarm',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Switch(
-                    value: _isAlarmEnabled,
-                    onChanged:
-                        _deadline == null
-                            ? null // Disable switch jika deadline belum dipilih
-                            : (value) {
-                              setState(() {
-                                _isAlarmEnabled = value;
-                                if (!value) {
-                                  _alarmDateTime = null;
-                                  _alarmDateTimeError = null;
-                                }
-                              });
-                            },
-                    splashRadius: 0,
-                    trackColor: WidgetStateProperty.resolveWith((states) {
-                      if (_deadline == null) {
-                        return Colors.grey.shade200; // Warna saat disabled
-                      }
-                      return states.contains(WidgetState.selected)
-                          ? AppTheme.primaryColor
-                          : Colors.grey.shade300;
-                    }),
-                    thumbColor: WidgetStateProperty.resolveWith((states) {
-                      if (_deadline == null) {
-                        return Colors
-                            .grey
-                            .shade400; // Warna thumb saat disabled
-                      }
-                      return Colors.white;
-                    }),
-                    overlayColor: const WidgetStatePropertyAll(
-                      Colors.transparent,
-                    ),
-                    trackOutlineColor: const WidgetStatePropertyAll(
-                      Colors.transparent,
-                    ),
-                  ),
-                ],
-              ),
-
-              // Pesan info jika deadline belum dipilih
-              if (_deadline == null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    '*Pilih deadline terlebih dahulu untuk mengaktifkan alarm',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 10,
-                      color: Colors.grey.shade600,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ),
-
-              if (_isAlarmEnabled)
-                Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      buildFieldTile(
-                        title: 'Waktu Alarm',
-                        value:
-                            _alarmDateTime == null
-                                ? 'Pilih waktu alarm'
-                                : DateFormat(
-                                  'EEEE, d MMM yyyy, HH:mm',
-                                  'id_ID',
-                                ).format(_alarmDateTime!),
-                        onTap: () async {
-                          if (_deadline != null) {
-                            // Mengubah dari 1 hari menjadi 1 jam sebelum deadline
-                            final maxDate = _deadline!.subtract(
-                              const Duration(hours: 1),
-                            );
-
-                            final result = await showAlarmPickerBottomSheet(
-                              context,
-                              initialDateTime: _alarmDateTime ?? maxDate,
-                              maxDateTime:
-                                  maxDate, // Batasi maksimal waktu alarm
-                            );
-
-                            if (result != null) {
-                              setState(() {
-                                _alarmDateTime = result;
-                                _alarmDateTimeError = null;
-                              });
-                            }
-                          }
+              const SizedBox(height: 32),
+              AlarmPicker(
+                isEnabled: _isAlarmEnabled,
+                alarmDateTime: _alarmDateTime,
+                onToggle:
+                    isDeadlineValid
+                        ? (value) {
+                          setState(() {
+                            _isAlarmEnabled = value;
+                            if (!value) _alarmDateTime = null;
+                            _alarmToggleError = null;
+                          });
+                        }
+                        : (_) {
+                          setState(() {
+                            _alarmToggleError =
+                                'Alarm hanya bisa diatur jika deadline > 1 jam dari sekarang';
+                          });
                         },
-                        error: _alarmDateTimeError,
-                      ),
-                      if (_deadline != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4, left: 4),
-                          child: Text(
-                            '*Alarm hanya dapat diatur minimal 1 jam sebelum deadline',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 10,
-                              color: Colors.grey.shade600,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+                onPickTime: () async {
+                  final maxDate = _deadline!.subtract(const Duration(hours: 1));
+                  final result = await showAlarmPickerBottomSheet(
+                    context,
+                    initialDateTime: _alarmDateTime ?? maxDate,
+                    maxDateTime: maxDate,
+                  );
+                  if (result != null) {
+                    setState(() {
+                      _alarmDateTime = result;
+                      _alarmDateTimeError = null;
+                    });
+                  }
+                },
+                showInitialWarning: _deadline == null,
+                errorText:
+                    !isDeadlineValid && _deadline != null
+                        ? 'Alarm hanya bisa diatur jika deadline > 1 jam dari sekarang'
+                        : null,
+                showError: !isDeadlineValid && _deadline != null,
+              ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget buildFieldTile({
-    required String title,
-    required String value,
-    VoidCallback? onTap,
-    String? error,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        GestureDetector(
-          onTap: onTap,
-          behavior: HitTestBehavior.opaque,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black,
-                ),
-              ),
-              Row(
-                children: [
-                  Text(
-                    value,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                  if (onTap != null)
-                    const Padding(
-                      padding: EdgeInsets.only(left: 6),
-                      child: Icon(
-                        Icons.chevron_right,
-                        size: 20,
-                        color: Colors.grey,
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        if (error != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 4, left: 4),
-            child: Text(
-              error,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 12,
-                color: Colors.red,
-              ),
-            ),
-          ),
-      ],
     );
   }
 }

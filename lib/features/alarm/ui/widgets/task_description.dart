@@ -1,5 +1,8 @@
 // lib/widgets/task_description.dart
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:aturin_app/core/theme/app_theme.dart';
+import 'package:sizer/sizer.dart';
 
 class TaskDescription extends StatelessWidget {
   final String taskName;
@@ -13,32 +16,47 @@ class TaskDescription extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Text(
+        Text(
           "Satu tugas beres, Satu beban hilang!",
-          style: TextStyle(
-            fontSize: 25,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 3.8.w, // Responsive - approximately 14-16sp on most devices
             fontWeight: FontWeight.w500,
+            color: Colors.black87,
           ),
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 1.h),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              '"',
-              style: TextStyle(fontSize: 30),
-            ),
             Text(
-              taskName,
-              style: const TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.w500,
-                color: Colors.indigo,
+              '"',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 5.w, // Responsive quotation marks
+                color: AppTheme.primaryColor,
               ),
             ),
-            const Text(
+            Flexible(
+              child: Text(
+                taskName,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 5.w,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.primaryColor,
+                ),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
+              ),
+            ),
+            Text(
               '"',
-              style: TextStyle(fontSize: 30),
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 5.w,
+                color: AppTheme.primaryColor,
+              ),
             ),
           ],
         ),

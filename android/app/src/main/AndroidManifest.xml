@@ -1,9 +1,4 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-        
-    <!-- Permissions for accessing external storage if required -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    
     <!-- Permission for wake lock to keep the device active when alarms or audio are playing -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
@@ -21,7 +16,7 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <application
-        android:label="aturin_app"
+        android:label="Aturin"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -29,6 +24,7 @@
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""
+            android:screenOrientation="portrait"
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"

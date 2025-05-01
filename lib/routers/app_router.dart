@@ -12,11 +12,14 @@ import 'package:aturin_app/features/task/ui/screens/task_detail_screen.dart';
 import 'package:aturin_app/features/task/models/task.dart';
 import 'package:aturin_app/features/alarm/ui/screens/alarm_ringing_screen.dart';
 import 'package:alarm/alarm.dart';
+import 'package:aturin_app/routers/data_prefetch_guard.dart';
 
 part 'app_router.gr.dart';
 
 @AutoRouterConfig()
 class AppRouter extends RootStackRouter{
+  final dataPrefetchGuard = DataPrefetchGuard();
+  
   @override
   RouteType get defaultRouteType => RouteType.material(
     enablePredictiveBackGesture: true,
@@ -37,6 +40,7 @@ class AppRouter extends RootStackRouter{
     CustomRoute(
       path: '/home',
       page: HomeRoute.page,
+      guards: [dataPrefetchGuard],
       transitionsBuilder: (_, __, ___, child) => child,
       duration: Duration.zero
     ),
@@ -49,6 +53,7 @@ class AppRouter extends RootStackRouter{
     CustomRoute(
       path: '/task',
       page: TaskListRoute.page,
+      guards: [dataPrefetchGuard],
       transitionsBuilder: (_, __, ___, child) => child,
       duration: Duration.zero
     ),

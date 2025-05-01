@@ -172,6 +172,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       builder: (context) => EditUsernameDialog(
         currentUsername: _usernameController.text,
         userId: userId,
+        profileService: _profileService,
         onUsernameUpdated: (newUsername) {
           setState(() {
             _usernameController.text = newUsername;

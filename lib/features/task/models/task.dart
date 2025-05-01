@@ -1,10 +1,4 @@
-enum TaskStatus {
-  completed,
-  late,
-  today,
-  tomorrow,
-  upcoming,
-}
+enum TaskStatus { completed, late, today, tomorrow, upcoming }
 
 enum TaskCategory {
   akademik,
@@ -31,6 +25,7 @@ class Task {
   final bool isAlarmActive;
   final double estimatedHours;
   final DateTime? completedAt;
+  final TaskStatus? previousStatus;
 
   Task({
     this.id,
@@ -46,28 +41,31 @@ class Task {
     bool? isAlarmActive,
     double? estimatedHours,
     this.completedAt,
-  }) : 
-    this.status = status ?? _calculateStatus(deadline),
-    this.isCompleted = isCompleted ?? isDone,
-    this.isAlarmActive = isAlarmActive ?? isAlarmEnabled,
-    this.estimatedHours = estimatedHours ?? (estimatedDuration.inMinutes / 60.0);
+    this.previousStatus,
+  }) : status = status ?? calculateStatus(deadline),
+       isCompleted = isCompleted ?? isDone,
+       isAlarmActive = isAlarmActive ?? isAlarmEnabled,
+       estimatedHours = estimatedHours ?? (estimatedDuration.inMinutes / 60);
 
-  static TaskStatus _calculateStatus(DateTime deadline) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final tomorrow = today.add(const Duration(days: 1));
-    final deadlineDate = DateTime(deadline.year, deadline.month, deadline.day);
+  static TaskStatus calculateStatus(DateTime deadline) {
+  final now = DateTime.now();
 
-    if (deadlineDate.isBefore(today)) {
-      return TaskStatus.late;
-    } else if (deadlineDate.isAtSameMomentAs(today)) {
-      return TaskStatus.today;
-    } else if (deadlineDate.isAtSameMomentAs(tomorrow)) {
-      return TaskStatus.tomorrow;
-    } else {
-      return TaskStatus.upcoming;
-    }
+  if (deadline.isBefore(now)) {
+    return TaskStatus.late;
   }
+
+  final today = DateTime(now.year, now.month, now.day);
+  final tomorrow = today.add(const Duration(days: 1));
+  final deadlineDate = DateTime(deadline.year, deadline.month, deadline.day);
+
+  if (deadlineDate.isAtSameMomentAs(today)) {
+    return TaskStatus.today;
+  } else if (deadlineDate.isAtSameMomentAs(tomorrow)) {
+    return TaskStatus.tomorrow;
+  } else {
+    return TaskStatus.upcoming;
+  }
+}
 
   Map<String, dynamic> toMap() {
     return {
@@ -79,7 +77,10 @@ class Task {
       'isAlarmEnabled': isAlarmEnabled ? 1 : 0,
       'alarmDateTime': alarmDateTime?.toIso8601String(),
       'isDone': isDone ? 1 : 0,
+      'isCompleted': isCompleted ? 1 : 0,
+      'status': status.name,
       'completedAt': completedAt?.toIso8601String(),
+      'previousStatus': previousStatus?.name,
     };
   }
 
@@ -96,9 +97,25 @@ class Task {
               ? DateTime.parse(map['alarmDateTime'])
               : null,
       isDone: map['isDone'] == 1,
-      completedAt: map['completedAt'] != null
-          ? DateTime.parse(map['completedAt'])
-          : null,
+      isCompleted: map['isCompleted'] == 1, // ✅ ambil dari DB
+      status:
+          map['status'] != null
+              ? TaskStatus.values.firstWhere(
+                (e) => e.name == map['status'],
+                orElse: () => calculateStatus(DateTime.parse(map['deadline'])),
+              )
+              : calculateStatus(DateTime.parse(map['deadline'])), // fallback
+      completedAt:
+          map['completedAt'] != null
+              ? DateTime.parse(map['completedAt'])
+              : null,
+      previousStatus:
+          map['previousStatus'] != null
+              ? TaskStatus.values.firstWhere(
+                (e) => e.name == map['previousStatus'],
+                orElse: () => TaskStatus.today,
+              )
+              : null,
     );
   }
 
@@ -116,6 +133,7 @@ class Task {
     bool? isAlarmActive,
     double? estimatedHours,
     DateTime? completedAt,
+    TaskStatus? previousStatus,
   }) {
     return Task(
       id: id ?? this.id,
@@ -131,6 +149,18 @@ class Task {
       isAlarmActive: isAlarmActive ?? this.isAlarmActive,
       estimatedHours: estimatedHours ?? this.estimatedHours,
       completedAt: completedAt ?? this.completedAt,
+      previousStatus: previousStatus ?? this.previousStatus,
+    );
+  }
+  
+  // /// Creates an empty task instance for placeholder purposes
+  factory Task.empty() {
+    return Task(
+      id: 0,
+      title: '',
+      deadline: DateTime.now(),
+      estimatedDuration: const Duration(minutes: 0),
+      category: '',
     );
   }
 }

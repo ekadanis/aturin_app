@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../models/task.dart';
 import '../../services/task_services.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../../../core/theme/app_theme.dart';
 import 'package:auto_route/auto_route.dart';
 
 @RoutePage()
@@ -18,22 +18,12 @@ class TaskDetailScreen extends StatefulWidget {
 }
 
 class _TaskDetailScreenState extends State<TaskDetailScreen> {
-  late int _taskId;
-  late Future<Task?> _taskFuture;
+  late Task _task;
 
   @override
   void initState() {
     super.initState();
-    _taskId = widget.task.id!;
-    _refreshTaskData();
-  }
-
-  
-  void _refreshTaskData() {
-    final taskService = Provider.of<TaskService>(context, listen: false);
-    setState(() {
-      _taskFuture = taskService.getTaskById(_taskId);
-    });
+    _task = widget.task;
   }
 
   String _formatDateTime(DateTime dateTime) {
@@ -64,78 +54,61 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           IconButton(
             icon: const Icon(Icons.edit, color: AppTheme.lightTextColor),
             onPressed: () async {
-              // Get the current task from the provider
-              final taskService = Provider.of<TaskService>(context, listen: false);
-              final currentTask = await taskService.getTaskById(_taskId);
-              if (currentTask != null) {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AddTaskScreen(existingTask: currentTask),
-                  ),
-                );
-                
-                // Refresh data setelah kembali dari halaman edit
-                if (result == true) {
-                  _refreshTaskData();
-                } else {
-                  // Tetap refresh untuk jaga-jaga jika ada perubahan
-                  _refreshTaskData();
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AddTaskScreen(existingTask: _task),
+                ),
+              );
+
+              if (result == true) {
+                final updatedTask = await TaskService().getTaskById(_task.id!);
+                if (updatedTask != null) {
+                  setState(() {
+                    _task = updatedTask;
+                  });
+                  // Tandai bahwa ada perubahan untuk diteruskan ke halaman daftar
+                  Navigator.pop(context, true);
                 }
               }
             },
           ),
         ],
       ),
-      body: FutureBuilder<Task?>(
-        future: _taskFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          
-          if (!snapshot.hasData || snapshot.data == null) {
-            return const Center(child: Text('Tugas tidak ditemukan'));
-          }
-          
-          final task = snapshot.data!;
-          
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildDetailField('Nama Tugas', task.title),
-                const SizedBox(height: 16),
-                _buildDetailField(
-                  'Kategori Tugas',
-                  _getCategoryName(task.category),
-                ),
-                const SizedBox(height: 16),
-                _buildDetailField(
-                  'Estimasi Pengerjaan',
-                  '${task.estimatedDuration.inHours};${(task.estimatedDuration.inMinutes % 60).toString().padLeft(2, '0')}',
-                ),
-                const SizedBox(height: 16),
-                _buildDetailField('Deadline', _formatDateTime(task.deadline)),
-                const SizedBox(height: 16),
-                _buildDetailField(
-                  'Pengingat',
-                  task.alarmDateTime != null
-                      ? _formatDateTime(task.alarmDateTime!)
-                      : 'Tidak diatur',
-                ),
-                const SizedBox(height: 16),
-                _buildDetailField(
-                  'Diselesaikan pada',
-                  task.isCompleted && task.completedAt != null
-                      ? _formatDateTime(task.completedAt!)
-                      : 'Belum diselesaikan',
-                ),
-              ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildDetailField('Nama Tugas', _task.title),
+            const SizedBox(height: 16),
+            _buildDetailField(
+              'Kategori Tugas',
+              _getCategoryName(_task.category),
             ),
-          );
-        },
+            const SizedBox(height: 16),
+              _buildDetailField(
+                'Estimasi Pengerjaan(Jam)',
+                _formatDurationToHourDotMinute(_task.estimatedDuration),
+              ),
+            const SizedBox(height: 16),
+            _buildDetailField('Deadline', _formatDateTime(_task.deadline)),
+            const SizedBox(height: 16),
+            _buildDetailField(
+              'Pengingat',
+              _task.alarmDateTime != null
+                  ? _formatDateTime(_task.alarmDateTime!)
+                  : 'Tidak diatur',
+            ),
+            const SizedBox(height: 16),
+            _buildDetailField(
+              'Diselesaikan pada',
+              _task.isCompleted && _task.completedAt != null
+                  ? _formatDateTime(_task.completedAt!)
+                  : 'Belum diselesaikan',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -172,6 +145,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 
+  // Perbaiki fungsi _getCategoryName untuk menangani konversi kategori dengan lebih baik
   String _getCategoryName(String category) {
     try {
       // Pastikan format string kategori sesuai dengan nama enum
@@ -204,4 +178,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       return category;
     }
   }
+
+
+  String _formatDurationToHourDotMinute(Duration duration) {
+  final hours = duration.inHours;
+  final minutes = duration.inMinutes % 60;
+
+  final minutesStr = minutes.toString().padLeft(2, '0');
+  return '$hours.$minutesStr';
+}
+
 }

@@ -66,6 +66,8 @@ class ProfileCard extends StatelessWidget {
                 ),
               ),
 
+              const SizedBox(width: 20),
+
               OutlinedButton(
                 onPressed: onEdit,
                 style: OutlinedButton.styleFrom(

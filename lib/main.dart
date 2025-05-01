@@ -1,114 +1,201 @@
 import 'package:flutter/material.dart';
-import 'package:aturin_app/routers/app_router.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:aturin_app/features/task/services/task_services.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:aturin_app/features/task/services/task_services.dart' as task;
+import 'package:aturin_app/features/home/services/task_service.dart' as home;
 import 'package:aturin_app/features/profile/services/profile_service.dart';
-import 'package:aturin_app/features/alarm/services/alarm_service.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:aturin_app/core/initialization/app_initializer.dart';
+import 'package:aturin_app/features/task/services/task_service_bridge.dart';
+import 'package:sizer/sizer.dart';
 
-// AppRouter yang akan diakses dari seluruh aplikasi
-final AppRouter appRouter = AppRouter();
-// App initializer untuk mengatur startup aplikasi
-final AppInitializer appInitializer = AppInitializer(appRouter);
+import 'core/initialization/app_initializer.dart';
+import 'core/database/database_helper.dart';
+import 'routers/app_router.dart';
+import 'core/theme/app_theme.dart';
 
-void main() async {
-  // Pastikan ini dipanggil sebelum mengakses Flutter services
-  WidgetsFlutterBinding.ensureInitialized();
-  
+// Membuat instance AppRouter di level global
+final appRouter = AppRouter();
+// Instance TaskServiceBridge untuk diakses secara global
+TaskServiceBridge? _taskServiceBridge;
+
+Future<void> main() async {
+  // Preserve splash screen until initialization is complete
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  // Set orientasi hanya potrait
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
   try {
-    // Inisialisasi semua komponen aplikasi melalui app initializer
-    await appInitializer.initialize();
-    
-    // Set app creator untuk alarm manager
-    appInitializer.alarmManager.setAppCreator(() => const Aturin());
-    
-    // Jalankan aplikasi
-    runApp(const Aturin());
+    await _initializeApp();
+    final app = const MyApp();
+    FlutterNativeSplash.remove();
+    runApp(app);
   } catch (e) {
-    // Menangkap dan mencatat error yang terjadi selama inisialisasi
-    debugPrint('Error selama inisialisasi aplikasi: $e');
-    // Jalankan aplikasi dengan pesan error jika diperlukan
-    runApp(const ErrorApp());
+    debugPrint('Error during app initialization: $e');
+    FlutterNativeSplash.remove();
+    runApp(ErrorApp(error: e.toString()));
   }
 }
 
-// Widget untuk menampilkan jika ada error fatal
-class ErrorApp extends StatelessWidget {
-  const ErrorApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(Icons.error_outline, size: 50, color: Colors.red),
-              SizedBox(height: 16),
-              Text('Terjadi kesalahan saat memulai aplikasi',
-                  style: TextStyle(fontSize: 18)),
-              SizedBox(height: 8),
-              Text('Silakan restart aplikasi atau hubungi dukungan',
-                  style: TextStyle(fontSize: 14)),
-            ],
-          ),
-        ),
-      ),
-    );
+Future<void> _initializeApp() async {
+  try {
+    final dbHelper = DatabaseHelper.instance;
+    await dbHelper.database;
+    debugPrint('Database initialized successfully');
+    // Initialize the app with AppInitializer
+    final appInitializer = AppInitializer(appRouter);
+    await appInitializer.initialize();
+    // Setup alarm manager
+    appInitializer.alarmManager.setAppCreator(() => const MyApp());
+  } catch (e) {
+    debugPrint('Failed to initialize app: $e');
+    throw Exception('App initialization failed: $e');
   }
 }
 
-class Aturin extends StatefulWidget {
-  const Aturin({super.key});
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
 
   @override
-  State<Aturin> createState() => _AturinState();
+  State<MyApp> createState() => _MyAppState();
 }
 
-class _AturinState extends State<Aturin> {
-  // Inisialisasi services
-  final TaskService _taskService = TaskService();
-  final ProfileService _profileService = ProfileService();
-  final AlarmService _alarmService = AlarmService();
-
-  @override
-  void initState() {
-    super.initState();
-    // Alarm already initialized by AppInitializer, no need for duplicate initialization
-  }
-
+class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider.value(value: _taskService),
-        ChangeNotifierProvider.value(value: _profileService),
-        Provider.value(value: _alarmService),
-      ],
-      child: MaterialApp.router(
-        debugShowCheckedModeBanner: false,
-        title: 'Aturin',
-        locale: const Locale('id', 'ID'),
-        supportedLocales: const [
-          Locale('id', 'ID'),
-          Locale('en', 'US'),
-        ],
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.blue,
-            brightness: Brightness.light,
-          ),
+        // Provider untuk TaskService dari features/task
+        ChangeNotifierProvider<task.TaskService>(
+          create: (_) => task.TaskService(),
         ),
-        routerConfig: appRouter.config(),
+        // Provider untuk TaskService dari features/home
+        ChangeNotifierProvider<home.TaskService>(
+          create: (_) => home.TaskService(),
+        ),
+        // Provider untuk ProfileService
+        ChangeNotifierProvider<ProfileService>(
+          create: (_) => ProfileService(),
+        ),
+      ],
+      child: Builder(
+        builder: (context) {
+          _initTaskServiceBridge(context);
+          return Sizer(
+            builder: (context, orientation, deviceType) {
+              return MaterialApp.router(
+                title: 'Aturin',
+                theme: AppTheme.lightTheme,
+                debugShowCheckedModeBanner: false,
+                routerConfig: appRouter.config(),
+              );
+            },
+          );
+        },
       ),
+    );
+  }
+
+  void _initTaskServiceBridge(BuildContext context) {
+    // Memastikan bridge diinisialisasi sekali saja
+    if (_taskServiceBridge == null) {
+      final taskService = Provider.of<task.TaskService>(context, listen: false);
+      final homeTaskService = Provider.of<home.TaskService>(context, listen: false);
+      
+      _taskServiceBridge = TaskServiceBridge(taskService, homeTaskService);
+      // Sinkronkan data awal
+      _taskServiceBridge!.syncServices();
+    }
+  }
+
+  @override
+  void dispose() {
+    // Bersihkan resource TaskServiceBridge
+    _taskServiceBridge?.dispose();
+    _taskServiceBridge = null;
+    super.dispose();
+  }
+}
+
+// ErrorApp class implementation remains the same
+class ErrorApp extends StatelessWidget {
+  final String error;
+
+  const ErrorApp({super.key, required this.error});
+  @override
+  Widget build(BuildContext context) {
+    return Sizer(
+      builder: (context, orientation, deviceType) {
+        return MaterialApp(
+          title: 'Aturin - Error',
+          theme: AppTheme.lightTheme.copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Colors.red,
+              error: Colors.red,
+            ),
+          ),
+          home: Scaffold(
+            appBar: AppBar(
+              title: const Text('Error'),
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            body: Center(
+              child: Padding(
+                padding: EdgeInsets.all(4.h),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error_outline, color: Colors.red, size: 10.h),
+                    SizedBox(height: 2.h),
+                    Text(
+                      'Terjadi kesalahan saat memulai aplikasi',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 1.5.h),
+                    Text(
+                      error,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12.sp),
+                    ),
+                    SizedBox(height: 3.h),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () async {
+                            try {
+                              await DatabaseHelper.instance.resetDatabase();
+                              main();
+                            } catch (e) {
+                              debugPrint('Error resetting database: $e');
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                          ),
+                          child: const Text('Reset Database'),
+                        ),
+                        SizedBox(width: 4.w),
+                        ElevatedButton(
+                          onPressed: () {
+                            main();
+                          },
+                          child: const Text('Coba Lagi'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

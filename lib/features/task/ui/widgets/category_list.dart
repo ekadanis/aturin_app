@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../../ui/screens/categories.dart';
+import '../screens/categories.dart';
 
 class CategoryListTile extends StatelessWidget {
   final CategoryOption category;
