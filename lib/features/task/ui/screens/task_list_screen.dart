@@ -1,6 +1,6 @@
 import 'package:aturin_app/features/task/ui/screens/categories.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../../services/task_services.dart';
 import '../widgets/filter_tabs.dart';
@@ -20,8 +20,7 @@ class TaskListScreen extends StatefulWidget {
   State<TaskListScreen> createState() => _TaskListScreenState();
 }
 
-class _TaskListScreenState extends State<TaskListScreen>
-    with WidgetsBindingObserver {
+class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObserver {
   String _selectedFilter = 'Semua';
   final List<String> _filters = [
     'Semua',
@@ -44,6 +43,7 @@ class _TaskListScreenState extends State<TaskListScreen>
       backgroundColor: const Color(0xFFFFFFFF),
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFFFFF),
+        elevation: 0,
         title: Text(
           'Tugas',
           style: GoogleFonts.plusJakartaSans(
@@ -51,7 +51,6 @@ class _TaskListScreenState extends State<TaskListScreen>
             fontSize: 20,
           ),
         ),
-        elevation: 0,
       ),
 
       body: Column(
@@ -67,22 +66,26 @@ class _TaskListScreenState extends State<TaskListScreen>
             },
           ),
 
-          // Task list
+          // Daftar tugas
           Expanded(
             child: Consumer<TaskService>(
-              builder: (context, taskService, child) {
-                // // Check if tasks are loading
-                // if (taskService.isLoading) {
-                //   return const Center(
-                //     child: CircularProgressIndicator(),
-                //   );
-                // }
+              builder: (context, taskService, _) {
+                final filteredTasks = taskService.getTasksByFilter(_selectedFilter);
 
-                final filteredTasks = taskService.getTasksByFilter(
-                  _selectedFilter,
+                return TaskListView(
+                  tasks: filteredTasks,
+                  onTapTask: (task) {
+                    context.router.push(TaskDetailRoute(task: task)).then((result) {
+                      if (result == true) {
+                        Provider.of<TaskService>(context, listen: false).fetchTasks();
+                        showCustomTopSnackbar(
+                          context: context,
+                          message: 'Tugas berhasil diperbarui',
+                        );
+                      }
+                    });
+                  },
                 );
-
-                return TaskListView(tasks: filteredTasks);
               },
             ),
           ),
@@ -93,7 +96,6 @@ class _TaskListScreenState extends State<TaskListScreen>
         borderRadius: BorderRadius.circular(100),
         child: FloatingActionButton(
           onPressed: () {
-            // Menggunakan AutoRoute alih-alih Navigator.push
             context.pushRoute(AddTaskRoute()).then((result) {
               if (result == true) {
                 Provider.of<TaskService>(context, listen: false).fetchTasks();
@@ -109,7 +111,6 @@ class _TaskListScreenState extends State<TaskListScreen>
         ),
       ),
 
-      // Menggunakan bottom navbar custom yang sudah ada
       bottomNavigationBar: const BottomNavbar(currentIndex: 1),
     );
   }

@@ -8,10 +8,14 @@ import 'snackbar.dart';
 
 class TaskListView extends StatelessWidget {
   final List<Task> tasks;
+  final void Function(String)? onShowSuccess;
+  final void Function(Task)? onTapTask;
 
   const TaskListView({
     Key? key,
     required this.tasks,
+    this.onShowSuccess,
+    this.onTapTask,
   }) : super(key: key);
 
   @override
@@ -58,12 +62,7 @@ class TaskListView extends StatelessWidget {
               );
             },
             onViewDetails: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => TaskDetailScreen(task: task),
-                ),
-              );
+               onTapTask?.call(task);
             },
             onToggleAlarm: () {
               Provider.of<TaskService>(
