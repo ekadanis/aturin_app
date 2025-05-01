@@ -10,12 +10,14 @@ class TaskListView extends StatelessWidget {
   final List<Task> tasks;
   final void Function(String)? onShowSuccess;
   final void Function(Task)? onTapTask;
+  final String currentFilter; 
 
   const TaskListView({
     Key? key,
     required this.tasks,
     this.onShowSuccess,
     this.onTapTask,
+    required this.currentFilter,
   }) : super(key: key);
 
   @override
@@ -39,15 +41,23 @@ class TaskListView extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: TaskCard(
             task: task,
+            currentFilter: currentFilter, 
             onToggleCompletion: () {
-              Provider.of<TaskService>(
+              final taskService = Provider.of<TaskService>(
                 context,
                 listen: false,
-              ).toggleTaskCompletion(task.id);
+              );
+              taskService.toggleTaskCompletion(task.id);
+
               if (!task.isCompleted) {
                 showCustomTopSnackbar(
                   context: context,
                   message: 'Berhasil Menyelesaikan Tugas',
+                );
+              } else {
+                showCustomTopSnackbar(
+                  context: context,
+                  message: 'Tugas dikembalikan ke status sebelumnya',
                 );
               }
             },
@@ -62,7 +72,7 @@ class TaskListView extends StatelessWidget {
               );
             },
             onViewDetails: () {
-               onTapTask?.call(task);
+              onTapTask?.call(task);
             },
             onToggleAlarm: () {
               Provider.of<TaskService>(

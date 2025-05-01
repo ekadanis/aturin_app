@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../database/task_database.dart';
 import '../models/task.dart';
 
 class TaskService extends ChangeNotifier {
   final taskDatabase = TaskDatabase();
+  Timer? _statusChecker;
   List<Task> _tasks = [];
 
   List<Task> get tasks => _tasks;
@@ -12,6 +15,19 @@ class TaskService extends ChangeNotifier {
   Future<void> fetchTasks() async {
     final result = await taskDatabase.queryAll();
     _tasks = result.map((row) => Task.fromMap(row)).toList();
+
+    // Periksa dan update status jika perlu
+    for (int i = 0; i < _tasks.length; i++) {
+      final task = _tasks[i];
+      final updatedStatus = Task.calculateStatus(task.deadline);
+
+      if (task.status != updatedStatus && !task.isCompleted) {
+        final updatedTask = task.copyWith(status: updatedStatus);
+        await taskDatabase.update(updatedTask.toMap());
+        _tasks[i] = updatedTask;
+      }
+    }
+    await _checkAndUpdateStatuses();
     notifyListeners();
   }
 
@@ -19,14 +35,40 @@ class TaskService extends ChangeNotifier {
   List<Task> getTasksByFilter(String filter) {
     switch (filter) {
       case 'Terlambat':
-        return _tasks.where((task) => task.status == TaskStatus.late).toList();
+        return _tasks
+            .where(
+              (task) => task.status == TaskStatus.late && !task.isCompleted,
+            )
+            .toList();
       case 'Belum Selesai':
-        return _tasks.where((task) => !task.isCompleted).toList();
+        return _tasks
+            .where(
+              (task) => !task.isCompleted && task.status != TaskStatus.late,
+            )
+            .toList()
+          ..sort(
+            (a, b) => a.deadline!.compareTo(b.deadline!),
+          ); // optional: urutkan
       case 'Selesai':
         return _tasks.where((task) => task.isCompleted).toList();
       case 'Semua':
       default:
-        return _tasks;
+        // custom urutan
+        final order = [
+          TaskStatus.late,
+          TaskStatus.today,
+          TaskStatus.tomorrow,
+          TaskStatus.upcoming,
+          TaskStatus.completed,
+        ];
+
+        // Urutkan: belum selesai dulu, lalu yang sudah selesai
+        return _tasks.toList()..sort((a, b) {
+          if (a.isCompleted != b.isCompleted) {
+            return a.isCompleted ? 1 : -1; // yang belum selesai didulukan
+          }
+          return order.indexOf(a.status).compareTo(order.indexOf(b.status));
+        });
     }
   }
 
@@ -38,10 +80,13 @@ class TaskService extends ChangeNotifier {
     if (index != -1) {
       final task = _tasks[index];
       final now = DateTime.now();
+
       final updatedTask = task.copyWith(
         isDone: !task.isDone,
         isCompleted: !task.isCompleted,
         completedAt: !task.isCompleted ? now : null,
+        previousStatus: !task.isCompleted ? task.status : task.previousStatus,
+        status: task.isCompleted ? task.previousStatus! : task.status,
       );
 
       await taskDatabase.update(updatedTask.toMap());
@@ -114,12 +159,11 @@ class TaskService extends ChangeNotifier {
   }
 
   String? validateTitle(String? value) {
-  final trimmed = value?.trim() ?? '';
-  if (trimmed.isEmpty) return 'Judul wajib diisi';
-  if (trimmed.length > 20) return 'Judul maksimal 20 karakter';
-  return null;
-}
-
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.isEmpty) return 'Judul wajib diisi';
+    if (trimmed.length > 20) return 'Judul maksimal 20 karakter';
+    return null;
+  }
 
   String? validateDeadline(DateTime? deadline) {
     if (deadline == null) return 'Deadline wajib diisi';
@@ -158,24 +202,52 @@ class TaskService extends ChangeNotifier {
   }
 
   Future<void> handleSaveForm({
-  required GlobalKey<FormState> formKey,
-  required Task task,
-  required bool isEdit,
-  required VoidCallback onSuccess,
-  required void Function(String message) onError,
-}) async {
-  if (!formKey.currentState!.validate()) return;
+    required GlobalKey<FormState> formKey,
+    required Task task,
+    required bool isEdit,
+    required VoidCallback onSuccess,
+    required void Function(String message) onError,
+  }) async {
+    if (!formKey.currentState!.validate()) return;
 
-  try {
-    await saveTaskForm(isEdit: isEdit, task: task);
-    onSuccess();
-  } catch (e) {
-    onError('Gagal menyimpan tugas');
+    try {
+      await saveTaskForm(isEdit: isEdit, task: task);
+      onSuccess();
+    } catch (e) {
+      onError('Gagal menyimpan tugas');
+    }
   }
-}
-bool isDeadlineValid(DateTime? deadline) {
-  return deadline != null &&
-         deadline.isAfter(DateTime.now().add(Duration(hours: 1)));
-}
 
+  bool isDeadlineValid(DateTime? deadline) {
+    return deadline != null &&
+        deadline.isAfter(DateTime.now().add(Duration(hours: 1)));
+  }
+
+  bool _isStatusCheckerStarted = false;
+  void startStatusChecker() {
+    if (_isStatusCheckerStarted) return;
+    _isStatusCheckerStarted = true;
+
+    _statusChecker = Timer.periodic(const Duration(seconds: 10), (_) {
+      _checkAndUpdateStatuses();
+    });
+  }
+
+  Future<void> _checkAndUpdateStatuses() async {
+    bool updated = false;
+
+    for (int i = 0; i < _tasks.length; i++) {
+      final task = _tasks[i];
+      final newStatus = Task.calculateStatus(task.deadline);
+
+      if (task.status != newStatus && !task.isCompleted) {
+        final updatedTask = task.copyWith(status: newStatus);
+        await taskDatabase.update(updatedTask.toMap());
+        _tasks[i] = updatedTask;
+        updated = true;
+      }
+    }
+
+    if (updated) notifyListeners();
+  }
 }

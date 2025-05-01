@@ -21,7 +21,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 5, // Meningkatkan versi database untuk memicu migrasi
+      version: 6, // Naikkan versi DB untuk memicu migrasi
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -29,8 +29,7 @@ class DatabaseHelper {
 
   Future<void> _onCreate(Database db, int version) async {
     debugPrint("Creating new database at version $version");
-    
-    // Buat tabel users
+
     await db.execute('''
       CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,8 +38,7 @@ class DatabaseHelper {
         avatar TEXT NOT NULL
       )
     ''');
-    
-    // Buat tabel tasks
+
     await db.execute('''
       CREATE TABLE IF NOT EXISTS tasks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,63 +49,50 @@ class DatabaseHelper {
         isAlarmEnabled INTEGER NOT NULL,
         alarmDateTime TEXT,
         isDone INTEGER NOT NULL,
+        isCompleted INTEGER,
+        status TEXT,
+        previousStatus TEXT,
         completedAt TEXT
       )
     ''');
-    
+
     await ProfileSeeder.seedDefaultUser(db);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     debugPrint("Upgrading database from version $oldVersion to $newVersion");
-    
+
     if (oldVersion < 2) {
-      // Jika versi sebelumnya kurang dari 2, kita perlu menjalankan onCreate
       await _onCreate(db, newVersion);
     }
-    
+
     if (oldVersion < 3) {
-      // Tambahkan kolom completedAt jika belum ada
       try {
         await db.execute('ALTER TABLE tasks ADD COLUMN completedAt TEXT');
       } catch (e) {
-        // Kolom mungkin sudah ada, abaikan error
         debugPrint('Info: kolom completedAt mungkin sudah ada: $e');
       }
     }
-    
-    if (oldVersion < 4) {
-      // Tambahan migrasi untuk versi 4 jika ada
-      debugPrint('Upgrading to database version 4');
-    }
-    
+
     if (oldVersion < 5) {
-      // Pastikan tabel tasks dibuat pada versi 5
-      debugPrint('Upgrading to database version 5');
+      final result = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='tasks'"
+      );
+      if (result.isEmpty) {
+        debugPrint('Creating tasks table that was missing');
+        await _onCreate(db, newVersion);
+      }
+    }
+
+    if (oldVersion < 6) {
+      debugPrint('Upgrading to database version 6 - add new task fields');
       try {
-        // Cek apakah tabel tasks sudah ada
-        final result = await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='tasks'");
-        if (result.isEmpty) {
-          // Buat tabel tasks jika belum ada
-          debugPrint('Creating tasks table that was missing');
-          await db.execute('''
-            CREATE TABLE IF NOT EXISTS tasks (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              title TEXT NOT NULL,
-              deadline TEXT NOT NULL,
-              estimatedDuration INTEGER NOT NULL,
-              category TEXT NOT NULL,
-              isAlarmEnabled INTEGER NOT NULL,
-              alarmDateTime TEXT,
-              isDone INTEGER NOT NULL,
-              completedAt TEXT
-            )
-          ''');
-        } else {
-          debugPrint('Tasks table already exists');
-        }
+        await db.execute("ALTER TABLE tasks ADD COLUMN status TEXT");
+        await db.execute("ALTER TABLE tasks ADD COLUMN isCompleted INTEGER");
+        await db.execute("ALTER TABLE tasks ADD COLUMN previousStatus TEXT");
+        debugPrint('Columns added successfully');
       } catch (e) {
-        debugPrint('Error checking/creating tasks table: $e');
+        debugPrint('Columns might already exist or failed to add: $e');
       }
     }
   }

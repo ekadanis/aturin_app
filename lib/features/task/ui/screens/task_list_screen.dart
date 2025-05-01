@@ -20,7 +20,8 @@ class TaskListScreen extends StatefulWidget {
   State<TaskListScreen> createState() => _TaskListScreenState();
 }
 
-class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObserver {
+class _TaskListScreenState extends State<TaskListScreen>
+    with WidgetsBindingObserver {
   String _selectedFilter = 'Semua';
   final List<String> _filters = [
     'Semua',
@@ -33,7 +34,12 @@ class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObse
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<TaskService>(context, listen: false).fetchTasks();
+      final taskService = Provider.of<TaskService>(
+        context,
+        listen: false,
+      ); // ✅ tambahkan deklarasi ini
+      taskService.fetchTasks();
+      taskService.startStatusChecker(); // ✅ sekarang aman
     });
   }
 
@@ -70,14 +76,22 @@ class _TaskListScreenState extends State<TaskListScreen> with WidgetsBindingObse
           Expanded(
             child: Consumer<TaskService>(
               builder: (context, taskService, _) {
-                final filteredTasks = taskService.getTasksByFilter(_selectedFilter);
+                final filteredTasks = taskService.getTasksByFilter(
+                  _selectedFilter,
+                );
 
                 return TaskListView(
                   tasks: filteredTasks,
+                  currentFilter: _selectedFilter,
                   onTapTask: (task) {
-                    context.router.push(TaskDetailRoute(task: task)).then((result) {
+                    context.router.push(TaskDetailRoute(task: task)).then((
+                      result,
+                    ) {
                       if (result == true) {
-                        Provider.of<TaskService>(context, listen: false).fetchTasks();
+                        Provider.of<TaskService>(
+                          context,
+                          listen: false,
+                        ).fetchTasks();
                         showCustomTopSnackbar(
                           context: context,
                           message: 'Tugas berhasil diperbarui',

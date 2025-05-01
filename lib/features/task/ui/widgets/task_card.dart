@@ -11,6 +11,7 @@ class TaskCard extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onViewDetails;
   final VoidCallback onToggleAlarm;
+  final String currentFilter;
 
   const TaskCard({
     Key? key,
@@ -19,6 +20,7 @@ class TaskCard extends StatelessWidget {
     required this.onDelete,
     required this.onViewDetails,
     required this.onToggleAlarm,
+    required this.currentFilter,
   }) : super(key: key);
 
   @override
@@ -140,10 +142,7 @@ class TaskCard extends StatelessWidget {
                         // Estimasi waktu
                         Row(
                           children: [
-                            const Icon(
-                              Icons.access_time_filled,
-                              size: 14,
-                            ),
+                            const Icon(Icons.access_time_filled, size: 14),
                             const SizedBox(width: 4),
                             Text(
                               'Estimasi: ${task.estimatedDuration.inHours}:${(task.estimatedDuration.inMinutes % 60).toString().padLeft(2, '0')}',
@@ -164,14 +163,14 @@ class TaskCard extends StatelessWidget {
                     width: 90,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: _getStatusColor(task.status),
+                      color: _getBadgeColor(task, currentFilter),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      _getStatusName(task.status, task: task),
+                      _getBadgeText(task, currentFilter),
                       style: TextStyle(
                         fontSize: 12,
-                        color: _getStatusTextColor(task.status),
+                        color: _getBadgeTextColor(task, currentFilter),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -196,8 +195,27 @@ class TaskCard extends StatelessWidget {
                     Icon(Icons.alarm, size: 12, color: Colors.blue),
                     SizedBox(width: 4),
                     Text(
-                      'Alarm Aktif',
+                      'Alarm aktif',
                       style: TextStyle(fontSize: 12, color: Colors.blue),
+                    ),
+                  ],
+                ),
+              ),
+            if (task.isCompleted && task.previousStatus == TaskStatus.late)
+              Container(
+                height: 24,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: const BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: Color(0xFFEEEEEE), width: 1),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      '* Diselesaikan terlambat',
+                      style: TextStyle(fontSize: 12, color: Colors.red, fontStyle: FontStyle.italic),
                     ),
                   ],
                 ),
@@ -209,9 +227,9 @@ class TaskCard extends StatelessWidget {
   }
 
   String _getCategoryIconPath(String category) {
-     try {
-    final taskCategory = TaskCategory.values.firstWhere(
-      (e) => e.name == category.toLowerCase(),
+    try {
+      final taskCategory = TaskCategory.values.firstWhere(
+        (e) => e.name == category.toLowerCase(),
       );
       switch (taskCategory) {
         case TaskCategory.akademik:
@@ -319,5 +337,26 @@ class TaskCard extends StatelessWidget {
       case TaskStatus.upcoming:
         return const Color(0xFF9E9E9E);
     }
+  }
+
+  String _getBadgeText(Task task, String currentFilter) {
+    if (task.isCompleted && currentFilter == 'Selesai') {
+      return 'Selesai';
+    }
+    return _getStatusName(task.status, task: task);
+  }
+
+  Color _getBadgeColor(Task task, String currentFilter) {
+    if (task.isCompleted && currentFilter == 'Selesai') {
+      return AppTheme.completedColor;
+    }
+    return _getStatusColor(task.status);
+  }
+
+  Color _getBadgeTextColor(Task task, String currentFilter) {
+    if (task.isCompleted && currentFilter == 'Selesai') {
+      return AppTheme.completedTextColor;
+    }
+    return _getStatusTextColor(task.status);
   }
 }
