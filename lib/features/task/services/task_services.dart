@@ -163,9 +163,29 @@ class TaskService extends ChangeNotifier {
 
   // Update an existing task
   Future<int> updateTask(Task task) async {
-    final result = await taskDatabase.update(task.toMap());
+    // Validasi alarm sebelum update
+    Task updatedTask = task;
+    
+    // Jika alarm diaktifkan, pastikan deadlinenya valid dan waktunya sesuai
+    if (task.isAlarmEnabled && task.alarmDateTime != null) {
+      // Cek apakah deadline valid (minimal 1 jam dari sekarang)
+      if (!isDeadlineValid(task.deadline)) {
+        // Jika tidak valid, nonaktifkan alarm
+        updatedTask = task.copyWith(isAlarmEnabled: false, alarmDateTime: null);
+        debugPrint('Alarm dinonaktifkan karena deadline terlalu dekat');
+      } 
+      // Cek apakah alarm setidaknya 1 jam sebelum deadline
+      else if (task.alarmDateTime!.isAfter(task.deadline!.subtract(Duration(hours: 1)))) {
+        // Jika alarm terlalu dekat dengan deadline, sesuaikan waktunya
+        final safeAlarmTime = task.deadline!.subtract(Duration(hours: 1));
+        updatedTask = task.copyWith(alarmDateTime: safeAlarmTime);
+        debugPrint('Alarm disesuaikan ke 1 jam sebelum deadline');
+      }
+    }
+    
+    final result = await taskDatabase.update(updatedTask.toMap());
     // Update alarm status
-    await alarmService.updateAlarmStatus(task);
+    await alarmService.updateAlarmStatus(updatedTask);
 
     await fetchTasks(); // Refresh the task list
     return result;

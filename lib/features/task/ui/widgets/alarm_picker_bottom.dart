@@ -10,8 +10,21 @@ Future<DateTime?> showAlarmPickerBottomSheet(
   DateTime? initialDateTime,
   required DateTime maxDateTime,
 }) async {
-  DateTime now = DateTime.now();
+  // Waktu saat ini sebagai batas minimum
+  final now = DateTime.now();
+  
+  // Batas maksimal adalah 1 jam sebelum deadline
+  final safeMaxDateTime = maxDateTime.subtract(const Duration(hours: 1));
+  
+  // Pastikan initialDateTime berada di antara now dan safeMaxDateTime
   DateTime initialDate = initialDateTime ?? now;
+  if (initialDate.isBefore(now)) {
+    initialDate = now;
+  } else if (initialDate.isAfter(safeMaxDateTime)) {
+    initialDate = safeMaxDateTime;
+  }
+  
+  // Truncate to day for selection
   DateTime selectedDate = DateTime(
     initialDate.year,
     initialDate.month,
@@ -21,93 +34,135 @@ Future<DateTime?> showAlarmPickerBottomSheet(
   int selectedMinute = initialDate.minute;
   DateTime? finalDate;
 
-  // Batas maksimal adalah 1 jam sebelum deadline
-  final safeMaxDateTime = maxDateTime.subtract(const Duration(hours: 1));
-
   await showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     barrierColor: Colors.white.withOpacity(0.7),
     builder: (context) {
+      // Prepare dates for selection
+      final nowTruncated = DateTime(now.year, now.month, now.day);
+      final maxTruncated = DateTime(safeMaxDateTime.year, safeMaxDateTime.month, safeMaxDateTime.day);
+      
+      // Calculate the day difference for controller initialization
+      final maxDays = maxTruncated.difference(nowTruncated).inDays;
+      final initialDayIndex = selectedDate.difference(nowTruncated).inDays;
+      
+      // Ensure initial day index is valid
+      final validInitialDayIndex = initialDayIndex.clamp(0, maxDays);
+      
+      // Setup day scroll controller
+      final dayScrollController = FixedExtentScrollController(
+        initialItem: validInitialDayIndex,
+      );
+
       return StatefulBuilder(
         builder: (context, setState) {
-          final maxDaysFromNow = safeMaxDateTime.difference(now).inDays;
-
-          // Validasi Jam
+          // Tanggal-tanggal yang dapat dipilih (dari sekarang hingga batas max)
+          final availableDates = List.generate(
+            maxDays + 1, 
+            (index) => nowTruncated.add(Duration(days: index))
+          );
+          
+          // Generate valid hours for selected date
           List<int> getValidHours() {
-            List<int> hours = [];
-            for (int i = 0; i <= 23; i++) {
-              final date = DateTime(
-                selectedDate.year,
-                selectedDate.month,
-                selectedDate.day,
-                i,
-              );
-              if (date.isBefore(safeMaxDateTime)) {
-                hours.add(i);
+            final List<int> hours = [];
+            
+            // Today's date - only show hours from now
+            if (selectedDate.year == nowTruncated.year &&
+                selectedDate.month == nowTruncated.month &&
+                selectedDate.day == nowTruncated.day) {
+              for (int h = now.hour; h <= 23; h++) {
+                hours.add(h);
+              }
+            } 
+            // Maximum date - only show hours until max
+            else if (selectedDate.year == maxTruncated.year &&
+                    selectedDate.month == maxTruncated.month &&
+                    selectedDate.day == maxTruncated.day) {
+              for (int h = 0; h <= safeMaxDateTime.hour; h++) {
+                hours.add(h);
+              }
+            } 
+            // Any day in between - all hours are valid
+            else {
+              for (int h = 0; h <= 23; h++) {
+                hours.add(h);
               }
             }
+            
+            // Filter out hours that would make selected time invalid
             return hours;
           }
-
-          // Validasi Menit
+          
+          // Generate valid minutes for selected hour
           List<int> getValidMinutes() {
-            List<int> minutes = [];
-            for (int i = 0; i <= 59; i++) {
-              final date = DateTime(
-                selectedDate.year,
-                selectedDate.month,
-                selectedDate.day,
-                selectedHour,
-                i,
-              );
-              if (date.isBefore(safeMaxDateTime)) {
-                minutes.add(i);
-              }
+            final List<int> minutes = [];
+            
+            // Same day and hour as now
+            final isSameAsNow = selectedDate.year == now.year &&
+                                selectedDate.month == now.month &&
+                                selectedDate.day == now.day &&
+                                selectedHour == now.hour;
+                                
+            // Same day and hour as max
+            final isSameAsMax = selectedDate.year == safeMaxDateTime.year &&
+                                selectedDate.month == safeMaxDateTime.month &&
+                                selectedDate.day == safeMaxDateTime.day &&
+                                selectedHour == safeMaxDateTime.hour;
+            
+            // Set min and max minutes based on conditions
+            final int minMinute = isSameAsNow ? now.minute : 0;
+            final int maxMinute = isSameAsMax ? safeMaxDateTime.minute : 59;
+            
+            // Add all valid minutes
+            for (int m = minMinute; m <= maxMinute; m++) {
+              minutes.add(m);
             }
+            
             return minutes;
           }
 
+          // Get valid hours and minutes
           final validHours = getValidHours();
           final validMinutes = getValidMinutes();
-
-          if (validHours.isEmpty) {
-            selectedHour = 0;
+          
+          // Ensure selected hour and minute are valid
+          if (validHours.isNotEmpty && !validHours.contains(selectedHour)) {
+            selectedHour = validHours.first;
           }
-          else if (!validHours.contains(selectedHour)) {
-            selectedHour = validHours.last;
+          
+          if (validMinutes.isNotEmpty && !validMinutes.contains(selectedMinute)) {
+            selectedMinute = validMinutes.first;
           }
-
-          if (validMinutes.isEmpty) {
-            selectedMinute = 0;
-          }
-          else if (!validMinutes.contains(selectedMinute)) {
-            selectedMinute = validMinutes.last;
-          }
-
-          // Format date time untuk subtitle
-          final formattedDateTime = DateFormat('EEEE, d MMM yyyy, HH:mm', 'id_ID').format(
-            DateTime(
-              selectedDate.year,
-              selectedDate.month,
-              selectedDate.day,
-              selectedHour,
-              selectedMinute,
-            ),
+          
+          // Format the selected datetime
+          final currentSelectedDateTime = DateTime(
+            selectedDate.year,
+            selectedDate.month,
+            selectedDate.day,
+            selectedHour,
+            selectedMinute,
           );
-
-          // Informasi catatan deadline
-          final deadlineNote = '*Alarm  maksimal 1 jam sebelum ${DateFormat('EEEE, d MMM yyyy, HH:mm', 'id_ID').format(maxDateTime)}';
+          
+          // Format strings for display
+          final formattedDateTime = DateFormat('EEEE, d MMM yyyy, HH:mm', 'id_ID').format(
+            currentSelectedDateTime
+          );
+          
+          final formattedMaxAlarmTime = DateFormat('HH:mm', 'id_ID').format(safeMaxDateTime);
+          final formattedMaxAlarmDate = DateFormat('EEEE, d MMM', 'id_ID').format(safeMaxDateTime);
+          
+          final deadlineNote = '*Waktu alarm harus antara sekarang dan $formattedMaxAlarmTime, $formattedMaxAlarmDate (1 jam sebelum deadline)';
 
           return BottomSheetContainer(
             title: 'Atur Alarm',
             subtitle: formattedDateTime,
             content: Column(
               children: [
-                // Catatan deadline
+                // Info deadline
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: 16),
                   child: Text(
                     deadlineNote,
                     style: GoogleFonts.plusJakartaSans(
@@ -124,37 +179,56 @@ Future<DateTime?> showAlarmPickerBottomSheet(
                   children: [
                     const SizedBox(width: 12),
                     
+                    // Day picker
                     Expanded(
-    
                       child: SizedBox(
                         height: 150,
                         child: ListWheelScrollView.useDelegate(
-                          controller: FixedExtentScrollController(
-                            initialItem: 0,
-                          ),
+                          controller: dayScrollController,
                           itemExtent: 40,
                           diameterRatio: 5,
                           perspective: 0.002,
                           physics: const FixedExtentScrollPhysics(),
                           onSelectedItemChanged: (index) {
-                            setState(() {
-                              selectedDate = now.add(Duration(days: index));
-                              selectedHour = getValidHours().last;
-                              selectedMinute = getValidMinutes().last;
-                            });
+                            if (index >= 0 && index < availableDates.length) {
+                              setState(() {
+                                // Update selected date
+                                selectedDate = availableDates[index];
+                                
+                                // Reset hour and minute with valid values
+                                final newValidHours = getValidHours();
+                                if (newValidHours.isNotEmpty) {
+                                  selectedHour = newValidHours.first;
+                                  
+                                  // Reset minute as well
+                                  final newValidMinutes = getValidMinutes();
+                                  if (newValidMinutes.isNotEmpty) {
+                                    selectedMinute = newValidMinutes.first;
+                                  }
+                                }
+                              });
+                            }
                           },
                           childDelegate: ListWheelChildBuilderDelegate(
-                            childCount: maxDaysFromNow + 1,
+                            childCount: availableDates.length,
                             builder: (context, index) {
-                              final date = now.add(Duration(days: index));
+                              if (index < 0 || index >= availableDates.length) {
+                                return Container();
+                              }
+                              
+                              final date = availableDates[index];
+                              final bool isSelected = 
+                                  date.year == selectedDate.year && 
+                                  date.month == selectedDate.month && 
+                                  date.day == selectedDate.day;
+                                  
                               return Center(
                                 child: Text(
                                   DateFormat('EEEE, d MMM', 'id_ID').format(date),
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 16,
-                                    color: selectedDate.difference(date).inDays == 0
-                                            ? AppTheme.primaryColor
-                                            : Colors.grey,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: isSelected ? AppTheme.primaryColor : Colors.grey,
                                   ),
                                 ),
                               );
@@ -189,12 +263,25 @@ Future<DateTime?> showAlarmPickerBottomSheet(
                               ),
                               onChanged: (value) => setState(() {
                                 selectedHour = value;
-                                selectedMinute = getValidMinutes().last;
+                                
+                                // Reset minutes when hour changes
+                                final newValidMinutes = getValidMinutes();
+                                if (newValidMinutes.isNotEmpty) {
+                                  selectedMinute = newValidMinutes.first;
+                                }
                               }),
                             ),
                             
                             const SizedBox(width: 8),
-                            
+                            Text(
+                              ":",
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+
                             // Minute picker
                             NumberPicker(
                               minValue: validMinutes.isEmpty ? 0 : validMinutes.first,
@@ -203,6 +290,7 @@ Future<DateTime?> showAlarmPickerBottomSheet(
                               zeroPad: true,
                               itemWidth: 50,
                               itemHeight: 50,
+                              step: 1, // 1 minute precision
                               textStyle: GoogleFonts.plusJakartaSans(
                                 color: Colors.grey,
                               ),

@@ -170,9 +170,21 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     setState(() {
                       _deadline = result;
                       _deadlineError = null;
-                      if (_alarmDateTime != null &&
-                          _alarmDateTime!.isAfter(result)) {
+                      
+                      // Validasi alarm terhadap deadline baru
+                      final isNewDeadlineValid = _taskService.isDeadlineValid(result);
+                      
+                      // Jika deadline kurang dari 1 jam dari sekarang, nonaktifkan alarm
+                      if (!isNewDeadlineValid) {
+                        _isAlarmEnabled = false;
                         _alarmDateTime = null;
+                      } 
+                      // Jika deadline valid tapi alarm sudah diatur dan melebihi deadline baru - 1 jam
+                      else if (_alarmDateTime != null) {
+                        final maxAlarmTime = result.subtract(const Duration(hours: 1));
+                        if (_alarmDateTime!.isAfter(maxAlarmTime)) {
+                          _alarmDateTime = maxAlarmTime;
+                        }
                       }
                     });
                   }
