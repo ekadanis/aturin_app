@@ -93,7 +93,7 @@ class AlarmService {
           body: '${task.title} (${getCategoryName(task.category)})',
           stopButton: 'Matikan',
           icon: 'mipmap/ic_launcher',
-          iconColor: const Color(0xFF5263F3),
+          iconColor: const Color.fromARGB(255, 255, 255, 255),
         ),
       );
 
