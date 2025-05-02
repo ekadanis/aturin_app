@@ -40,7 +40,10 @@ class TaskCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 12.0,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -53,11 +56,7 @@ class TaskCard extends StatelessWidget {
                       // Kategori + Icon
                       Row(
                         children: [
-                          SvgPicture.asset(
-                            categoryIcon,
-                            width: 16,
-                            height: 16,
-                          ),
+                          SvgPicture.asset(categoryIcon, width: 16, height: 16),
                           const SizedBox(width: 4),
                           Text(
                             categoryLabel,
@@ -69,7 +68,7 @@ class TaskCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      
+
                       // Judul tugas
                       Text(
                         task.title,
@@ -81,24 +80,26 @@ class TaskCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
-  
+
                       Row(
                         children: [
                           Icon(
-                            Icons.access_time_filled, 
+                            Icons.access_time_filled,
                             size: 12, // Ukuran ikon dikurangi
-                            color: task.status == TaskStatus.belumDikerjakan
-                              ? AppTheme.dangerColor
-                              : Colors.black54,
+                            color:
+                                task.status == TaskStatus.belumDikerjakan
+                                    ? AppTheme.dangerColor
+                                    : Colors.black54,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             deadlineText,
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 11, // Font size dikurangi
-                              color: task.status == TaskStatus.belumDikerjakan
-                                ? AppTheme.dangerColor
-                                : Colors.black54,
+                              color:
+                                  task.status == TaskStatus.belumDikerjakan
+                                      ? AppTheme.dangerColor
+                                      : Colors.black54,
                             ),
                           ),
                         ],
@@ -106,21 +107,29 @@ class TaskCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                
+
                 // RIGHT SIDE (Status badge)
                 Container(
-                  alignment: Alignment.center,
-                  width: 80, // Lebar badge dikurangi
-                  height:32, // Tinggi badge dikurangi
-                  margin: const EdgeInsets.only(left: 8), // Menambah margin dari konten kiri
+                  alignment: Alignment.center, // pastikan ini ada
+                  width: 80,
+                  height: null, // biarkan tinggi otomatis mengikuti isi
+                  constraints: const BoxConstraints(
+                    minHeight: 32,
+                  ), // tinggi minimal tetap 32
+                  margin: const EdgeInsets.only(left: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 4,
+                  ), // beri ruang untuk teks
                   decoration: BoxDecoration(
                     color: statusColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8), // Radius border dikurangi
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     statusLabel,
+                    textAlign: TextAlign.center, // teks di tengah
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 10, // Font size dikurangi
+                      fontSize: 10,
                       color: statusColor,
                       fontWeight: FontWeight.w500,
                     ),
@@ -129,7 +138,7 @@ class TaskCard extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // Indikator tambahan (alarm atau terlambat) dengan ukuran yang lebih kecil
           if (task.isAlarmEnabled)
             _buildIndicator(
@@ -138,7 +147,7 @@ class TaskCard extends StatelessWidget {
               'Alarm aktif',
               isLateCompletion: false,
             ),
-          
+
           // "Diselesaikan terlambat" indicator if applicable
           if (task.status == TaskStatus.selesai && task.isLateCompletion)
             _buildIndicator(
@@ -153,7 +162,12 @@ class TaskCard extends StatelessWidget {
   }
 
   // Helper method untuk membuat indikator (alarm atau terlambat)
-  Widget _buildIndicator(Color textColor, IconData? icon, String text, {required bool isLateCompletion}) {
+  Widget _buildIndicator(
+    Color textColor,
+    IconData? icon,
+    String text, {
+    required bool isLateCompletion,
+  }) {
     return ClipRRect(
       borderRadius: const BorderRadius.only(
         bottomLeft: Radius.circular(12),
@@ -180,7 +194,8 @@ class TaskCard extends StatelessWidget {
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 10, // Font size dikurangi
                 color: textColor,
-                fontStyle: isLateCompletion ? FontStyle.italic : FontStyle.normal,
+                fontStyle:
+                    isLateCompletion ? FontStyle.italic : FontStyle.normal,
               ),
             ),
           ],
@@ -194,7 +209,7 @@ class TaskCard extends StatelessWidget {
       case TaskStatus.selesai:
         return const Color(0xFF4CAF50);
       case TaskStatus.belumDikerjakan:
-        return  Color(0xFFFF6B6B);
+        return const Color(0xFFFF6B6B);
     }
   }
 

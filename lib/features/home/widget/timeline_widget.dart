@@ -10,52 +10,62 @@ class TimelineWidget extends StatelessWidget {
     required this.task,
     required this.index,
     required this.isLast,
+    required this.previousIsFlagged,
   });
 
   final Task task;
   final int index;
   final bool isLast;
+  final bool previousIsFlagged;
 
   @override
   Widget build(BuildContext context) {
     return TimelineTile(
       nodeAlign: TimelineNodeAlign.start,
       node: TimelineNode(
-        indicator: task.status == TaskStatus.selesai
-            ? const DotIndicator(
-                size: 24,
-                color: Colors.green,
-                child: Icon(Icons.check, size: 16, color: Colors.white),
-              )
-            : const OutlinedDotIndicator(
-                size: 24,
-                borderWidth: 2,
-                color: Colors.red,
-              ),
+        indicator:
+            task.status == TaskStatus.selesai
+                ? const DotIndicator(
+                  size: 24,
+                  color: Colors.green,
+                  child: Icon(Icons.check, size: 16, color: Colors.white),
+                )
+                : const OutlinedDotIndicator(
+                  size: 24,
+                  borderWidth: 2,
+                  color: Colors.red,
+                ),
         startConnector:
             index == 0
                 ? null
                 : DashedLineConnector(
                   color: Colors.grey,
                   dash: 5,
-                  gap: 6, 
-                  indent: 5.5,
+                  gap: 6,
+                  indent:
+                      index == 1
+                          ? (previousIsFlagged ? 2.5 : 0.5) // untuk card ke-2
+                          : (previousIsFlagged ? 8 : 6),  // card ke-3 dan seterusnya
                 ),
         endConnector:
             isLast
                 ? null
-                : const DashedLineConnector(
+                : DashedLineConnector(
                   color: Colors.grey,
                   dash: 5,
                   gap: 6,
-                  indent: 1,
+                  indent: index == 0 ? 7.0 : 1.5,
                 ),
       ),
       contents: Container(
         // Menambahkan margin atas dan bawah untuk membuat gap antar card
         margin: EdgeInsets.only(
-          top: index == 0 ? 0 : 4.0,  // Tidak perlu margin atas untuk card pertama
-          bottom: isLast ? 0 : 4.0,   // Tidak perlu margin bawah untuk card terakhir
+          top:
+              index == 0
+                  ? 0
+                  : 4.0, // Tidak perlu margin atas untuk card pertama
+          bottom:
+              isLast ? 0 : 4.0, // Tidak perlu margin bawah untuk card terakhir
         ),
         padding: const EdgeInsets.only(left: 8.0),
         child: TaskCard(task: task),

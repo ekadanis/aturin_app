@@ -31,7 +31,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     // Mendapatkan tinggi bottom navigation untuk padding scroll
     final bottomNavHeight = kBottomNavigationBarHeight;
-    
+
     return PopScope(
       canPop: true,
       child: Scaffold(
@@ -43,7 +43,7 @@ class _HomePageState extends State<HomePage> {
         body: Consumer<home.TaskService>(
           builder: (context, taskService, _) {
             final tasks = taskService.tasks;
-            
+
             return SafeArea(
               bottom: false, // Menghilangkan padding bawah
               child: Padding(
@@ -55,52 +55,71 @@ class _HomePageState extends State<HomePage> {
                     Text(
                       'Tugas',
                       style: GoogleFonts.plusJakartaSans(
-                        fontSize: 21, 
+                        fontSize: 21,
                         fontWeight: FontWeight.bold,
                         color: AppTheme.lightTextColor,
                       ),
                     ),
                     const SizedBox(height: 10),
                     Expanded(
-                      child: tasks.isEmpty 
-                        ? const Center(child: EmptyTask())
-                        : ListView.builder(
-                            // Menghilangkan padding karena akan kita tambahkan sebagai item terpisah
-                            padding: EdgeInsets.zero,
-                            itemCount: tasks.length + 1, // +1 untuk item gap di bagian bawah
-                            itemBuilder: (context, index) {
-                              // Item terakhir adalah gap
-                              if (index == tasks.length) {
-                                // Menambahkan SizedBox sebagai gap yang jelas di bagian bawah
-                                return SizedBox(
-                                  height: bottomNavHeight + 40, // Margin yang lebih besar untuk kejelasan visual
-                                  child: Align(
-                                    alignment: Alignment.center,
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(bottom: 20),
-                                      child: Text(
-                                        'Semua tugas hari ini ditampilkan',
-                                        style: GoogleFonts.plusJakartaSans(
-                                          fontSize: 12,
-                                          color: Colors.grey,
-                                          fontStyle: FontStyle.italic,
+                      child:
+                          tasks.isEmpty
+                              ? const Center(child: EmptyTask())
+                              : ListView.builder(
+                                // Menghilangkan padding karena akan kita tambahkan sebagai item terpisah
+                                padding: EdgeInsets.zero,
+                                itemCount:
+                                    tasks.length +
+                                    1, // +1 untuk item gap di bagian bawah
+                                itemBuilder: (context, index) {
+                                  // Item terakhir adalah gap
+                                  if (index == tasks.length) {
+                                    // Menambahkan SizedBox sebagai gap yang jelas di bagian bawah
+                                    return SizedBox(
+                                      height:
+                                          bottomNavHeight +
+                                          40, // Margin yang lebih besar untuk kejelasan visual
+                                      child: Align(
+                                        alignment: Alignment.center,
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(
+                                            bottom: 20,
+                                          ),
+                                          child: Text(
+                                            'Semua tugas hari ini ditampilkan',
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 12,
+                                              color: Colors.grey,
+                                              fontStyle: FontStyle.italic,
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ),
-                                );
-                              }
+                                    );
+                                  }
 
-                              final task = tasks[index];
-                              final isLast = index == tasks.length - 1;
+                                  // Default: false
+                                  bool previousIsFlagged = false;
 
-                              return TimelineWidget(
-                                task: task,
-                                index: index,
-                                isLast: isLast,
-                              );
-                            },
-                          ),
+                                  final task = tasks[index];
+                                  final isLast = index == tasks.length - 1;
+
+                                  // Cek task sebelumnya jika bukan task pertama
+                                  if (index > 0) {
+                                    final previousTask = tasks[index - 1];
+                                    previousIsFlagged =
+                                        previousTask.isAlarmEnabled ||
+                                        previousTask.isLateCompletion;
+                                  }
+
+                                  return TimelineWidget(
+                                    task: task,
+                                    index: index,
+                                    isLast: isLast,
+                                    previousIsFlagged: previousIsFlagged,
+                                  );
+                                },
+                              ),
                     ),
                   ],
                 ),
