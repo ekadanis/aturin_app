@@ -87,7 +87,6 @@ class TimelineSkeleton extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        
                         // Judul tugas skeleton
                         Container(
                           width: double.infinity,
@@ -98,7 +97,6 @@ class TimelineSkeleton extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        
                         // Deadline skeleton
                         Row(
                           children: [

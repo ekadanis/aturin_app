@@ -1,5 +1,6 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:aturin_app/features/task/services/task_services.dart';
 import 'package:aturin_app/features/home/services/task_service.dart' as home;
@@ -11,15 +12,69 @@ class DataPrefetchGuard extends AutoRouteGuard {
     NavigationResolver resolver, 
     StackRouter router,
   ) async {
+    // Selalu izinkan navigasi di release mode untuk mencegah layar putih
+    if (kReleaseMode) {
+      // Di release mode, izinkan navigasi terlebih dahulu
+      resolver.next(true);
+      
+      // Kemudian coba ambil data di background
+      _fetchDataInBackground(resolver.route.name, router.navigatorKey.currentContext);
+      return;
+    }
+    
+    // Kode di bawah ini hanya dijalankan di debug mode
     final context = router.navigatorKey.currentContext;
+    
     if (context != null) {
-      if (resolver.route.name == 'HomeRoute') {
-        await Provider.of<home.TaskService>(context, listen: false).fetchTasks();
-      } else if (resolver.route.name == 'TaskListRoute') {
-        await Provider.of<TaskService>(context, listen: false).fetchTasks();
+      try {
+        if (resolver.route.name == 'HomeRoute') {
+          await Provider.of<home.TaskService>(context, listen: false)
+              .fetchTasks()
+              .timeout(
+                const Duration(seconds: 3),
+                onTimeout: () {
+                  debugPrint('HomeRoute data fetch timeout, continuing navigation');
+                  return;
+                },
+              );
+        } else if (resolver.route.name == 'TaskListRoute') {
+          await Provider.of<TaskService>(context, listen: false)
+              .fetchTasks()
+              .timeout(
+                const Duration(seconds: 3),
+                onTimeout: () {
+                  debugPrint('TaskListRoute data fetch timeout, continuing navigation');
+                  return;
+                },
+              );
+        }
+      } catch (e) {
+        debugPrint('Error during data prefetch: $e');
       }
     }
 
+    // Selalu lanjutkan navigasi bahkan jika prefetch gagal
     resolver.next(true);
+  }
+  
+  // Metode untuk mengambil data di background tanpa menahan navigasi
+  void _fetchDataInBackground(String routeName, BuildContext? context) {
+    if (context == null) return;
+    
+    Future.microtask(() async {
+      try {
+        if (routeName == 'HomeRoute') {
+          await Provider.of<home.TaskService>(context, listen: false)
+              .fetchTasks()
+              .timeout(const Duration(seconds: 5));
+        } else if (routeName == 'TaskListRoute') {
+          await Provider.of<TaskService>(context, listen: false)
+              .fetchTasks()
+              .timeout(const Duration(seconds: 5));
+        }
+      } catch (e) {
+        debugPrint('Background data fetch error: $e');
+      }
+    });
   }
 }

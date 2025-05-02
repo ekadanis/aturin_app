@@ -13,7 +13,6 @@ class PermissionsService {
     
     if (Platform.isAndroid) {
 
-      // Request storage permissions
       final storageStatus = await Permission.storage.request();
       if (storageStatus.isDenied) {
         debugPrint('Storage permission ditolak');
