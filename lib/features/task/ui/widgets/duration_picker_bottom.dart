@@ -5,8 +5,9 @@ import '../../../../../../core/theme/app_theme.dart';
 import 'bottom_sheet_container.dart';
 
 Future<Duration?> showDurationPickerBottomSheet(BuildContext context) async {
-  int selectedHour = 0;
-  int selectedMinute = 30;
+  // Inisialisasi dengan nilai yang valid, memastikan dalam batas min dan max
+  int selectedHour = 0; // between 0 and 23
+  int selectedMinute = 30; // between 0 and 59
   Duration? result;
   bool isValid = true; // Durasi awal valid
 
@@ -18,7 +19,13 @@ Future<Duration?> showDurationPickerBottomSheet(BuildContext context) async {
     builder: (context) {
       return StatefulBuilder(
         builder: (context, setState) {
-          isValid = selectedHour > 0 || selectedMinute > 0;
+          // Selalu lakukan sanitasi nilai saat widget dibuild
+          selectedHour = selectedHour.clamp(0, 23);
+          selectedMinute = selectedMinute.clamp(0, 59);
+          
+          // Validasi: minimal durasi 5 menit
+          isValid = selectedHour > 0 || selectedMinute >= 5;
+          
           return BottomSheetContainer(
             title: 'Estimasi Waktu Pengerjaan',
             subtitle: '$selectedHour Jam $selectedMinute Menit',
@@ -52,7 +59,9 @@ Future<Duration?> showDurationPickerBottomSheet(BuildContext context) async {
                             fontWeight: FontWeight.bold,
                             color: AppTheme.primaryColor,
                           ),
-                          onChanged: (value) => setState(() => selectedHour = value),
+                          onChanged: (value) => setState(() {
+                            selectedHour = value.clamp(0, 23);
+                          }),
                         ),
                       ],
                     ),
@@ -94,14 +103,16 @@ Future<Duration?> showDurationPickerBottomSheet(BuildContext context) async {
                             fontWeight: FontWeight.bold,
                             color: AppTheme.primaryColor,
                           ),
-                          onChanged: (value) => setState(() => selectedMinute = value),
+                          onChanged: (value) => setState(() {
+                            selectedMinute = value.clamp(0, 59);
+                          }),
                         ),
                       ],
                     ),
                   ],
                 ),
                 
-                // Pesan validasi jika durasi 0
+                // Pesan validasi jika durasi kurang dari 5 menit
                 if (!isValid)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),

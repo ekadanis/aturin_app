@@ -193,12 +193,45 @@ class TaskService extends ChangeNotifier {
 
   // Delete a task
   Future<int> deleteTask(int? id) async {
-    if (id == null) return 0;
-    await alarmService.removeAlarmForTask(id);
-    
-    final result = await taskDatabase.delete(id);
-    await fetchTasks(); // Refresh the task list
-    return result;
+    if (id == null) {
+      debugPrint('Gagal menghapus: ID task adalah null');
+      return 0;
+    }
+
+    try {
+      // Coba hapus alarm terlebih dahulu dengan penanganan error
+      try {
+        await alarmService.removeAlarmForTask(id);
+        debugPrint('Alarm untuk task $id berhasil dihapus');
+      } catch (e) {
+        // Jika gagal menghapus alarm, tetap lanjutkan proses penghapusan task
+        debugPrint('Gagal menghapus alarm untuk task $id: $e');
+      }
+      
+      // Pastikan database melakukan penghapusan dengan benar
+      final result = await taskDatabase.delete(id);
+      debugPrint('Task dengan ID $id berhasil dihapus dari database: $result');
+      
+      if (result <= 0) {
+        debugPrint('Database mengembalikan hasil $result untuk penghapusan task $id');
+        throw Exception('Database gagal menghapus task');
+      }
+      
+      // Perbarui cache dan UI
+      _cachedFilteredTasks.clear();
+      _tasks.removeWhere((task) => task.id == id);
+      notifyListeners();
+      
+      // Fetch ulang task untuk memastikan data konsisten
+      await fetchTasks();
+      
+      return result;
+    } catch (e) {
+      debugPrint('Error fatal saat menghapus task: $e');
+      // Re-fetch tasks untuk memastikan tampilan konsisten dengan database
+      await fetchTasks();
+      rethrow; // Lempar kembali error untuk ditangani di UI
+    }
   }
 
   // Clear all tasks

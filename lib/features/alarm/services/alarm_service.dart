@@ -91,7 +91,6 @@ class AlarmService {
         notificationSettings: NotificationSettings(
           title: 'Aturin - Pengingat Tugas',
           body: '${task.title} (${getCategoryName(task.category)})',
-          stopButton: 'Matikan',
           icon: 'mipmap/ic_launcher',
           iconColor: const Color.fromARGB(255, 255, 255, 255),
         ),

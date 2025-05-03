@@ -11,7 +11,6 @@ import '../widgets/category_tag.dart';
 import '../widgets/cancel_slider_button.dart';
 import 'package:auto_route/auto_route.dart';
 import '../../services/alarm_service.dart';
-import 'package:sizer/sizer.dart';
 
 @RoutePage()
 class AlarmRingingScreen extends StatefulWidget {
@@ -106,6 +105,10 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen> {
             : dateFormat.format(now);
     final taskName = _task?.title ?? 'Waktunya mengerjakan tugas!';
     final category = _alarmService.getCategoryName(_task?.category ?? 'akademik');
+    
+    // Menggunakan MediaQuery alih-alih sizer untuk menghindari LateInitializationError
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return WillPopScope(
       onWillPop: () async {
@@ -116,7 +119,7 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen> {
         backgroundColor: const Color(0xFFDFEAFF),
         body: SafeArea(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 5.w),
+            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05), // Setara dengan 5.w
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final availableHeight = constraints.maxHeight;
@@ -125,7 +128,7 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     // Top section - Clock time and date
-                    SizedBox(height: 2.h), // Reduced top spacing
+                    SizedBox(height: screenHeight * 0.02), // Setara dengan 2.h
                     AlarmTimeDisplay(time: time, date: date),
                     
                     // Middle section - Animation
@@ -138,14 +141,17 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen> {
                     Column(
                       children: [
                         TaskDescription(taskName: taskName),
-                        SizedBox(height: 1.h), // Minimal spacing
+                        SizedBox(height: screenHeight * 0.01), // Setara dengan 1.h
                         CategoryTag(category: category),
                       ],
                     ),
                     
                     // Cancel button section - Always visible and properly positioned
                     Padding(
-                      padding: EdgeInsets.only(bottom: 3.h, top: 2.h), // Adjusted vertical spacing
+                      padding: EdgeInsets.only(
+                        bottom: screenHeight * 0.03, // Setara dengan 3.h
+                        top: screenHeight * 0.02, // Setara dengan 2.h
+                      ),
                       child: CancelSliderButton(
                         text: "Matikan Alarm",
                         description: "Geser ke kanan untuk mematikan alarm",

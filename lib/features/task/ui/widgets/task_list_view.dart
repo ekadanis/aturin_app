@@ -155,32 +155,59 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
               );
             }
           },
-          onDelete: () {
+          onDelete: () async {
             // Set flag untuk animasi
             setState(() {
               _animatingTaskId = task.id;
               _isAnimating = true;
             });
             
-            // Mulai animasi hapus
-            _animator.prepareTaskDeletion(task, () {
-              // Hapus task dari provider setelah animasi selesai
-              Provider.of<TaskService>(
-                context,
-                listen: false,
-              ).deleteTask(task.id);
-              
-              showCustomTopSnackbar(
-                context: context,
-                message: 'Berhasil menghapus tugas',
-              );
-              
-              // Reset flag animasi
-              setState(() {
-                _isAnimating = false;
-                _animatingTaskId = null;
+            // Simpan ID task sebelum dihapus untuk menangani race condition
+            final taskId = task.id;
+            
+            try {
+              // Mulai animasi hapus
+              _animator.prepareTaskDeletion(task, () async {
+                // Hapus task dari provider setelah animasi selesai
+                // Gunakan await untuk memastikan operasi database selesai
+                if (taskId != null) {
+                  await Provider.of<TaskService>(
+                    context,
+                    listen: false,
+                  ).deleteTask(taskId);
+                  
+                  // Tampilkan notifikasi hanya jika penghapusan berhasil
+                  showCustomTopSnackbar(
+                    context: context,
+                    message: 'Berhasil menghapus tugas',
+                  );
+                }
+                
+                // Reset flag animasi setelah operasi database selesai
+                if (mounted) {
+                  setState(() {
+                    if (_animatingTaskId == taskId) {
+                      _isAnimating = false;
+                      _animatingTaskId = null;
+                    }
+                  });
+                }
               });
-            });
+            } catch (e) {
+              // Tangani error dan reset state animasi
+              debugPrint('Error menghapus task: $e');
+              if (mounted) {
+                setState(() {
+                  _isAnimating = false;
+                  _animatingTaskId = null;
+                });
+                
+                showCustomTopSnackbar(
+                  context: context,
+                  message: 'Gagal menghapus tugas, coba lagi',
+                );
+              }
+            }
           },
           onViewDetails: () {
             widget.onTapTask?.call(task);
