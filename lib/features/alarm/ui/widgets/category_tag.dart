@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:sizer/sizer.dart';
 import 'package:aturin_app/features/task/ui/screens/categories.dart';
 import 'package:aturin_app/features/alarm/services/alarm_service.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
@@ -17,11 +16,12 @@ class CategoryTag extends StatelessWidget {
   Widget build(BuildContext context) {
     final alarmService = AlarmService();
     final CategoryOption categoryOption = alarmService.getCategoryOption(category);
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: 3.w,
-        vertical: 0.8.h,
+        horizontal: screenWidth * 0.03, // Setara dengan 3.w
+        vertical: screenWidth * 0.01, // Setara dengan 0.8.h (approx)
       ),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -33,14 +33,14 @@ class CategoryTag extends StatelessWidget {
         children: [
           SvgPicture.asset(
             categoryOption.iconPath,
-            width: 3.5.w,
-            height: 3.5.w,
+            width: screenWidth * 0.035, // Setara dengan 3.5.w
+            height: screenWidth * 0.035, // Setara dengan 3.5.w
           ),
-          SizedBox(width: 1.w),
+          SizedBox(width: screenWidth * 0.01), // Setara dengan 1.w
           Text(
             categoryOption.name,
             style: TextStyle(
-              fontSize: 3.3.w,
+              fontSize: screenWidth * 0.033, // Setara dengan 3.3.w
               color: categoryOption.color,
               fontWeight: FontWeight.w500,
             ),

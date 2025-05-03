@@ -24,6 +24,6 @@ final List<OnboardingContent> contents = [
   OnboardingContent(
     image: "assets/images/onboarding_images/work_life_balance.gif",
     title: "Work Life Balance",
-    description: "Mulai kehidupan Work Life Ballancemu dengan Aturin!",
+    description: "Mulai kehidupan Work Life Balancemu dengan Aturin!",
   ),
 ];

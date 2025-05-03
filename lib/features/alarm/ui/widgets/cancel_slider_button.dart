@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:sizer/sizer.dart';
 
 class CancelSliderButton extends StatefulWidget {
   final String text;
@@ -43,16 +42,16 @@ class _CancelSliderButtonState extends State<CancelSliderButton> with SingleTick
 
   @override
   Widget build(BuildContext context) {
-    // Hitung lebar container dan max position untuk slider
-    final containerWidth = 80.w;
-    final buttonSize = 12.w;
-    final maxPosition = containerWidth - buttonSize - 2.w; // Padding
+    final screenWidth = MediaQuery.of(context).size.width;
+    final containerWidth = screenWidth * 0.8;
+    final buttonSize = screenWidth * 0.12;
+    final maxPosition = containerWidth - buttonSize - (screenWidth * 0.02);
 
     return Column(
       children: [
         Container(
           width: containerWidth,
-          height: 14.w,
+          height: screenWidth * 0.14,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(100),
             color: const Color(0xFFA3BBFE),
@@ -74,20 +73,19 @@ class _CancelSliderButtonState extends State<CancelSliderButton> with SingleTick
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
-                    fontSize: 4.w,
+                    fontSize: screenWidth * 0.04,
                   ),
                 ),
               ),
-              
-              // Shimmer effect (animasi berkilau)
+
               AnimatedBuilder(
                 animation: _shimmerAnimation,
                 builder: (context, child) {
                   return Positioned(
                     left: _shimmerAnimation.value * containerWidth,
                     child: Container(
-                      width: 30.w,
-                      height: 14.w,
+                      width: screenWidth * 0.3,
+                      height: screenWidth * 0.14,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
@@ -101,11 +99,10 @@ class _CancelSliderButtonState extends State<CancelSliderButton> with SingleTick
                   );
                 }
               ),
-              
-              // The draggable button
+
               Positioned(
                 left: _position,
-                top: 1.w,
+                top: screenWidth * 0.01,  
                 child: GestureDetector(
                   onHorizontalDragUpdate: (details) {
                     setState(() {
@@ -143,7 +140,7 @@ class _CancelSliderButtonState extends State<CancelSliderButton> with SingleTick
                     child: Icon(
                       Icons.arrow_forward_ios_rounded,
                       color: Colors.white,
-                      size: 5.w,
+                      size: screenWidth * 0.05, // Setara dengan 5.w
                     ),
                   ),
                 ),
@@ -151,12 +148,12 @@ class _CancelSliderButtonState extends State<CancelSliderButton> with SingleTick
             ],
           ),
         ),
-        SizedBox(height: 1.h),
+        SizedBox(height: screenWidth * 0.02), // Setara dengan 1.h (perkiraan)
         Text(
           widget.description,
           style: GoogleFonts.plusJakartaSans(
             color: AppTheme.lightSecondaryTextColor,
-            fontSize: 3.w,
+            fontSize: screenWidth * 0.03, // Setara dengan 3.w
             fontWeight: FontWeight.w500,
           ),
           textAlign: TextAlign.center,

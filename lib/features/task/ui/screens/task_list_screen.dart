@@ -83,14 +83,22 @@ class _TaskListScreenState extends State<TaskListScreen>
             children: [
               // Reduced the space between AppBar and filter tabs by adding negative margin
               Transform.translate(
-                offset: const Offset(0, -8), // Moving the filter tabs up by 8 pixels
-                child: FilterTabs(
-                  filters: _filters,
-                  selectedFilter: _selectedFilter,
-                  onFilterSelected: (filter) {
-                    setState(() {
-                      _selectedFilter = filter;
-                    });
+                offset: const Offset(0, -8),
+                child: Consumer<TaskService>(
+                  builder: (context, taskService, _) {
+
+                    final overdueTasksCount = taskService.getTasksByFilter('Terlambat').length;
+
+                    return FilterTabs(
+                      filters: _filters,
+                      selectedFilter: _selectedFilter,
+                      overdueTasksCount: overdueTasksCount,
+                      onFilterSelected: (filter) {
+                        setState(() {
+                          _selectedFilter = filter;
+                        });
+                      },
+                    );
                   },
                 ),
               ),

@@ -10,6 +10,7 @@ class AlarmPicker extends StatelessWidget {
   final String? errorText;
   final bool showError;
   final bool showInitialWarning;
+  final bool isDeadlineTooClose; // Tambahkan parameter baru
 
   const AlarmPicker({
     super.key,
@@ -20,6 +21,7 @@ class AlarmPicker extends StatelessWidget {
     this.errorText,
     this.showError = false,
     this.showInitialWarning = false,
+    this.isDeadlineTooClose = false, // Default false
   });
 
   @override
@@ -40,7 +42,7 @@ class AlarmPicker extends StatelessWidget {
             ),
             Switch(
               value: isEnabled,
-              onChanged: onToggle,
+              onChanged: isDeadlineTooClose ? null : onToggle, // Nonaktifkan switch jika deadline terlalu dekat
               splashRadius: 0,
               trackColor: WidgetStateProperty.resolveWith(
                 (states) =>
@@ -66,6 +68,20 @@ class AlarmPicker extends StatelessWidget {
               showInitialWarning
                   ? '*Pilih deadline terlebih dahulu untuk mengaktifkan alarm'
                   : errorText ?? '',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 10,
+                color: Colors.red,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+
+        // Tambahkan pesan alert jika deadline terlalu dekat
+        if (isDeadlineTooClose)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              '*Alarm hanya dapat diatur minimal 1 jam sebelum deadline',
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 10,
                 color: Colors.red,

@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
-import 'package:sizer/sizer.dart';
 
 class TaskDescription extends StatelessWidget {
   final String taskName;
@@ -14,12 +13,14 @@ class TaskDescription extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    
     return Column(
       children: [
         Text(
           "Satu tugas beres, Satu beban hilang!",
           style: GoogleFonts.plusJakartaSans(
-            fontSize: 3.8.w, // Responsive - approximately 14-16sp on most devices
+            fontSize: screenWidth * 0.038, // Setara dengan 3.8.w
             fontWeight: FontWeight.w500,
             color: Colors.black87,
           ),
@@ -27,14 +28,14 @@ class TaskDescription extends StatelessWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
-        SizedBox(height: 1.h),
+        SizedBox(height: screenWidth * 0.02), // Setara dengan 1.h (perkiraan)
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               '"',
               style: GoogleFonts.plusJakartaSans(
-                fontSize: 5.w, // Responsive quotation marks
+                fontSize: screenWidth * 0.05, // Setara dengan 5.w
                 color: AppTheme.primaryColor,
               ),
             ),
@@ -42,7 +43,7 @@ class TaskDescription extends StatelessWidget {
               child: Text(
                 taskName,
                 style: GoogleFonts.plusJakartaSans(
-                  fontSize: 5.w,
+                  fontSize: screenWidth * 0.05, // Setara dengan 5.w
                   fontWeight: FontWeight.w600,
                   color: AppTheme.primaryColor,
                 ),
@@ -54,7 +55,7 @@ class TaskDescription extends StatelessWidget {
             Text(
               '"',
               style: GoogleFonts.plusJakartaSans(
-                fontSize: 5.w,
+                fontSize: screenWidth * 0.05, // Setara dengan 5.w
                 color: AppTheme.primaryColor,
               ),
             ),

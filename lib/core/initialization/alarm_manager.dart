@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:alarm/alarm.dart';
 import 'package:aturin_app/features/alarm/ui/screens/alarm_ringing_screen.dart';
 import 'package:aturin_app/routers/app_router.dart';
+import 'package:sizer/sizer.dart'; // Import sizer untuk inisialisasi
 
 typedef AppCreator = Widget Function();
 
@@ -44,27 +45,32 @@ class AlarmManager {
       // Jika aplikasi belum berjalan atau di background, gunakan tampilan overlay
       // yang akan kembali ke aplikasi normal setelah alarm dimatikan
       runApp(
-        MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            useMaterial3: true,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.blue,
-              brightness: Brightness.light,
-            ),
-          ),
-          home: AlarmRingingScreen(
-            alarmSettings: alarmSettings,
-            // Memberikan callback untuk restart aplikasi normal setelah alarm dimatikan
-            onDismiss: () {
-              // Restart aplikasi dengan aplikasi utama
-              if (_appCreator != null) {
-                runApp(_appCreator!());
-              } else {
-                debugPrint('Error: App creator not set in AlarmManager');
-              }
-            },
-          ),
+        // Gunakan Sizer untuk memastikan dependensi diinisialisasi dengan benar
+        Sizer(
+          builder: (context, orientation, deviceType) {
+            return MaterialApp(
+              debugShowCheckedModeBanner: false,
+              theme: ThemeData(
+                useMaterial3: true,
+                colorScheme: ColorScheme.fromSeed(
+                  seedColor: Colors.blue,
+                  brightness: Brightness.light,
+                ),
+              ),
+              home: AlarmRingingScreen(
+                alarmSettings: alarmSettings,
+                // Memberikan callback untuk restart aplikasi normal setelah alarm dimatikan
+                onDismiss: () {
+                  // Restart aplikasi dengan aplikasi utama
+                  if (_appCreator != null) {
+                    runApp(_appCreator!());
+                  } else {
+                    debugPrint('Error: App creator not set in AlarmManager');
+                  }
+                },
+              ),
+            );
+          }
         ),
       );
       debugPrint('Menampilkan AlarmRingingScreen sebagai aplikasi terpisah');
