@@ -20,25 +20,31 @@ Future<DateTime?> showDeadlinePickerBottomSheet(BuildContext context) async {
     builder: (context) {
       return StatefulBuilder(
         builder: (context, setState) {
-          final isToday = selectedDate.year == now.year &&
+          final isToday =
+              selectedDate.year == now.year &&
               selectedDate.month == now.month &&
               selectedDate.day == now.day;
 
           final minHour = isToday ? now.hour : 0;
-          final minMinute = isToday && selectedHour == now.hour ? now.minute : 0;
+          final minMinute =
+              isToday && selectedHour == now.hour ? now.minute : 0;
 
           // Auto-adjust if value < min
           if (selectedHour < minHour) selectedHour = minHour;
           if (selectedMinute < minMinute) selectedMinute = minMinute;
 
-          final formattedDateTime = DateFormat('EEEE, d MMM yyyy, HH:mm', 'id_ID')
-              .format(DateTime(
-                selectedDate.year,
-                selectedDate.month,
-                selectedDate.day,
-                selectedHour,
-                selectedMinute,
-              ));
+          final formattedDateTime = DateFormat(
+            'EEEE, d MMM yyyy, HH:mm',
+            'id_ID',
+          ).format(
+            DateTime(
+              selectedDate.year,
+              selectedDate.month,
+              selectedDate.day,
+              selectedHour,
+              selectedMinute,
+            ),
+          );
 
           return BottomSheetContainer(
             title: 'Deadline',
@@ -60,22 +66,37 @@ Future<DateTime?> showDeadlinePickerBottomSheet(BuildContext context) async {
                         setState(() {
                           selectedDate = now.add(Duration(days: index));
 
-                          final isToday = selectedDate.year == now.year &&
+                          // Reset jam dan menit saat ganti hari
+                          if (!(selectedDate.year == now.year &&
+                              selectedDate.month == now.month &&
+                              selectedDate.day == now.day)) {
+                            selectedHour = 0;
+                            selectedMinute = 0;
+                          }
+
+                          // Jika hari ini, pastikan jam dan menit valid
+                          final isToday =
+                              selectedDate.year == now.year &&
                               selectedDate.month == now.month &&
                               selectedDate.day == now.day;
 
                           final minHour = isToday ? now.hour : 0;
-                          final minMinute = isToday && selectedHour == now.hour ? now.minute : 0;
+                          final minMinute =
+                              isToday && selectedHour == now.hour
+                                  ? now.minute
+                                  : 0;
 
                           if (selectedHour < minHour) selectedHour = minHour;
-                          if (selectedMinute < minMinute) selectedMinute = minMinute;
+                          if (selectedMinute < minMinute)
+                            selectedMinute = minMinute;
                         });
                       },
                       childDelegate: ListWheelChildBuilderDelegate(
                         childCount: 100,
                         builder: (context, index) {
                           final date = now.add(Duration(days: index));
-                          final isSelected = selectedDate.year == date.year &&
+                          final isSelected =
+                              selectedDate.year == date.year &&
                               selectedDate.month == date.month &&
                               selectedDate.day == date.day;
 
@@ -85,9 +106,13 @@ Future<DateTime?> showDeadlinePickerBottomSheet(BuildContext context) async {
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: isSelected ? 18 : 16,
                                 fontWeight:
-                                    isSelected ? FontWeight.w600 : FontWeight.normal,
+                                    isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.normal,
                                 color:
-                                    isSelected ? AppTheme.primaryColor : Colors.grey,
+                                    isSelected
+                                        ? AppTheme.primaryColor
+                                        : Colors.grey,
                               ),
                             ),
                           );
@@ -107,25 +132,29 @@ Future<DateTime?> showDeadlinePickerBottomSheet(BuildContext context) async {
                         NumberPicker(
                           minValue: minHour,
                           maxValue: 23,
-                          value: selectedHour < minHour ? minHour : selectedHour,
+                          value:
+                              selectedHour < minHour ? minHour : selectedHour,
                           zeroPad: true,
                           itemWidth: 50,
                           itemHeight: 50,
-                          textStyle: GoogleFonts.plusJakartaSans(color: Colors.grey),
+                          textStyle: GoogleFonts.plusJakartaSans(
+                            color: Colors.grey,
+                          ),
                           selectedTextStyle: GoogleFonts.plusJakartaSans(
                             fontSize: 20,
                             fontWeight: FontWeight.w600,
                             color: AppTheme.primaryColor,
                           ),
-                          onChanged: (value) => setState(() {
-                            selectedHour = value;
+                          onChanged:
+                              (value) => setState(() {
+                                selectedHour = value;
 
-                            if (isToday &&
-                                selectedHour == now.hour &&
-                                selectedMinute < now.minute) {
-                              selectedMinute = now.minute;
-                            }
-                          }),
+                                if (isToday &&
+                                    selectedHour == now.hour &&
+                                    selectedMinute < now.minute) {
+                                  selectedMinute = now.minute;
+                                }
+                              }),
                         ),
 
                         const SizedBox(width: 8),
@@ -133,19 +162,25 @@ Future<DateTime?> showDeadlinePickerBottomSheet(BuildContext context) async {
                         NumberPicker(
                           minValue: minMinute,
                           maxValue: 59,
-                          value: selectedMinute < minMinute ? minMinute : selectedMinute,
+                          value:
+                              selectedMinute < minMinute
+                                  ? minMinute
+                                  : selectedMinute,
                           zeroPad: true,
                           itemWidth: 50,
                           itemHeight: 50,
-                          textStyle: GoogleFonts.plusJakartaSans(color: Colors.grey),
+                          textStyle: GoogleFonts.plusJakartaSans(
+                            color: Colors.grey,
+                          ),
                           selectedTextStyle: GoogleFonts.plusJakartaSans(
                             fontSize: 20,
                             fontWeight: FontWeight.w600,
                             color: AppTheme.primaryColor,
                           ),
-                          onChanged: (value) => setState(() {
-                            selectedMinute = value;
-                          }),
+                          onChanged:
+                              (value) => setState(() {
+                                selectedMinute = value;
+                              }),
                         ),
                       ],
                     ),
@@ -170,7 +205,9 @@ Future<DateTime?> showDeadlinePickerBottomSheet(BuildContext context) async {
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Waktu sudah lewat, deadline diatur ke sekarang'),
+                    content: Text(
+                      'Waktu sudah lewat, deadline diatur ke sekarang',
+                    ),
                     backgroundColor: Colors.orange,
                   ),
                 );
