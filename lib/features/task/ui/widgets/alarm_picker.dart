@@ -10,7 +10,8 @@ class AlarmPicker extends StatelessWidget {
   final String? errorText;
   final bool showError;
   final bool showInitialWarning;
-  final bool isDeadlineTooClose; // Tambahkan parameter baru
+  final bool isDeadlineTooClose;
+  final bool isAlarmTimePassed;
 
   const AlarmPicker({
     super.key,
@@ -21,15 +22,18 @@ class AlarmPicker extends StatelessWidget {
     this.errorText,
     this.showError = false,
     this.showInitialWarning = false,
-    this.isDeadlineTooClose = false, // Default false
+    this.isDeadlineTooClose = false,
+    this.isAlarmTimePassed = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final bool disableSwitch = isDeadlineTooClose || isAlarmTimePassed;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Switch bar row
+        // Header: Switch
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -42,32 +46,26 @@ class AlarmPicker extends StatelessWidget {
             ),
             Switch(
               value: isEnabled,
-              onChanged: isDeadlineTooClose ? null : onToggle, // Nonaktifkan switch jika deadline terlalu dekat
+              onChanged: disableSwitch ? null : onToggle,
               splashRadius: 0,
               trackColor: WidgetStateProperty.resolveWith(
-                (states) =>
-                    states.contains(WidgetState.selected)
-                        ? const Color(0xFF5263F3)
-                        : Colors.grey.shade300,
+                (states) => states.contains(WidgetState.selected)
+                    ? const Color(0xFF5263F3)
+                    : Colors.grey.shade300,
               ),
               thumbColor: const WidgetStatePropertyAll(Colors.white),
               overlayColor: const WidgetStatePropertyAll(Colors.transparent),
-              trackOutlineColor: const WidgetStatePropertyAll(
-                Colors.transparent,
-              ),
+              trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
             ),
           ],
         ),
 
-        // Initial info or warning if deadline is not set
-        // Dynamic logic for single error message
-        if (!isEnabled && (showInitialWarning || showError))
+        // Conditional messages
+        if (!isEnabled && showInitialWarning)
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              showInitialWarning
-                  ? '*Pilih deadline terlebih dahulu untuk mengaktifkan alarm'
-                  : errorText ?? '',
+              '*Pilih deadline terlebih dahulu untuk mengaktifkan alarm',
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 10,
                 color: Colors.red,
@@ -75,8 +73,6 @@ class AlarmPicker extends StatelessWidget {
               ),
             ),
           ),
-
-        // Tambahkan pesan alert jika deadline terlalu dekat
         if (isDeadlineTooClose)
           Padding(
             padding: const EdgeInsets.only(top: 4),
@@ -89,8 +85,33 @@ class AlarmPicker extends StatelessWidget {
               ),
             ),
           ),
+        // if (isAlarmTimePassed)
+        //   Padding(
+        //     padding: const EdgeInsets.only(top: 4),
+        //     child: Text(
+        //       '*Waktu alarm sudah terlewati, alarm tidak dapat diaktifkan',
+        //       style: GoogleFonts.plusJakartaSans(
+        //         fontSize: 10,
+        //         color: Colors.red,
+        //         fontStyle: FontStyle.italic,
+        //       ),
+        //     ),
+        //   ),
+        if (showError && errorText != null && !isDeadlineTooClose && !isAlarmTimePassed)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              errorText!,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 10,
+                color: Colors.red,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
 
-        // Pick time when enabled
+        // Time picker
+          // Pick time when enabled
         if (isEnabled)
           GestureDetector(
             onTap: onPickTime,

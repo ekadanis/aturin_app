@@ -130,6 +130,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final isDeadlineValid = _taskService.isDeadlineValid(_deadline);
+    
+    // Check if alarm time has passed the current time
+    final bool isAlarmTimePassed = _alarmDateTime != null && _alarmDateTime!.isBefore(now);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -267,6 +270,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     });
                   }
                 },
+                isDeadlineTooClose: !isDeadlineValid && _deadline != null,
+                isAlarmTimePassed: isAlarmTimePassed,
                 showInitialWarning: _deadline == null,
                 errorText:
                     !isDeadlineValid && _deadline != null

@@ -103,10 +103,12 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen> {
         _task?.alarmDateTime != null
             ? dateFormat.format(_task!.alarmDateTime!)
             : dateFormat.format(now);
-    final taskName = _task?.title ?? 'Waktunya mengerjakan tugas!';
+
+    final taskName = _task?.title.isNotEmpty == true 
+        ? _task!.title 
+        : 'Waktunya mengerjakan tugas!';
+
     final category = _alarmService.getCategoryName(_task?.category ?? 'akademik');
-    
-    // Menggunakan MediaQuery alih-alih sizer untuk menghindari LateInitializationError
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
@@ -119,7 +121,7 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen> {
         backgroundColor: const Color(0xFFDFEAFF),
         body: SafeArea(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05), // Setara dengan 5.w
+            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final availableHeight = constraints.maxHeight;

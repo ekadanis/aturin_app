@@ -275,6 +275,32 @@ class TaskService extends ChangeNotifier {
         deadline.isAfter(DateTime.now().add(Duration(hours: 1)));
   }
 
+  bool isDeadlineValid(DateTime? deadline) {
+    return deadline != null &&
+        deadline.isAfter(DateTime.now().add(Duration(hours: 1)));
+  }
+  
+  // Fungsi untuk memeriksa apakah waktu alarm masih valid (belum terlewati)
+  bool isAlarmValid(DateTime? deadline) {
+    if (deadline == null) return false;
+    
+    // Waktu alarm adalah 1 jam sebelum deadline
+    final alarmTime = deadline.subtract(Duration(hours: 1));
+    
+    // Jika waktu sekarang sudah melewati waktu alarm, return false
+    return alarmTime.isAfter(DateTime.now());
+  }
+
+  // Fungsi baru: Memeriksa apakah waktu alarm masih valid (belum terlewati oleh waktu sekarang)
+  bool isAlarmTimeValid(DateTime? deadline) {
+    if (deadline == null) return false;
+    // Alarm diatur 1 jam sebelum deadline, jadi kita periksa apakah (deadline - 1 jam) masih di masa depan
+    final alarmTime = deadline.subtract(const Duration(hours: 1));
+    return alarmTime.isAfter(DateTime.now());
+  }
+
+  bool _isStatusCheckerStarted = false;
+
   Future<void> saveTaskForm({required bool isEdit, required Task task}) async {
     if (isEdit) {
       await updateTask(task);
@@ -300,12 +326,6 @@ class TaskService extends ChangeNotifier {
     }
   }
 
-  bool isDeadlineValid(DateTime? deadline) {
-    return deadline != null &&
-        deadline.isAfter(DateTime.now().add(Duration(hours: 1)));
-  }
-
-  bool _isStatusCheckerStarted = false;
   void startStatusChecker() {
     if (_isStatusCheckerStarted) return;
     _isStatusCheckerStarted = true;

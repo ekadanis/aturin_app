@@ -290,6 +290,10 @@ Future<DateTime?> showAlarmPickerBottomSheet(
                                 fontWeight: FontWeight.w600,
                                 color: AppTheme.primaryColor,
                               ),
+                              textMapper: (numberText) {
+                                // Format to always show two digits (00, 01, 02, ..., 23)
+                                return numberText.padLeft(2, '0');
+                              },
                               onChanged:
                                   (value) => setState(() {
                                     // Ensure value is within bounds
@@ -322,9 +326,9 @@ Future<DateTime?> showAlarmPickerBottomSheet(
                               maxValue: validMinutes.last,
                               value: selectedMinute,
                               zeroPad: true,
+                              infiniteLoop: false,
                               itemWidth: 50,
                               itemHeight: 50,
-                              step: 1, // 1 minute precision
                               textStyle: GoogleFonts.plusJakartaSans(
                                 color: Colors.grey,
                               ),
@@ -333,8 +337,13 @@ Future<DateTime?> showAlarmPickerBottomSheet(
                                 fontWeight: FontWeight.w600,
                                 color: AppTheme.primaryColor,
                               ),
+                              textMapper: (numberText) {
+                                // Format to always show two digits (00, 01, 02, etc.)
+                                return numberText.padLeft(2, '0');
+                              },
                               onChanged:
                                   (value) => setState(() {
+                                    // Ensure value is within bounds
                                     if (value >= validMinutes.first &&
                                         value <= validMinutes.last) {
                                       selectedMinute = value;

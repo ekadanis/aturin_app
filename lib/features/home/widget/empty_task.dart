@@ -18,7 +18,7 @@ class EmptyTask extends StatelessWidget {
         ),
 
         Text(
-          'Yuk, tambahkan tugas pertama kamu!',
+          'Tidak ada tugas hari ini.',
           style: GoogleFonts.plusJakartaSans(
             color: AppTheme.primaryColor,
             fontWeight: FontWeight.w600,
