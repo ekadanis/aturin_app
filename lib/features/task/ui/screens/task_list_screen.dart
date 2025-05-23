@@ -165,7 +165,7 @@ class _TaskListScreenState extends State<TaskListScreen>
         ),
 
         // Biarkan extendBody tetap false (default)
-        bottomNavigationBar: const BottomNavbar(currentIndex: 1),
+        bottomNavigationBar: const BottomNavbar(currentIndex: 2),
       ),
     );
   }

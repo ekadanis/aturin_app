@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'dart:async';
+import 'package:aturin_app/core/theme/app_theme.dart';
 
 class ProfileTextField extends StatefulWidget {
   final String label;
@@ -29,6 +30,8 @@ class _ProfileTextFieldState extends State<ProfileTextField> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
   bool _isError = false;
+  bool _nonEditableTapped = false;
+  Timer? _nonEditableTapTimer;
 
   @override
   void initState() {
@@ -52,8 +55,14 @@ class _ProfileTextFieldState extends State<ProfileTextField> {
     });
 
     _focusNode.addListener(() {
-      setState(() {}); // Update UI on focus change
+      setState(() {});
     });
+
+    if (widget.editable) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _focusNode.requestFocus();
+      });
+    }
   }
 
   @override
@@ -62,6 +71,7 @@ class _ProfileTextFieldState extends State<ProfileTextField> {
       _controller.dispose();
     }
     _focusNode.dispose();
+    _nonEditableTapTimer?.cancel();
     super.dispose();
   }
 
@@ -70,15 +80,31 @@ class _ProfileTextFieldState extends State<ProfileTextField> {
       setState(() {
         _isError = true;
       });
-      return; // Jangan panggil onSubmitted jika kosong
+      return;
     }
     widget.onSubmitted?.call();
+  }
+
+  void _handleNonEditableTap() {
+    setState(() {
+      _nonEditableTapped = true;
+    });
+
+    _nonEditableTapTimer?.cancel();
+    _nonEditableTapTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _nonEditableTapped = false;
+        });
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final currentLength = _controller.text.length;
     final maxLength = widget.maxChar;
+    final textColor = Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,7 +112,9 @@ class _ProfileTextFieldState extends State<ProfileTextField> {
         Container(
           decoration: BoxDecoration(
             border: Border.all(
-              color: _isError ? Colors.red : const Color(0xFFE4E4E7),
+              color: _isError || _nonEditableTapped
+                  ? Colors.red
+                  : const Color(0xFFE4E4E7),
             ),
             borderRadius: BorderRadius.circular(12),
           ),
@@ -97,10 +125,12 @@ class _ProfileTextFieldState extends State<ProfileTextField> {
               children: [
                 Text(
                   widget.label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
-                    color: Color(0xFF131927),
+                    color: widget.editable
+                        ? const Color(0xFF131927)
+                        : AppTheme.detailTextColor,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -124,13 +154,16 @@ class _ProfileTextFieldState extends State<ProfileTextField> {
                             color: Color(0xFF131927),
                           ),
                         )
-                      : Text(
-                          _controller.text.isNotEmpty
-                              ? _controller.text
-                              : 'Data belum diisi',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Color(0xFF131927),
+                      : GestureDetector(
+                          onTap: _handleNonEditableTap,
+                          child: Text(
+                            _controller.text.isNotEmpty
+                                ? _controller.text
+                                : 'Data belum diisi',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: AppTheme.detailTextColor,
+                            ),
                           ),
                         ),
                 ),
@@ -152,15 +185,6 @@ class _ProfileTextFieldState extends State<ProfileTextField> {
                             ),
                           ),
                         ),
-                      if (widget.onEditPressed != null)
-                        GestureDetector(
-                          onTap: widget.onEditPressed,
-                          child: SvgPicture.asset(
-                            'assets/icons/edit_big.svg',
-                            width: 20,
-                            height: 20,
-                          ),
-                        ),
                     ],
                   ),
               ],
@@ -172,10 +196,15 @@ class _ProfileTextFieldState extends State<ProfileTextField> {
             padding: EdgeInsets.only(left: 12, top: 6),
             child: Text(
               'Nama tidak boleh kosong',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.red,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.red),
+            ),
+          ),
+        if (_nonEditableTapped)
+          const Padding(
+            padding: EdgeInsets.only(left: 12, top: 6),
+            child: Text(
+              'Data ini tidak bisa diedit',
+              style: TextStyle(fontSize: 12, color: Colors.red),
             ),
           ),
       ],

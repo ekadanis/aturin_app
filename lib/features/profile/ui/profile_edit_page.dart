@@ -7,7 +7,6 @@ import 'package:aturin_app/features/profile/ui/avatar_selection.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:aturin_app/features/profile/widgets/snackbar.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:aturin_app/features/profile/widgets/confirm_exit_dialog.dart';
 
 @RoutePage()
 class ProfileEditPage extends StatefulWidget {
@@ -107,20 +106,12 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         actions: [
           IconButton(
             icon: SvgPicture.asset(
-              'assets/icons/log-out.svg',
-              width: 28,
-              height: 28,
+              'assets/icons/check.svg',
+              width: 14,
+              height: 14,
+              color: const Color(0xFF131927),
             ),
-            onPressed: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (context) => const ConfirmExitDialog(),
-              );
-
-              if (confirm == true) {
-                Navigator.pop(context, true);
-              }
-            },
+            onPressed: () => _saveChanges(shouldPop: false),
           ),
         ],
       ),
