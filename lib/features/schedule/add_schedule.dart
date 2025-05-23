@@ -48,7 +48,6 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
             style: TextStyle(fontSize: 24),
           ),
         ),
-        bottomNavigationBar: const BottomNavbar(currentIndex: 1),
       ),
     );
   }
