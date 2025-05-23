@@ -52,10 +52,15 @@ class AlarmRingingRoute extends PageRouteInfo<AlarmRingingRouteArgs> {
   AlarmRingingRoute({
     Key? key,
     required AlarmSettings alarmSettings,
+    VoidCallback? onDismiss,
     List<PageRouteInfo>? children,
   }) : super(
          AlarmRingingRoute.name,
-         args: AlarmRingingRouteArgs(key: key, alarmSettings: alarmSettings),
+         args: AlarmRingingRouteArgs(
+           key: key,
+           alarmSettings: alarmSettings,
+           onDismiss: onDismiss,
+         ),
          initialChildren: children,
        );
 
@@ -68,21 +73,28 @@ class AlarmRingingRoute extends PageRouteInfo<AlarmRingingRouteArgs> {
       return AlarmRingingScreen(
         key: args.key,
         alarmSettings: args.alarmSettings,
+        onDismiss: args.onDismiss,
       );
     },
   );
 }
 
 class AlarmRingingRouteArgs {
-  const AlarmRingingRouteArgs({this.key, required this.alarmSettings});
+  const AlarmRingingRouteArgs({
+    this.key,
+    required this.alarmSettings,
+    this.onDismiss,
+  });
 
   final Key? key;
 
   final AlarmSettings alarmSettings;
 
+  final VoidCallback? onDismiss;
+
   @override
   String toString() {
-    return 'AlarmRingingRouteArgs{key: $key, alarmSettings: $alarmSettings}';
+    return 'AlarmRingingRouteArgs{key: $key, alarmSettings: $alarmSettings, onDismiss: $onDismiss}';
   }
 }
 
@@ -167,6 +179,22 @@ class ProfileRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return const ProfilePage();
+    },
+  );
+}
+
+/// generated route for
+/// [SchedulePage]
+class ScheduleRoute extends PageRouteInfo<void> {
+  const ScheduleRoute({List<PageRouteInfo>? children})
+    : super(ScheduleRoute.name, initialChildren: children);
+
+  static const String name = 'ScheduleRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const SchedulePage();
     },
   );
 }

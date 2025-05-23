@@ -31,7 +31,7 @@ class _BottomNavbarState extends State<BottomNavbar>
           context.router.replace(const HomeRoute());
           break;
         case 1:
-          context.router.replace(const HomeRoute());
+          context.router.replace(const ScheduleRoute());
           break;
         case 2:
           context.router.replace(const TaskListRoute());
