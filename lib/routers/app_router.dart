@@ -14,6 +14,7 @@ import 'package:aturin_app/features/alarm/ui/screens/alarm_ringing_screen.dart';
 import 'package:alarm/alarm.dart';
 import 'package:aturin_app/routers/data_prefetch_guard.dart';
 import 'package:aturin_app/features/schedule/schedule.dart';
+import 'package:aturin_app/features/schedule/add_schedule.dart';
 
 part 'app_router.gr.dart';
 
@@ -77,6 +78,12 @@ class AppRouter extends RootStackRouter {
     CustomRoute(
       path: '/schedule',
       page: ScheduleRoute.page,
+      transitionsBuilder: (_, __, ___, child) => child,
+      duration: Duration.zero,
+    ),
+    CustomRoute(
+      path: '/schedule/add',
+      page: AddScheduleRoute.page,
       transitionsBuilder: (_, __, ___, child) => child,
       duration: Duration.zero,
     ),

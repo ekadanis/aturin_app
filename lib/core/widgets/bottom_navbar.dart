@@ -216,7 +216,9 @@ class _BottomNavbarState extends State<BottomNavbar>
                   mini: true,
                   elevation: 6,
                   onPressed: () {
-                    print('Tombol kiri ditekan');
+                    _navigationThrottle.run(() {
+                      context.router.push(AddScheduleRoute());
+                    });
                   },
                   backgroundColor: AppTheme.primaryColor,
                   shape: const CircleBorder(),
@@ -249,7 +251,7 @@ class _BottomNavbarState extends State<BottomNavbar>
                   elevation: 6,
                   onPressed: () {
                     _navigationThrottle.run(() {
-                      context.router.replace(AddTaskRoute());
+                      context.router.push(AddTaskRoute());
                     });
                   },
                   backgroundColor: AppTheme.primaryColor,

@@ -11,6 +11,22 @@
 part of 'app_router.dart';
 
 /// generated route for
+/// [AddSchedulePage]
+class AddScheduleRoute extends PageRouteInfo<void> {
+  const AddScheduleRoute({List<PageRouteInfo>? children})
+    : super(AddScheduleRoute.name, initialChildren: children);
+
+  static const String name = 'AddScheduleRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const AddSchedulePage();
+    },
+  );
+}
+
+/// generated route for
 /// [AddTaskScreen]
 class AddTaskRoute extends PageRouteInfo<AddTaskRouteArgs> {
   AddTaskRoute({Key? key, Task? existingTask, List<PageRouteInfo>? children})
