@@ -132,10 +132,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     title: 'Alarm',
                     description: 'Atur Alarm kamu',
                   ),
-                  
-                  LogoutCard(
-                    iconPath: 'assets/icons/log-out.svg',
-                    label: 'Keluar',
+
+                  LogoutButton(
                     onPressed: () async {
                       final confirm = await showDialog<bool>(
                         context: context,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:aturin_app/core/widgets/bottom_navbar.dart';
 import 'package:aturin_app/routers/app_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
@@ -22,7 +21,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
         if (didPop) return;
 
         context.router.pushAndPopUntil(
-          const HomeRoute(),
+          const ScheduleRoute(),
           predicate: (_) => false,
         );
         return;
