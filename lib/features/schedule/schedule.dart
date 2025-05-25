@@ -42,10 +42,12 @@ class _SchedulePageState extends State<SchedulePage> {
           backgroundColor: AppTheme.lightBackgroundColor,
           foregroundColor: AppTheme.lightTextColor,
         ),
-        body: const Center(
-          child: Text(
-            'Hello World',
-            style: TextStyle(fontSize: 24),
+        body: Center(
+          child: ElevatedButton(
+            onPressed: () {
+              context.pushRoute(const ActivityDetailListRoute());
+            },
+            child: const Text('Yahahayuk'),
           ),
         ),
         bottomNavigationBar: const BottomNavbar(currentIndex: 1),

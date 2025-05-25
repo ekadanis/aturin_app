@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-class ConfirmExitDialog extends StatelessWidget {
-  const ConfirmExitDialog({super.key});
+class ConfirmDialog extends StatelessWidget {
+  const ConfirmDialog({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -19,18 +19,18 @@ class ConfirmExitDialog extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               SvgPicture.asset(
-                'assets/icons/log-out_besar.svg',
+                'assets/activitycategory/trash-round-tipis.svg',
                 width: 80,
                 height: 80,
               ),
               const SizedBox(height: 16),
               const Text(
-                'Keluar',
+                'Hapus Aktivitas',
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 15),
               const Text(
-                'Yakin nih kamu mau keluar?',
+                'Yakin nih kamu mau hapus aktivitas?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
@@ -89,7 +89,7 @@ class ConfirmExitDialog extends StatelessWidget {
                         ),
                       ),
                       child: const Text(
-                        'Keluar',
+                        'Hapus',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 20,

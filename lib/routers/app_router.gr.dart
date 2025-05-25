@@ -11,6 +11,22 @@
 part of 'app_router.dart';
 
 /// generated route for
+/// [ActivityDetailListPage]
+class ActivityDetailListRoute extends PageRouteInfo<void> {
+  const ActivityDetailListRoute({List<PageRouteInfo>? children})
+    : super(ActivityDetailListRoute.name, initialChildren: children);
+
+  static const String name = 'ActivityDetailListRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const ActivityDetailListPage();
+    },
+  );
+}
+
+/// generated route for
 /// [AddSchedulePage]
 class AddScheduleRoute extends PageRouteInfo<void> {
   const AddScheduleRoute({List<PageRouteInfo>? children})

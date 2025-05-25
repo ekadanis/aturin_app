@@ -43,7 +43,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
         ),
         body: const Center(
           child: Text(
-            'Hello World',
+            'Hahahihi',
             style: TextStyle(fontSize: 24),
           ),
         ),
