@@ -50,6 +50,9 @@ flutter:
     - assets/images/splash_screen/
     - assets/images/onboarding_images/
     - assets/avatars/
+    - assets/activitycategory/iconcard/
+    - assets/activitycategory/chip/
+    - assets/activitycategory/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -13,73 +13,86 @@ import 'package:aturin_app/features/task/models/task.dart';
 import 'package:aturin_app/features/alarm/ui/screens/alarm_ringing_screen.dart';
 import 'package:alarm/alarm.dart';
 import 'package:aturin_app/routers/data_prefetch_guard.dart';
+import 'package:aturin_app/features/schedule/schedule.dart';
+import 'package:aturin_app/features/schedule/add_schedule.dart';
+import 'package:aturin_app/features/detailactivity/ui/activity_detail_list.dart';
 
 part 'app_router.gr.dart';
 
 @AutoRouterConfig()
-class AppRouter extends RootStackRouter{
+class AppRouter extends RootStackRouter {
   final dataPrefetchGuard = DataPrefetchGuard();
-  
+
   @override
-  RouteType get defaultRouteType => RouteType.material(
-    enablePredictiveBackGesture: true,
-  );
+  RouteType get defaultRouteType =>
+      RouteType.material(enablePredictiveBackGesture: true);
 
   @override
   List<AutoRoute> get routes => [
-    AutoRoute(
-      path: '/',
-      page: SplashRoute.page,
-      initial: true,
-    ),
-    AutoRoute(
-      path: '/onboarding',
-      page: OnboardingRoute.page,
-    ),
-    
+    AutoRoute(path: '/', page: SplashRoute.page, initial: true),
+    AutoRoute(path: '/onboarding', page: OnboardingRoute.page),
+
     CustomRoute(
       path: '/home',
       page: HomeRoute.page,
       guards: [dataPrefetchGuard],
       transitionsBuilder: (_, __, ___, child) => child,
-      duration: Duration.zero
+      duration: Duration.zero,
     ),
     CustomRoute(
       path: '/profile',
       page: ProfileRoute.page,
       transitionsBuilder: (_, __, ___, child) => child,
-      duration: Duration.zero
+      duration: Duration.zero,
     ),
     CustomRoute(
       path: '/task',
       page: TaskListRoute.page,
       guards: [dataPrefetchGuard],
       transitionsBuilder: (_, __, ___, child) => child,
-      duration: Duration.zero
+      duration: Duration.zero,
     ),
     CustomRoute(
       path: '/task/add',
       page: AddTaskRoute.page,
       transitionsBuilder: (_, __, ___, child) => child,
-      duration: Duration.zero
+      duration: Duration.zero,
     ),
     CustomRoute(
       path: '/task/detail',
       page: TaskDetailRoute.page,
       transitionsBuilder: (_, __, ___, child) => child,
-      duration: Duration.zero
+      duration: Duration.zero,
     ),
-      CustomRoute(
+    CustomRoute(
       path: '/AlarmRinging',
       page: AlarmRingingRoute.page,
       transitionsBuilder: (_, __, ___, child) => child,
-      duration: Duration.zero
+      duration: Duration.zero,
     ),
     CustomRoute(
       path: '/profile/edit',
       page: ProfileEditRoute.page,
       transitionsBuilder: TransitionsBuilders.fadeIn,
-      duration: Duration.zero
+      duration: Duration.zero,
+    ),
+    CustomRoute(
+      path: '/schedule',
+      page: ScheduleRoute.page,
+      transitionsBuilder: (_, __, ___, child) => child,
+      duration: Duration.zero,
+    ),
+    CustomRoute(
+      path: '/schedule/add',
+      page: AddScheduleRoute.page,
+      transitionsBuilder: (_, __, ___, child) => child,
+      duration: Duration.zero,
+    ),
+    CustomRoute(
+      path: '/schedule/activity-detail',
+      page: ActivityDetailListRoute.page,
+      transitionsBuilder: (_, __, ___, child) => child,
+      duration: Duration.zero,
     ),
   ];
 }

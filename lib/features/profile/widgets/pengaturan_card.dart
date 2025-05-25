@@ -8,13 +8,13 @@ import 'package:provider/provider.dart';
 import 'package:animated_toggle_switch/animated_toggle_switch.dart'; // Added import
 
 class PengaturanCard extends StatefulWidget {
-  final String Title;
-  final String Description;
+  final String title;
+  final String description;
 
   const PengaturanCard({
     super.key,
-    required this.Title,
-    required this.Description,
+    required this.title,
+    required this.description,
   });
 
   @override
@@ -144,7 +144,7 @@ class _PengaturanCardState extends State<PengaturanCard> with SingleTickerProvid
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  widget.Title,
+                  widget.title,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -152,7 +152,7 @@ class _PengaturanCardState extends State<PengaturanCard> with SingleTickerProvid
                   ),
                 ),
                 Text(
-                  widget.Description,
+                  widget.description,
                   style: GoogleFonts.plusJakartaSans(
                     fontWeight: FontWeight.w500,
                     fontSize: 12,

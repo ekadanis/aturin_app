@@ -4,11 +4,13 @@ import 'package:aturin_app/features/profile/services/profile_service.dart';
 import 'package:aturin_app/features/profile/widgets/profile_card.dart';
 import 'package:aturin_app/features/profile/ui/profile_edit_page.dart';
 import 'package:aturin_app/features/profile/widgets/pengaturan_card.dart';
+import 'package:aturin_app/features/profile/widgets/logout_card.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:aturin_app/core/widgets/bottom_navbar.dart';
 import 'package:aturin_app/routers/app_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
+import 'package:aturin_app/features/profile/widgets/confirm_exit_dialog.dart';
 
 @RoutePage()
 class ProfilePage extends StatefulWidget {
@@ -46,7 +48,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
         context.router.pushAndPopUntil(
           const HomeRoute(),
-          predicate: (_) => false
+          predicate: (_) => false,
         );
 
         return;
@@ -66,28 +68,32 @@ class _ProfilePageState extends State<ProfilePage> {
           backgroundColor: AppTheme.lightBackgroundColor,
           foregroundColor: AppTheme.lightTextColor,
         ),
-        bottomNavigationBar: const BottomNavbar(currentIndex: 2),
+        bottomNavigationBar: const BottomNavbar(currentIndex: 3),
         body: FutureBuilder<User?>(
           future: _userFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator(
-                color: AppTheme.primaryColor,
-              ));
+              return Center(
+                child: CircularProgressIndicator(color: AppTheme.primaryColor),
+              );
             } else if (snapshot.hasError) {
-              return Center(child: Text(
-                'Error: ${snapshot.error}',
-                style: GoogleFonts.plusJakartaSans(
-                  color: AppTheme.lightTextColor,
+              return Center(
+                child: Text(
+                  'Error: ${snapshot.error}',
+                  style: GoogleFonts.plusJakartaSans(
+                    color: AppTheme.lightTextColor,
+                  ),
                 ),
-              ));
+              );
             } else if (!snapshot.hasData || snapshot.data == null) {
-              return Center(child: Text(
-                'No user data found',
-                style: GoogleFonts.plusJakartaSans(
-                  color: AppTheme.lightTextColor,
+              return Center(
+                child: Text(
+                  'No user data found',
+                  style: GoogleFonts.plusJakartaSans(
+                    color: AppTheme.lightTextColor,
+                  ),
                 ),
-              ));
+              );
             }
 
             User user = snapshot.data!;
@@ -123,8 +129,21 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   PengaturanCard(
-                    Title: 'Alarm',
-                    Description: 'Atur Alarm kamu',
+                    title: 'Alarm',
+                    description: 'Atur Alarm kamu',
+                  ),
+
+                  LogoutButton(
+                    onPressed: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => const ConfirmExitDialog(),
+                      );
+
+                      if (confirm == true) {
+                        Navigator.pop(context);
+                      }
+                    },
                   ),
                 ],
               ),

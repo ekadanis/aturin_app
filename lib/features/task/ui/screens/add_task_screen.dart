@@ -15,6 +15,7 @@ import 'category_picker_screen.dart';
 import '../../../../../../routers/app_router.dart';
 import 'package:aturin_app/features/task/ui/widgets/alarm_picker_bottom.dart';
 import 'package:aturin_app/features/task/ui/widgets/field_tile.dart';
+import 'package:aturin_app/features/task/ui/widgets/snackbar.dart';
 
 @RoutePage()
 class AddTaskScreen extends StatefulWidget {
@@ -116,8 +117,19 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       ),
       isEdit: widget.existingTask != null,
       onSuccess: () {
-        if (mounted) Navigator.pop(context, true);
+        if (mounted) {
+          showCustomTopSnackbar(
+            context: context,
+            message: 'Tugas berhasil disimpan',
+            isError: false,
+          );
+
+          Future.delayed(const Duration(seconds: 0), () {
+            AutoRouter.of(context).replaceAll([const TaskListRoute()]);
+          });
+        }
       },
+
       onError: (msg) {
         ScaffoldMessenger.of(
           context,
@@ -130,14 +142,17 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final isDeadlineValid = _taskService.isDeadlineValid(_deadline);
-    
+
     // Check if alarm time has passed the current time
-    final bool isAlarmTimePassed = _alarmDateTime != null && _alarmDateTime!.isBefore(now);
+    final bool isAlarmTimePassed =
+        _alarmDateTime != null && _alarmDateTime!.isBefore(now);
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(widget.existingTask != null ? 'Edit Tugas' : 'Tambah Tugas'),
+        title: Text(
+          widget.existingTask != null ? 'Edit Tugas' : 'Tambah Tugas',
+        ),
         elevation: 0,
         scrolledUnderElevation: 0,
         backgroundColor: Colors.white,
@@ -173,18 +188,22 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     setState(() {
                       _deadline = result;
                       _deadlineError = null;
-                      
+
                       // Validasi alarm terhadap deadline baru
-                      final isNewDeadlineValid = _taskService.isDeadlineValid(result);
-                      
+                      final isNewDeadlineValid = _taskService.isDeadlineValid(
+                        result,
+                      );
+
                       // Jika deadline kurang dari 1 jam dari sekarang, nonaktifkan alarm
                       if (!isNewDeadlineValid) {
                         _isAlarmEnabled = false;
                         _alarmDateTime = null;
-                      } 
+                      }
                       // Jika deadline valid tapi alarm sudah diatur dan melebihi deadline baru - 1 jam
                       else if (_alarmDateTime != null) {
-                        final maxAlarmTime = result.subtract(const Duration(hours: 1));
+                        final maxAlarmTime = result.subtract(
+                          const Duration(hours: 1),
+                        );
                         if (_alarmDateTime!.isAfter(maxAlarmTime)) {
                           _alarmDateTime = maxAlarmTime;
                         }

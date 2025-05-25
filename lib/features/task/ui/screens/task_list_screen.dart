@@ -143,29 +143,29 @@ class _TaskListScreenState extends State<TaskListScreen>
           ),
         ),
 
-        floatingActionButton: ClipRRect(
-          borderRadius: BorderRadius.circular(100),
-          child: FloatingActionButton(
-            onPressed: () {
-              safeOnTap(() {
-                context.pushRoute(AddTaskRoute()).then((result) {
-                  if (result == true) {
-                    Provider.of<TaskService>(context, listen: false).fetchTasks();
-                    showCustomTopSnackbar(
-                      context: context,
-                      message: 'Berhasil menambahkan tugas',
-                    );
-                  }
-                });
-              });
-            },
-            backgroundColor: AppTheme.primaryColor,
-            child: const Icon(Icons.add, color: AppTheme.buttonBackgroundColor),
-          ),
-        ),
+        // floatingActionButton: ClipRRect(
+        //   borderRadius: BorderRadius.circular(100),
+        //   child: FloatingActionButton(
+        //     onPressed: () {
+        //       safeOnTap(() {
+        //         context.pushRoute(AddTaskRoute()).then((result) {
+        //           if (result == true) {
+        //             Provider.of<TaskService>(context, listen: false).fetchTasks();
+        //             showCustomTopSnackbar(
+        //               context: context,
+        //               message: 'Berhasil menambahkan tugas',
+        //             );
+        //           }
+        //         });
+        //       });
+        //     },
+        //     backgroundColor: AppTheme.primaryColor,
+        //     child: const Icon(Icons.add, color: AppTheme.buttonBackgroundColor),
+        //   ),
+        // ),
 
         // Biarkan extendBody tetap false (default)
-        bottomNavigationBar: const BottomNavbar(currentIndex: 1),
+        bottomNavigationBar: const BottomNavbar(currentIndex: 2),
       ),
     );
   }
