@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:sizer/sizer.dart';
 import 'package:aturin_app/features/detailactivity/widgets/category.dart';
 
 class DetailActivityCard extends StatelessWidget {
@@ -9,7 +10,7 @@ class DetailActivityCard extends StatelessWidget {
   final String completeTime;
   final String category;
   final String? alarmId;
-  final bool isSelected;  // Tambahkan properti isSelected
+  final bool isSelected;
 
   const DetailActivityCard({
     super.key,
@@ -19,7 +20,7 @@ class DetailActivityCard extends StatelessWidget {
     required this.completeTime,
     required this.category,
     this.alarmId,
-    this.isSelected = false, // default false
+    this.isSelected = false,
   });
 
   CategoryOption _getCategoryDetails() {
@@ -33,15 +34,13 @@ class DetailActivityCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final categoryDetails = _getCategoryDetails();
 
-    // Ukuran card normal
-    final normalWidth = 327.0;
-    final normalHeight = 560.0;
+    final normalWidth = 85.w;
+    final normalHeight = 65.h;
 
-    // Ukuran card jika selected, misalnya ditambah 20 px
-    final width = isSelected ? normalWidth + 20 : normalWidth;
-    final height = isSelected ? normalHeight + 20 : normalHeight;
+    final width = isSelected ? normalWidth + 2.w : normalWidth;
+    final height = isSelected ? normalHeight + 2.h : normalHeight;
 
-    final headerHeight = height * 2 / 3 - 32; // sesuaikan dengan ukuran total card
+    final headerHeight = height * 2 / 3 - 4.h;
 
     return SizedBox(
       width: width,
@@ -49,21 +48,17 @@ class DetailActivityCard extends StatelessWidget {
         maxHeight: height,
         minHeight: height,
         child: Card(
-          elevation: isSelected ? 8 : 0, // contoh shadow beda saat selected
+          elevation: isSelected ? 8 : 0,
           margin: EdgeInsets.zero,
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: Colors.grey.shade200,
-              width: 2,
-            ),
+            side: BorderSide(color: Colors.grey.shade200, width: 0.3.w),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(2.w),
             child: Column(
               children: [
-                // Header berwarna (2/3 dari tinggi card dikurangi padding)
                 Container(
                   height: headerHeight,
                   decoration: BoxDecoration(
@@ -75,33 +70,38 @@ class DetailActivityCard extends StatelessWidget {
                   child: Stack(
                     children: [
                       Positioned(
-                        top: 16,
+                        top: 2.h,
                         left: 0,
                         right: 0,
                         child: Center(
                           child: Text(
                             date,
-                            style: const TextStyle(
-                              fontSize: 12,
+                            style: TextStyle(
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w600,
                               color: Colors.white,
                             ),
                           ),
                         ),
                       ),
+                      SizedBox(height: 12.w),
                       Positioned(
-                        top: 56,
+                        top: 7.h,
                         left: 0,
                         right: 0,
                         child: Center(
                           child: Container(
-                            padding: const EdgeInsets.all(32),
+                            padding: EdgeInsets.only(
+                              right: 12.w,
+                              left: 12.w,
+                              top: 4.w,
+                            ),
                             alignment: Alignment.center,
                             child: Text(
                               title,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 28,
+                              style: TextStyle(
+                                fontSize: 20.sp,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
                                 height: 1.2,
@@ -114,11 +114,11 @@ class DetailActivityCard extends StatelessWidget {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const SizedBox(height: 128),
+                            SizedBox(height: 14.h),
                             Image.asset(
                               categoryDetails.iconPath,
-                              width: 90,
-                              height: 90,
+                              width: 25.w,
+                              height: 12.h,
                             ),
                           ],
                         ),
@@ -133,12 +133,12 @@ class DetailActivityCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Transform.translate(
-                      offset: const Offset(30, -16),
+                      offset: Offset(8.w, -2.h),
                       child: Transform.rotate(
                         angle: 0.785398,
                         child: Container(
-                          height: 30,
-                          width: 70,
+                          height: 3.h,
+                          width: 18.w,
                           decoration: BoxDecoration(
                             color: categoryDetails.color,
                             borderRadius: const BorderRadius.vertical(
@@ -149,8 +149,8 @@ class DetailActivityCard extends StatelessWidget {
                       ),
                     ),
                     Container(
-                      height: 30,
-                      width: 100,
+                      height: 3.h,
+                      width: 26.w,
                       decoration: BoxDecoration(
                         color: categoryDetails.color,
                         borderRadius: const BorderRadius.vertical(
@@ -159,12 +159,12 @@ class DetailActivityCard extends StatelessWidget {
                       ),
                     ),
                     Transform.translate(
-                      offset: const Offset(-30, -16),
+                      offset: Offset(-8.w, -2.h),
                       child: Transform.rotate(
                         angle: -0.785398,
                         child: Container(
-                          height: 30,
-                          width: 70,
+                          height: 3.h,
+                          width: 18.w,
                           decoration: BoxDecoration(
                             color: categoryDetails.color,
                             borderRadius: const BorderRadius.vertical(
@@ -177,87 +177,81 @@ class DetailActivityCard extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 48),
+                SizedBox(height: 6.h),
 
                 Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        height: 2,
-                        width: 50,
+                        height: 0.3.h,
+                        width: 13.w,
                         decoration: BoxDecoration(
                           color: categoryDetails.color,
-                          borderRadius: const BorderRadius.vertical(
-                            bottom: Radius.circular(2),
-                            top: Radius.circular(2),
-                          ),
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 2.w),
                       SvgPicture.asset(
                         'assets/activitycategory/time.svg',
-                        width: 16,
+                        width: 4.w,
                         color: categoryDetails.color,
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 1.w),
                       Text(
                         '$startTime - $completeTime',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 14.sp,
                           fontWeight: FontWeight.w600,
                           color: categoryDetails.color,
                           height: 1.2,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 2.w),
                       Container(
-                        height: 2,
-                        width: 50,
+                        height: 0.3.h,
+                        width: 13.w,
                         decoration: BoxDecoration(
                           color: categoryDetails.color,
-                          borderRadius: const BorderRadius.vertical(
-                            bottom: Radius.circular(2),
-                            top: Radius.circular(2),
-                          ),
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 64),
+                SizedBox(height: 8.h),
 
                 Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       SizedBox(
-                        width: 100,
-                        height: 24,
                         child: SvgPicture.asset(
                           categoryDetails.category,
                           fit: BoxFit.contain,
+                          width: 12.w,
+                          height: 2.5.h,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 2.w),
                       SizedBox(
-                        width: 100,
-                        height: 24,
                         child: SvgPicture.asset(
                           categoryDetails.activity,
                           fit: BoxFit.contain,
+                          width: 12.w,
+                          height: 2.5.h,
                         ),
                       ),
                       if (alarmId != null) ...[
-                        const SizedBox(width: 8),
+                        SizedBox(width: 2.w),
                         SizedBox(
-                          width: 24,
-                          height: 24,
                           child: SvgPicture.asset(
                             'assets/activitycategory/chip/alarm.svg',
                             fit: BoxFit.contain,
+                            width: 15.w,
+                            height: 2.5.h,
                           ),
                         ),
                       ],
