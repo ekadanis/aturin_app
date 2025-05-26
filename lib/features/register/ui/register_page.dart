@@ -37,14 +37,16 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   String get strengthLabel {
-    if (strengthValue <= 0.3) return "Lemah";
-    if (strengthValue <= 0.6) return "Sedang";
+    if (strengthValue <= 0.4) return "Lemah";
+    if (strengthValue <= 0.7) return "Sedang";
+    if (strengthValue <= 0.99) return "Baik";
     return "Kuat";
   }
 
   Color get strengthColor {
-    if (strengthValue <= 0.3) return Colors.red;
-    if (strengthValue <= 0.6) return Colors.orange;
+    if (strengthValue <= 0.4) return Colors.red;
+    if (strengthValue <= 0.7) return Colors.yellow;
+    if (strengthValue <= 0.99) return Colors.orange;
     return Colors.green;
   }
 
@@ -202,36 +204,34 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
 
-              const SizedBox(height: 10),
-              LinearProgressIndicator(
-                value: strengthValue,
-                backgroundColor: Colors.grey[200],
-                color: strengthColor,
-                minHeight: 4,
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    strengthLabel,
-                    style: TextStyle(color: strengthColor, fontSize: 12),
+              if (passwordController.text.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                segmentedProgressIndicator(strengthValue),
+
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      strengthLabel,
+                      style: TextStyle(color: strengthColor, fontSize: 12),
+                    ),
                   ),
                 ),
-              ),
 
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 12,
-                runSpacing: 8,
-                children: [
-                  _buildCriteria('8+ karakter', hasMinLength),
-                  _buildCriteria('huruf besar (A–Z)', hasUppercase),
-                  _buildCriteria('simbol (!@#...)', hasSymbol),
-                  _buildCriteria('tanpa spasi', noSpaces),
-                  _buildCriteria('tidak boleh kosong', isNotEmpty),
-                ],
-              ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  children: [
+                    _buildCriteria('8+ karakter', hasMinLength),
+                    _buildCriteria('huruf besar (A–Z)', hasUppercase),
+                    _buildCriteria('simbol (!@#...)', hasSymbol),
+                    _buildCriteria('tanpa spasi', noSpaces),
+                    _buildCriteria('tidak boleh kosong', isNotEmpty),
+                  ],
+                ),
+              ],
 
               const SizedBox(height: 24),
               ElevatedButton(
@@ -340,6 +340,27 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget segmentedProgressIndicator(double strengthValue) {
+    int totalSegments = 4;
+    double segmentValue = 1.0 / totalSegments;
+
+    return Row(
+      children: List.generate(totalSegments, (index) {
+        bool isFilled = strengthValue >= (segmentValue * (index + 1));
+        return Expanded(
+          child: Container(
+            margin: EdgeInsets.symmetric(horizontal: 2), // Jarak antar segmen
+            height: 4,
+            decoration: BoxDecoration(
+              color: isFilled ? strengthColor : Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        );
+      }),
     );
   }
 }
