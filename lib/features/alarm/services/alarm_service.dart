@@ -1,7 +1,7 @@
 import 'package:alarm/alarm.dart';
 import 'package:flutter/material.dart';
 import 'dart:io' show Platform;
-import 'package:aturin_app/features/task/models/task.dart';
+import 'package:aturin_app/features/task/models/task_model.dart';
 import 'package:intl/intl.dart';
 import 'package:aturin_app/features/task/ui/screens/categories.dart';
 import 'package:shared_preferences/shared_preferences.dart';

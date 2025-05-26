@@ -1,3 +1,4 @@
+import 'package:aturin_app/features/login/ui/login_page.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:aturin_app/features/home/ui/page/home_page.dart';
@@ -9,7 +10,7 @@ import 'package:aturin_app/features/animated_splash_screen/ui/animated_splash_sc
 import 'package:aturin_app/features/task/ui/screens/task_list_screen.dart';
 import 'package:aturin_app/features/task/ui/screens/add_task_screen.dart';
 import 'package:aturin_app/features/task/ui/screens/task_detail_screen.dart';
-import 'package:aturin_app/features/task/models/task.dart';
+import 'package:aturin_app/features/task/models/task_model.dart';
 import 'package:aturin_app/features/alarm/ui/screens/alarm_ringing_screen.dart';
 import 'package:alarm/alarm.dart';
 import 'package:aturin_app/routers/data_prefetch_guard.dart';
@@ -81,5 +82,11 @@ class AppRouter extends RootStackRouter{
       transitionsBuilder: TransitionsBuilders.fadeIn,
       duration: Duration.zero
     ),
+    CustomRoute(
+      path: '/login/ui',
+      page: LoginRoute.page,
+      transitionsBuilder: (_, __, ___, child) => child,
+      duration: Duration.zero
+    )
   ];
 }

@@ -1,3 +1,4 @@
+import 'package:aturin_app/features/login/ui/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -6,6 +7,7 @@ import 'package:aturin_app/features/task/services/task_services.dart' as task;
 import 'package:aturin_app/features/home/services/task_service.dart' as home;
 import 'package:aturin_app/features/profile/services/profile_service.dart';
 import 'package:aturin_app/features/task/services/task_service_bridge.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
 
 import 'core/initialization/app_initializer.dart';
@@ -48,6 +50,17 @@ Future<void> _initializeApp() async {
     // Initialize the app with AppInitializer
     final appInitializer = AppInitializer(appRouter);
     await appInitializer.initialize();
+
+     // Tambahkan logika redirect berdasarkan status login
+    final prefs = await SharedPreferences.getInstance();
+    final isLoggedIn = prefs.getBool('isLoggedIn') ?? true; //inisiasikan false agar login berfungsi
+
+    if (isLoggedIn) {
+      appRouter.replaceAll([const HomeRoute()]);
+    } else {
+      appRouter.replaceAll([const LoginRoute()]);
+    }
+    
     // Setup alarm manager
     appInitializer.alarmManager.setAppCreator(() => const MyApp());
   } catch (e) {

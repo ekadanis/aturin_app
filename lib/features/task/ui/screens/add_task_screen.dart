@@ -6,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:auto_route/auto_route.dart';
 import 'categories.dart';
-import '../../models/task.dart';
+import '../../models/task_model.dart';
 import '../../services/task_services.dart';
 import '../widgets/deadline_picker_bottom.dart';
 import '../widgets/duration_picker_bottom.dart';
@@ -48,12 +48,16 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     super.initState();
     final task = widget.existingTask;
     if (task != null) {
+      // Jika mengedit task
       _titleController.text = task.title;
       _deadline = task.deadline;
       _estimatedDuration = task.estimatedDuration;
       _selectedCategory = categories.firstWhere((c) => c.name == task.category);
       _isAlarmEnabled = task.isAlarmEnabled;
       _alarmDateTime = task.alarmDateTime;
+    } else {
+      // Kalau tambah task baru, set default kategori ke "Akademik"
+      _selectedCategory = categories.firstWhere((c) => c.name == 'Akademik');
     }
     _updateWordCount();
     _titleController.addListener(_updateWordCount);
@@ -130,14 +134,17 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final isDeadlineValid = _taskService.isDeadlineValid(_deadline);
-    
+
     // Check if alarm time has passed the current time
-    final bool isAlarmTimePassed = _alarmDateTime != null && _alarmDateTime!.isBefore(now);
+    final bool isAlarmTimePassed =
+        _alarmDateTime != null && _alarmDateTime!.isBefore(now);
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(widget.existingTask != null ? 'Edit Tugas' : 'Tambah Tugas'),
+        title: Text(
+          widget.existingTask != null ? 'Edit Tugas' : 'Tambah Tugas',
+        ),
         elevation: 0,
         scrolledUnderElevation: 0,
         backgroundColor: Colors.white,
@@ -159,10 +166,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               ),
               const SizedBox(height: 32),
               FieldTile(
-                title: 'Deadline',
+                title: 'Tenggat Waktu',
                 value:
                     _deadline == null
-                        ? 'Pilih deadline'
+                        ? 'Pilih tenggat waktu'
                         : DateFormat(
                           'EEEE, d MMM yyyy, HH:mm',
                           'id_ID',
@@ -173,18 +180,22 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     setState(() {
                       _deadline = result;
                       _deadlineError = null;
-                      
+
                       // Validasi alarm terhadap deadline baru
-                      final isNewDeadlineValid = _taskService.isDeadlineValid(result);
-                      
+                      final isNewDeadlineValid = _taskService.isDeadlineValid(
+                        result,
+                      );
+
                       // Jika deadline kurang dari 1 jam dari sekarang, nonaktifkan alarm
                       if (!isNewDeadlineValid) {
                         _isAlarmEnabled = false;
                         _alarmDateTime = null;
-                      } 
+                      }
                       // Jika deadline valid tapi alarm sudah diatur dan melebihi deadline baru - 1 jam
                       else if (_alarmDateTime != null) {
-                        final maxAlarmTime = result.subtract(const Duration(hours: 1));
+                        final maxAlarmTime = result.subtract(
+                          const Duration(hours: 1),
+                        );
                         if (_alarmDateTime!.isAfter(maxAlarmTime)) {
                           _alarmDateTime = maxAlarmTime;
                         }
@@ -215,7 +226,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               const SizedBox(height: 32),
               FieldTile(
                 title: 'Kategori',
-                value: _selectedCategory?.name ?? 'Pilih Kategori',
+                value: _selectedCategory?.name ?? 'Akademik ',
                 onTap: () async {
                   final selected = await Navigator.push(
                     context,
@@ -253,7 +264,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         : (_) {
                           setState(() {
                             _alarmToggleError =
-                                'Alarm hanya bisa diatur jika deadline > 1 jam dari sekarang';
+                                'Alarm hanya bisa diatur jika tenggat waktu > 1 jam dari sekarang';
                           });
                         },
                 onPickTime: () async {
@@ -275,7 +286,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 showInitialWarning: _deadline == null,
                 errorText:
                     !isDeadlineValid && _deadline != null
-                        ? 'Alarm hanya bisa diatur jika deadline > 1 jam dari sekarang'
+                        ? 'Alarm hanya bisa diatur jika tenggat waktu > 1 jam dari sekarang'
                         : null,
                 showError: !isDeadlineValid && _deadline != null,
               ),

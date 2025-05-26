@@ -1,6 +1,7 @@
+import 'package:aturin_app/core/widgets/edit_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import '../../models/task.dart';
+import '../../models/task_model.dart';
 import '../../../../../../core/theme/app_theme.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -14,6 +15,7 @@ class TaskCard extends StatefulWidget {
   final VoidCallback onViewDetails;
   final VoidCallback onToggleAlarm;
   final String currentFilter;
+  final bool showCheckbox;
 
   const TaskCard({
     Key? key,
@@ -23,6 +25,7 @@ class TaskCard extends StatefulWidget {
     required this.onViewDetails,
     required this.onToggleAlarm,
     required this.currentFilter,
+    this.showCheckbox = true, // default aktif
   }) : super(key: key);
 
   @override
@@ -32,14 +35,14 @@ class TaskCard extends StatefulWidget {
 class _TaskCardState extends State<TaskCard> {
   // Throttle untuk mencegah multiple tap
   final _actionThrottle = Throttle(milliseconds: 500);
-  
+
   // Handler yang aman untuk onToggleCompletion
   void _handleToggleCompletion() {
     _actionThrottle.run(() {
       widget.onToggleCompletion();
     });
   }
-  
+
   // Handler yang aman untuk onDelete dengan konfirmasi
   void _handleDelete() {
     _actionThrottle.run(() {
@@ -48,11 +51,11 @@ class _TaskCardState extends State<TaskCard> {
   }
 
   void _showDeleteConfirmationDialog() {
-
     PanaraConfirmDialog.showAnimatedGrow(
       context,
       title: "Hapus Tugas",
-      message: "Apakah Anda yakin ingin menghapus tugas \"${widget.task.title}\"?",
+      message:
+          "Apakah Anda yakin ingin menghapus tugas \"${widget.task.title}\"?",
       confirmButtonText: "Hapus",
       cancelButtonText: "Batal",
       onTapCancel: () {
@@ -68,21 +71,21 @@ class _TaskCardState extends State<TaskCard> {
       padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
     );
   }
-  
+
   // Handler yang aman untuk onViewDetails
   void _handleViewDetails() {
     _actionThrottle.run(() {
       widget.onViewDetails();
     });
   }
-  
+
   // Handler yang aman untuk onToggleAlarm
   void _handleToggleAlarm() {
     _actionThrottle.run(() {
       widget.onToggleAlarm();
     });
   }
-  
+
   @override
   void dispose() {
     _actionThrottle.dispose();
@@ -92,229 +95,497 @@ class _TaskCardState extends State<TaskCard> {
   @override
   Widget build(BuildContext context) {
     // Tentukan apakah card memiliki indikator terlambat atau alarm
-    final bool hasLateIndicator = widget.task.isCompleted && widget.task.previousStatus == TaskStatus.late;
+    final bool hasLateIndicator =
+        widget.task.isCompleted &&
+        widget.task.previousStatus == TaskStatus.late;
     final bool hasAlarmIndicator = widget.task.isAlarmActive;
 
-    return Slidable(
+    return Container(
       key: ValueKey(widget.task.id),
-      endActionPane: ActionPane(
-        motion: const ScrollMotion(),
-        extentRatio: 0.4,
-        children: [
-          CustomSlidableAction(
-            onPressed: (_) => _handleViewDetails(),
-            backgroundColor: const Color.fromARGB(212, 219, 217, 217),
-            child: SvgPicture.asset(
-              'assets/icons/info.svg',
-              width: 24,
-              height: 24,
-            ),
-          ),
-          CustomSlidableAction(
-            onPressed: (_) => _handleDelete(),
-            backgroundColor: const Color(0xFFFFCDD2),
-            child: SvgPicture.asset(
-              'assets/icons/sampah.svg',
-              width: 24,
-              height: 24,
-              colorFilter: const ColorFilter.mode(Colors.red, BlendMode.srcIn),
-            ),
+      // Memastikan overflow konten dipotong sesuai border
+      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12), // Selalu menggunakan radius 12
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: Container(
-        clipBehavior: Clip.antiAlias, // Memastikan overflow konten dipotong sesuai border
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12), // Selalu menggunakan radius 12
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
+
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Checkbox atau indikator status
-                  GestureDetector(
-                    onTap: _handleToggleCompletion,
-                    child: Container(
-                      width: 26, // Sedikit diperbesar
-                      height: 26, // Sedikit diperbesar
-                      decoration: BoxDecoration(
-                        color:
-                            widget.task.isCompleted
-                                ? AppTheme.primaryColor
-                                : Colors.transparent,
-                        border: Border.all(
-                          color:
+                  const SizedBox(width: 20),
+                  if (widget.showCheckbox)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 28),
+                      child: GestureDetector(
+                        onTap: _handleToggleCompletion,
+                        child: Container(
+                          width: 26,
+                          height: 26,
+                          decoration: BoxDecoration(
+                            color:
+                                widget.task.isCompleted
+                                    ? AppTheme.primaryColor
+                                    : Colors.transparent,
+                            border: Border.all(
+                              color: AppTheme.primaryColor,
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child:
                               widget.task.isCompleted
-                                  ? AppTheme.primaryColor
-                                  : AppTheme.primaryColor,
-                          width: 2,
+                                  ? const Icon(
+                                    Icons.check,
+                                    size: 18,
+                                    color: AppTheme.lightCardColor,
+                                  )
+                                  : null,
                         ),
-                        borderRadius: BorderRadius.circular(6),
                       ),
-                      child:
-                          widget.task.isCompleted
-                              ? const Icon(
-                                Icons.check,
-                                size: 18, // Ukuran ikon check diperbesar
-                                color: AppTheme.lightCardColor,
-                              )
-                              : null,
+                    )
+                  else
+                    const SizedBox(width: 0),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            spacing: 6,
+                            children: [
+                              // badge category
+                              _buildBadge(
+                                icon: Icons.school,
+                                label: _getCategoryName(widget.task.category),
+                                bgColor: const Color(0xFFCCEAFF),
+                                textColor: const Color(0xFF3498DB),
+                              ),
+
+                              // badge tugas / aktivitas
+                              _buildBadge(
+                                icon: Icons.list,
+                                label: 'Tugas',
+                                bgColor: const Color(0xFFDFEAFF),
+                                textColor: const Color(0xFF5263F3),
+                              ),
+
+                              // badge alarm
+                              _buildBadge(
+                                icon: Icons.timer,
+                                label: '',
+                                bgColor: const Color(0xFFDFEAFF),
+                                textColor: const Color(0xFF5263F3),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.task.title,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF131927),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.access_time_filled,
+                                size: 12,
+                                color: Colors.black,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Estimasi: ${widget.task.estimatedDuration.inHours}:${(widget.task.estimatedDuration.inMinutes % 60).toString().padLeft(2, '0')}',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-
-                  // Informasi tugas
-                  Expanded(
+                  Padding(
+                    padding: const EdgeInsets.only(top: 28),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Kategori
-                        Row(
-                          children: [
-                            SvgPicture.asset(
-                              _getCategoryIconPath(widget.task.category),
-                              width: 16, // Ukuran ikon kategori diperkecil
-                              height: 16, // Untuk proporsi yang lebih baik
-                            ),
-
-                            const SizedBox(width: 6), // Jarak ditambah
-                            Text(
-                              _getCategoryName(widget.task.category),
-                              style: GoogleFonts.plusJakartaSans( // Menggunakan font yang konsisten
-                                fontSize: 11, // Ukuran font sedikit dikurangi
-                                fontWeight: FontWeight.w500, // Ketebalan sedang
-                                color: AppTheme.lightSecondaryTextColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6), // Jarak ditambah
-
-                        // Judul tugas
-                        Text(
-                          widget.task.title,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 14, // Ukuran font diperbesar
-                            fontWeight: FontWeight.w700, // Lebih tebal dari sebelumnya
-                            color: AppTheme.lightTextColor, // Warna teks utama
+                        // badge status
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
                           ),
-                        ),
-                        const SizedBox(height: 6), // Jarak ditambah
-
-                        // Estimasi waktu
-                        Row(
-                          children: [
-                            const Icon(Icons.access_time_filled, size: 14),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Estimasi: ${widget.task.estimatedDuration.inHours}:${(widget.task.estimatedDuration.inMinutes % 60).toString().padLeft(2, '0')}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.black54,
-                              ),
+                          decoration: BoxDecoration(
+                            color: _getBadgeColor(
+                              widget.task,
+                              widget.currentFilter,
                             ),
-                          ],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            _getBadgeText(widget.task, widget.currentFilter),
+                            style: TextStyle(
+                              color: _getBadgeTextColor(
+                                widget.task,
+                                widget.currentFilter,
+                              ),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              height: 1.2,
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
 
-                  // Status badge
-                  Container(
-                    alignment: Alignment.center,
-                    width: 80,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: _getBadgeColor(widget.task, widget.currentFilter),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Center(
-                      child: Text(
-                        _getBadgeText(widget.task, widget.currentFilter),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: _getBadgeTextColor(widget.task, widget.currentFilter),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, size: 20),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        showDialog(
+                          context: context,
+                          builder:
+                              (_) => Dialog(
+                                backgroundColor: Colors.transparent,
+                                insetPadding: const EdgeInsets.all(16),
+                                child: EditPopup(
+                                  currentIndex: widget.task.id!,
+                                  task: widget.task,
+                                ),
+                              ),
+                        );
+                      }
+                    },
+                    itemBuilder:
+                        (context) => const [
+                          PopupMenuItem<String>(
+                            value: 'edit',
+                            child: Text('Opsi'),
+                          ),
+                        ],
                   ),
                 ],
               ),
-            ),
-
-            // Alarm indicator if active (only shown for non-completed tasks)
-            if (widget.task.isAlarmActive && !widget.task.isCompleted)
-              ClipRRect(
-                // Clip the corners to match the parent container's border radius
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(12),
-                  bottomRight: Radius.circular(12),
-                ),
-                child: Container(
-                  height: 24,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      top: BorderSide(color: Color(0xFFEEEEEE), width: 1),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: const [
-                      Icon(Icons.alarm, size: 12, color: AppTheme.alarmActiveColor),
-                      SizedBox(width: 4),
-                      Text(
-                        'Alarm aktif',
-                        style: TextStyle(fontSize: 12, color: AppTheme.alarmActiveColor),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              
-            // "Diselesaikan terlambat" indicator if applicable
-            if (widget.task.isCompleted && widget.task.previousStatus == TaskStatus.late)
-              ClipRRect(
-                // Clip the corners to match the parent container's border radius
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(12),
-                  bottomRight: Radius.circular(12),
-                ),
-                child: Container(
+              if (hasLateIndicator)
+                Container(
                   width: double.infinity,
-                  height: 24,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
                   decoration: const BoxDecoration(
-                    color: Color(0xFFFFF0F0),
-                    border: Border(
-                      top: BorderSide(color: Color(0xFFEEEEEE), width: 1),
+                    color: Color(0xFFFDECEC),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(12),
+                      bottomRight: Radius.circular(12),
                     ),
                   ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(
-                        '* Diselesaikan terlambat',
-                        style: TextStyle(fontSize: 12, color: Colors.red, fontStyle: FontStyle.italic),
+                  child: const Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      'Diselesaikan terlambat',
+                      style: TextStyle(
+                        color: Color(0xFFD93E39),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
                       ),
-                    ],
+                    ),
                   ),
                 ),
+            ],
+          ),
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            child: Container(
+              width: 10,
+              decoration: const BoxDecoration(
+                color: Color(0xFF5263F3),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  bottomLeft: Radius.circular(12),
+                ),
               ),
+            ),
+          ),
+        ],
+      ),
+      // child: Column(
+      //   crossAxisAlignment: CrossAxisAlignment.start,
+      //   children: [
+      //     Stack(
+      //       children: [
+      //         Row(
+      //           crossAxisAlignment: CrossAxisAlignment.start,
+      //           children: [
+      //             //strip biru
+      //             Container(
+      //               width: 6,
+      //               height: 120,
+      //               decoration: const BoxDecoration(
+      //                 color: Color(0xFF3A5AFE), // warna biru
+      //                 borderRadius: BorderRadius.only(
+      //                   topLeft: Radius.circular(12),
+      //                   bottomLeft: Radius.circular(12),
+      //                 ),
+      //               ),
+      //             ),
+      //             const SizedBox(width: 12),
+
+      //             Expanded(
+      //               child: Padding(
+      //                 padding: const EdgeInsets.all(12.0),
+      //                 child: Column(
+      //                 crossAxisAlignment: CrossAxisAlignment.start,
+      //                 children: [
+      //                   Row(
+      //                     crossAxisAlignment: CrossAxisAlignment.start,
+      //                     children: [
+      //
+      //                       // Informasi tugas
+      //                       Expanded(
+      //                         child: Column(
+      //                           crossAxisAlignment: CrossAxisAlignment.start,
+      //                           children: [
+      //                             // Kategori
+      //                             Row(
+      //                               children: [
+      //                                 SvgPicture.asset(
+      //                                   _getCategoryIconPath(
+      //                                     widget.task.category,
+      //                                   ),
+      //                                   width:
+      //                                       16, // Ukuran ikon kategori diperkecil
+      //                                   height:
+      //                                       16, // Untuk proporsi yang lebih baik
+      //                                 ),
+
+      //                                 const SizedBox(
+      //                                   width: 6,
+      //                                 ), // Jarak ditambah
+      //                                 Text(
+      //                                   _getCategoryName(widget.task.category),
+      //                                   style: GoogleFonts.plusJakartaSans(
+      //                                     // Menggunakan font yang konsisten
+      //                                     fontSize:
+      //                                         11, // Ukuran font sedikit dikurangi
+      //                                     fontWeight:
+      //                                         FontWeight
+      //                                             .w500, // Ketebalan sedang
+      //                                     color:
+      //                                         AppTheme.lightSecondaryTextColor,
+      //                                   ),
+      //                                 ),
+      //                               ],
+      //                             ),
+      //                             const SizedBox(height: 6), // Jarak ditambah
+      //                             // Judul tugas
+      //                             Text(
+      //                               widget.task.title,
+      //                               style: GoogleFonts.plusJakartaSans(
+      //                                 fontSize: 14, // Ukuran font diperbesar
+      //                                 fontWeight:
+      //                                     FontWeight
+      //                                         .w700, // Lebih tebal dari sebelumnya
+      //                                 color:
+      //                                     AppTheme
+      //                                         .lightTextColor, // Warna teks utama
+      //                               ),
+      //                             ),
+      //                             const SizedBox(height: 6), // Jarak ditambah
+      //                             // Estimasi waktu
+      //                             Row(
+      //                               children: [
+      //                                 const Icon(
+      //                                   Icons.access_time_filled,
+      //                                   size: 14,
+      //                                 ),
+      //                                 const SizedBox(width: 4),
+      //                                 Text(
+      //                                   'Estimasi: ${widget.task.estimatedDuration.inHours}:${(widget.task.estimatedDuration.inMinutes % 60).toString().padLeft(2, '0')}',
+      //                                   style: const TextStyle(
+      //                                     fontSize: 12,
+      //                                     color: Colors.black54,
+      //                                   ),
+      //                                 ),
+      //                               ],
+      //                             ),
+      //                           ],
+      //                         ),
+      //                       ),
+      //                       
+      //                       EditPopup(currentIndex: widget.task.id!, task: widget.task)
+      //                       // PopupMenuButton<String>(
+      //                       //   icon: const Icon(Icons.more_vert, size: 20),
+      //                       //   onSelected: (value) {
+      //                       //     if (value == 'edit') {
+      //                       //       showDialog(
+      //                       //         context: context,
+      //                       //         builder:
+      //                       //             (_) => Dialog(
+      //                       //               backgroundColor: Colors.transparent,
+      //                       //               insetPadding: const EdgeInsets.all(
+      //                       //                 16,
+      //                       //               ),
+      //                       //               child: EditPopup(
+      //                       //                 currentIndex: widget.task.id!,
+      //                       //                 task: widget.task,
+      //                       //               ),
+      //                       //             ),
+      //                       //       );
+      //                       //     }
+      //                       //   },
+      //                       //   itemBuilder:
+      //                       //       (context) => [
+      //                       //         const PopupMenuItem<String>(
+      //                       //           value: 'edit',
+      //                       //           child: Text('Opsi'),
+      //                       //         ),
+      //                       //       ],
+      //                       // ),
+      //                     ],
+      //                   ),
+      //                 ],
+      //               )
+      //               )
+      //               ,
+      //             ),
+      //           ],
+      //         ),
+      //       ],
+      //     ),
+
+      //     Container(padding: const EdgeInsets.all(16.0)),
+
+      //     // Alarm indicator if active (only shown for non-completed tasks)
+      //     if (widget.task.isAlarmActive && !widget.task.isCompleted)
+      //       ClipRRect(
+      //         // Clip the corners to match the parent container's border radius
+      //         borderRadius: const BorderRadius.only(
+      //           bottomLeft: Radius.circular(12),
+      //           bottomRight: Radius.circular(12),
+      //         ),
+      //         child: Container(
+      //           height: 24,
+      //           padding: const EdgeInsets.symmetric(horizontal: 16),
+      //           decoration: const BoxDecoration(
+      //             border: Border(
+      //               top: BorderSide(color: Color(0xFFEEEEEE), width: 1),
+      //             ),
+      //           ),
+      //           child: Row(
+      //             mainAxisAlignment: MainAxisAlignment.end,
+      //             children: const [
+      //               Icon(
+      //                 Icons.alarm,
+      //                 size: 12,
+      //                 color: AppTheme.alarmActiveColor,
+      //               ),
+      //               SizedBox(width: 4),
+      //               Text(
+      //                 'Alarm aktif',
+      //                 style: TextStyle(
+      //                   fontSize: 12,
+      //                   color: AppTheme.alarmActiveColor,
+      //                 ),
+      //               ),
+      //             ],
+      //           ),
+      //         ),
+      //       ),
+
+      //     // "Diselesaikan terlambat" indicator if applicable
+      //     if (widget.task.isCompleted &&
+      //         widget.task.previousStatus == TaskStatus.late)
+      //       ClipRRect(
+      //         // Clip the corners to match the parent container's border radius
+      //         borderRadius: const BorderRadius.only(
+      //           bottomLeft: Radius.circular(12),
+      //           bottomRight: Radius.circular(12),
+      //         ),
+      //         child: Container(
+      //           width: double.infinity,
+      //           height: 24,
+      //           padding: const EdgeInsets.symmetric(horizontal: 16),
+      //           decoration: const BoxDecoration(
+      //             color: Color(0xFFFFF0F0),
+      //             border: Border(
+      //               top: BorderSide(color: Color(0xFFEEEEEE), width: 1),
+      //             ),
+      //           ),
+      //           child: const Row(
+      //             mainAxisAlignment: MainAxisAlignment.end,
+      //             children: [
+      //               Text(
+      //                 '* Diselesaikan terlambat',
+      //                 style: TextStyle(
+      //                   fontSize: 12,
+      //                   color: Colors.red,
+      //                   fontStyle: FontStyle.italic,
+      //                 ),
+      //               ),
+      //             ],
+      //           ),
+      //         ),
+      //       ),
+      //   ],
+      // ),
+    );
+  }
+
+  Widget _buildBadge({
+    required IconData icon,
+    required String label,
+    required Color bgColor,
+    required Color textColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 12, color: textColor),
+          if (label.isNotEmpty) ...[
+            const SizedBox(width: 2),
+            Text(
+              label,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -407,13 +678,13 @@ class _TaskCardState extends State<TaskCard> {
       case TaskStatus.completed:
         return const Color(0xFFE3F2E9);
       case TaskStatus.late:
-        return const Color(0xFFFFDDDD);
+        return const Color(0xFFE4E4E7);
       case TaskStatus.today:
-        return const Color(0xFFE3F2F9);
+        return const Color(0xFFE6F4FF);
       case TaskStatus.tomorrow:
-        return const Color(0xFFFFF8E1);
+        return const Color(0xFFFFE5B0);
       case TaskStatus.upcoming:
-        return const Color(0xFFF5F5F5);
+        return const Color(0xFFFFE5B0);
     }
   }
 
@@ -422,13 +693,13 @@ class _TaskCardState extends State<TaskCard> {
       case TaskStatus.completed:
         return const Color(0xFF4CAF50);
       case TaskStatus.late:
-        return const Color(0xFFFF6B6B);
+        return const Color(0xFF999999);
       case TaskStatus.today:
-        return const Color(0xFF2196F3);
+        return const Color(0xFF0077CC);
       case TaskStatus.tomorrow:
-        return const Color(0xFFFFC107);
+        return const Color(0xFFE89B00);
       case TaskStatus.upcoming:
-        return const Color(0xFF9E9E9E);
+        return const Color(0xFFE89B00);
     }
   }
 

@@ -1,4 +1,4 @@
-import 'package:aturin_app/features/home/models/task_model.dart';
+import 'package:aturin_app/features/task/models/task_model.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -14,8 +14,9 @@ class TaskCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final statusColor = getStatusColor(task.status);
     final statusLabel = getStatusLabel(task.status);
-    final categoryIcon = getCategoryIcon(task.category);
-    final categoryLabel = getCategoryLabel(task.category);
+    final category = parseTaskCategory(task.category);
+    final categoryIcon = getCategoryIcon(category);
+    final categoryLabel = getCategoryLabel(category);
 
     // Format deadline untuk menampilkan waktu saja (HH:mm)
     final timeFormat = DateFormat('HH:mm');
@@ -87,7 +88,7 @@ class TaskCard extends StatelessWidget {
                             Icons.access_time_filled,
                             size: 12, // Ukuran ikon dikurangi
                             color:
-                                task.status == TaskStatus.belumDikerjakan
+                                task.status == TaskStatus.upcoming
                                     ? AppTheme.dangerColor
                                     : Colors.black54,
                           ),
@@ -97,7 +98,7 @@ class TaskCard extends StatelessWidget {
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 11, // Font size dikurangi
                               color:
-                                  task.status == TaskStatus.belumDikerjakan
+                                  task.status == TaskStatus.upcoming
                                       ? AppTheme.dangerColor
                                       : Colors.black54,
                             ),
@@ -140,7 +141,7 @@ class TaskCard extends StatelessWidget {
           ),
 
           // Indikator tambahan (alarm atau terlambat) dengan ukuran yang lebih kecil
-          if (task.isAlarmEnabled)
+          if (task.isAlarmActive)
             _buildIndicator(
               AppTheme.alarmActiveColor,
               Icons.alarm,
@@ -149,7 +150,7 @@ class TaskCard extends StatelessWidget {
             ),
 
           // "Diselesaikan terlambat" indicator if applicable
-          if (task.status == TaskStatus.selesai && task.isLateCompletion)
+          if (task.status == TaskStatus.late)
             _buildIndicator(
               AppTheme.lateTextColor,
               null,
@@ -160,6 +161,13 @@ class TaskCard extends StatelessWidget {
       ),
     );
   }
+
+  TaskCategory parseTaskCategory(String name) {
+  return TaskCategory.values.firstWhere(
+    (e) => e.name.toLowerCase() == name.toLowerCase(),
+    orElse: () => TaskCategory.akademik, // fallback default
+  );
+}
 
   // Helper method untuk membuat indikator (alarm atau terlambat)
   Widget _buildIndicator(
@@ -206,19 +214,31 @@ class TaskCard extends StatelessWidget {
 
   static Color getStatusColor(TaskStatus status) {
     switch (status) {
-      case TaskStatus.selesai:
-        return const Color(0xFF4CAF50);
-      case TaskStatus.belumDikerjakan:
-        return const Color(0xFFFF6B6B);
+      case TaskStatus.completed:
+        return const Color(0xFF4CAF50); // Hijau
+      case TaskStatus.upcoming:
+        return const Color(0xFF9E9E9E); // Abu
+      case TaskStatus.late:
+        return const Color(0xFFFF6B6B); // Merah
+      case TaskStatus.today:
+        return const Color(0xFF2196F3); // Biru
+      case TaskStatus.tomorrow:
+        return const Color(0xFFFFC107); // Kuning
     }
   }
 
   static String getStatusLabel(TaskStatus status) {
     switch (status) {
-      case TaskStatus.selesai:
+      case TaskStatus.completed:
         return 'Selesai';
-      case TaskStatus.belumDikerjakan:
-        return 'Belum Dikerjakan';
+      case TaskStatus.upcoming:
+        return 'Mendatang';
+      case TaskStatus.late:
+        return 'Terlambat';
+      case TaskStatus.today:
+        return 'Hari Ini';
+      case TaskStatus.tomorrow:
+        return 'Besok';
     }
   }
 
@@ -243,7 +263,7 @@ class TaskCard extends StatelessWidget {
     }
   }
 
-  static String getCategoryLabel(TaskCategory category) {
+  String getCategoryLabel(TaskCategory category) {
     switch (category) {
       case TaskCategory.akademik:
         return 'Akademik';

@@ -2,6 +2,7 @@ import 'package:aturin_app/features/home/services/task_service.dart' as home;
 import 'package:aturin_app/features/home/widget/empty_task.dart';
 import 'package:aturin_app/features/home/widget/greeting_header.dart';
 import 'package:aturin_app/features/home/widget/timeline_widget.dart';
+import 'package:aturin_app/features/task/models/task_model.dart';
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:aturin_app/core/widgets/bottom_navbar.dart';
@@ -109,7 +110,7 @@ class _HomePageState extends State<HomePage> {
                                     final previousTask = tasks[index - 1];
                                     previousIsFlagged =
                                         previousTask.isAlarmEnabled ||
-                                        previousTask.isLateCompletion;
+                                        previousTask.status == TaskStatus.late;
                                   }
 
                                   return TimelineWidget(

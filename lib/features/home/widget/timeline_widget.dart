@@ -1,5 +1,5 @@
-import 'package:aturin_app/features/home/models/task_model.dart';
 import 'package:aturin_app/features/home/widget/task_card.dart';
+import 'package:aturin_app/features/task/models/task_model.dart';
 import 'package:flutter/material.dart';
 import 'package:timelines_plus/timelines_plus.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
@@ -24,7 +24,7 @@ class TimelineWidget extends StatelessWidget {
       nodeAlign: TimelineNodeAlign.start,
       node: TimelineNode(
         indicator:
-            task.status == TaskStatus.selesai
+            task.status == TaskStatus.completed
                 ? const DotIndicator(
                   size: 24,
                   color: Colors.green,
