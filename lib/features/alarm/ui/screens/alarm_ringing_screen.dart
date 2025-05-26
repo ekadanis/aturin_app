@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:alarm/alarm.dart';
 import 'package:intl/intl.dart';
 import 'package:aturin_app/features/task/services/task_services.dart';
-import 'package:aturin_app/features/task/models/task.dart';
+import 'package:aturin_app/features/task/model/task.dart';
 import '../widgets/alarm_clock_image.dart';
 import '../widgets/alarm_time_display.dart';
 import '../widgets/task_description.dart';

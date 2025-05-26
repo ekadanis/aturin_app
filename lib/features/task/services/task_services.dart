@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../database/task_database.dart';
-import '../models/task.dart';
+import '../model/task.dart';
 import '../../../features/alarm/services/alarm_service.dart';
 
 class TaskService extends ChangeNotifier {

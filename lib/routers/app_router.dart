@@ -6,16 +6,16 @@ import 'package:aturin_app/features/profile/ui/profile_edit_page.dart';
 import 'package:aturin_app/features/profile/models/user.dart';
 import 'package:aturin_app/features/onboarding/ui/onboarding_screen.dart';
 import 'package:aturin_app/features/animated_splash_screen/ui/animated_splash_screen.dart';
-import 'package:aturin_app/features/task/ui/screens/task_list_screen.dart';
-import 'package:aturin_app/features/task/ui/screens/add_task_screen.dart';
-import 'package:aturin_app/features/task/ui/screens/task_detail_screen.dart';
-import 'package:aturin_app/features/task/models/task.dart';
+import 'package:aturin_app/features/task/screens/screens/task_list_screen.dart';
+import 'package:aturin_app/features/task/screens/screens/add_task_screen.dart';
+import 'package:aturin_app/features/task/screens/screens/task_detail_screen.dart';
+import 'package:aturin_app/features/task/model/task.dart';
 import 'package:aturin_app/features/alarm/ui/screens/alarm_ringing_screen.dart';
 import 'package:alarm/alarm.dart';
 import 'package:aturin_app/routers/data_prefetch_guard.dart';
-import 'package:aturin_app/features/schedule/schedule.dart';
-import 'package:aturin_app/features/schedule/add_schedule.dart';
-import 'package:aturin_app/features/detailactivity/ui/activity_detail_list.dart';
+import 'package:aturin_app/features/schedule/screens/schedule_screen/ui/schedule_screen.dart';
+import 'package:aturin_app/features/schedule/screens/add_schedule/ui/add_schedule.dart';
+import 'package:aturin_app/features/schedule/screens/activity_detail_list.dart';
 
 part 'app_router.gr.dart';
 

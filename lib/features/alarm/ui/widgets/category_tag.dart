@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:aturin_app/features/task/ui/screens/categories.dart';
+import 'package:aturin_app/core/widgets/categories.dart';
 import 'package:aturin_app/features/alarm/services/alarm_service.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
 
@@ -30,18 +30,18 @@ class CategoryTag extends StatelessWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          SvgPicture.asset(
+        children: [          SvgPicture.asset(
             categoryOption.iconPath,
             width: screenWidth * 0.035, // Setara dengan 3.5.w
             height: screenWidth * 0.035, // Setara dengan 3.5.w
+            colorFilter: ColorFilter.mode(categoryOption.textColor, BlendMode.srcIn),
           ),
           SizedBox(width: screenWidth * 0.01), // Setara dengan 1.w
           Text(
             categoryOption.name,
             style: TextStyle(
               fontSize: screenWidth * 0.033, // Setara dengan 3.3.w
-              color: categoryOption.color,
+              color: categoryOption.textColor,
               fontWeight: FontWeight.w500,
             ),
             overflow: TextOverflow.ellipsis,
