@@ -133,7 +133,7 @@ class DetailActivityCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Transform.translate(
-                      offset: Offset(8.w, -2.h),
+                      offset: Offset(7.8.w, -1.95.h),
                       child: Transform.rotate(
                         angle: 0.785398,
                         child: Container(
@@ -159,7 +159,7 @@ class DetailActivityCard extends StatelessWidget {
                       ),
                     ),
                     Transform.translate(
-                      offset: Offset(-8.w, -2.h),
+                      offset: Offset(-7.8.w, -1.95.h),
                       child: Transform.rotate(
                         angle: -0.785398,
                         child: Container(
@@ -177,7 +177,7 @@ class DetailActivityCard extends StatelessWidget {
                   ],
                 ),
 
-                SizedBox(height: 6.h),
+                SizedBox(height: 4.h),
 
                 Center(
                   child: Row(
