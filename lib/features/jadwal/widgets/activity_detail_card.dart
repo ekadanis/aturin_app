@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:aturin_app/features/schedule/widgets/category.dart';
+import 'package:aturin_app/features/jadwal/widgets/category.dart';
 
 class DetailActivityCard extends StatelessWidget {
   final String title;

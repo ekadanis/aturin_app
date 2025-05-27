@@ -1,3 +1,4 @@
+import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:aturin_app/features/home/ui/page/home_page.dart';
@@ -9,13 +10,13 @@ import 'package:aturin_app/features/animated_splash_screen/ui/animated_splash_sc
 import 'package:aturin_app/features/task/screens/screens/task_list_screen.dart';
 import 'package:aturin_app/features/task/screens/screens/add_task_screen.dart';
 import 'package:aturin_app/features/task/screens/screens/task_detail_screen.dart';
-import 'package:aturin_app/features/task/model/task.dart';
+import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:aturin_app/features/alarm/ui/screens/alarm_ringing_screen.dart';
 import 'package:alarm/alarm.dart';
 import 'package:aturin_app/routers/data_prefetch_guard.dart';
-import 'package:aturin_app/features/schedule/screens/schedule_screen/ui/schedule_screen.dart';
-import 'package:aturin_app/features/schedule/screens/add_schedule/ui/add_schedule.dart';
-import 'package:aturin_app/features/schedule/screens/activity_detail_list.dart';
+import 'package:aturin_app/features/jadwal/screens/aktivtias_screen/ui/aktivitas_screen.dart';
+import 'package:aturin_app/features/jadwal/screens/add_aktivitas/ui/add_aktivitas.dart';
+import 'package:aturin_app/features/jadwal/screens/activity_detail_list.dart';
 
 part 'app_router.gr.dart';
 
@@ -77,19 +78,19 @@ class AppRouter extends RootStackRouter {
       duration: Duration.zero,
     ),
     CustomRoute(
-      path: '/schedule',
-      page: ScheduleRoute.page,
+      path: '/aktivitas',
+      page: AktivitasRoute.page,
       transitionsBuilder: (_, __, ___, child) => child,
       duration: Duration.zero,
     ),
     CustomRoute(
-      path: '/schedule/add',
-      page: AddScheduleRoute.page,
+      path: '/aktivitas/add',
+      page: AddAktivitasRoute.page,
       transitionsBuilder: (_, __, ___, child) => child,
       duration: Duration.zero,
     ),
     CustomRoute(
-      path: '/schedule/activity-detail',
+      path: '/aktivitas/activity-detail',
       page: ActivityDetailListRoute.page,
       transitionsBuilder: (_, __, ___, child) => child,
       duration: Duration.zero,

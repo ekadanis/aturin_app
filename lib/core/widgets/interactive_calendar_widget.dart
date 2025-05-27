@@ -1,13 +1,13 @@
+import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:aturin_app/features/schedule/model/schedule_model.dart';
 
 class InteractiveCalendarWidget extends StatelessWidget {
   final DateTime selectedDate;
   final DateTime focusedDate;
   final CalendarFormat calendarFormat;
-  final List<ScheduleModel> schedules;
+  final List<AktivitasModel> schedules;
   final AnimationController viewTransitionController;
   final Animation<double> viewTransitionAnimation;
   final Function(DateTime, DateTime) onDateSelected;
@@ -58,7 +58,7 @@ class InteractiveCalendarWidget extends StatelessWidget {
       child: AnimatedBuilder(
         animation: viewTransitionAnimation,
         builder: (context, child) {
-          return TableCalendar<ScheduleModel>(
+          return TableCalendar<AktivitasModel>(
             firstDay: DateTime.utc(2020, 1, 1),
             lastDay: DateTime.utc(2030, 12, 31),
             focusedDay: focusedDate,
@@ -89,7 +89,7 @@ class InteractiveCalendarWidget extends StatelessWidget {
     );
   }
 
-  List<ScheduleModel> _getEventsForDay(DateTime day) {
+  List<AktivitasModel> _getEventsForDay(DateTime day) {
     return schedules
         .where((schedule) => isSameDay(schedule.activityDate, day))
         .toList();

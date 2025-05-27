@@ -2,7 +2,7 @@ import 'package:aturin_app/features/task/screens/screens/add_task_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../model/task.dart';
+import '../../model/task_model.dart';
 import '../../services/task_services.dart';
 import '../../../../../../core/theme/app_theme.dart';
 import 'package:auto_route/auto_route.dart';

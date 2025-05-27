@@ -6,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:aturin_app/core/widgets/categories.dart';
-import '../../model/task.dart';
+import '../../model/task_model.dart';
 import '../../services/task_services.dart';
 import '../widgets/deadline_picker_bottom.dart';
 import '../widgets/duration_picker_bottom.dart';

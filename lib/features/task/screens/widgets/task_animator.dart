@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import '../../model/task.dart';
+import '../../model/task_model.dart';
 
 class TaskAnimator {
   final TickerProvider vsync;

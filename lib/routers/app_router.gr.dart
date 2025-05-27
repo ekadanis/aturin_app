@@ -27,19 +27,48 @@ class ActivityDetailListRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [AddSchedulePage]
-class AddScheduleRoute extends PageRouteInfo<void> {
-  const AddScheduleRoute({List<PageRouteInfo>? children})
-    : super(AddScheduleRoute.name, initialChildren: children);
+/// [AddAktivitasPage]
+class AddAktivitasRoute extends PageRouteInfo<AddAktivitasRouteArgs> {
+  AddAktivitasRoute({
+    Key? key,
+    AktivitasModel? existingAktivitas,
+    List<PageRouteInfo>? children,
+  }) : super(
+         AddAktivitasRoute.name,
+         args: AddAktivitasRouteArgs(
+           key: key,
+           existingAktivitas: existingAktivitas,
+         ),
+         initialChildren: children,
+       );
 
-  static const String name = 'AddScheduleRoute';
+  static const String name = 'AddAktivitasRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const AddSchedulePage();
+      final args = data.argsAs<AddAktivitasRouteArgs>(
+        orElse: () => const AddAktivitasRouteArgs(),
+      );
+      return AddAktivitasPage(
+        key: args.key,
+        existingAktivitas: args.existingAktivitas,
+      );
     },
   );
+}
+
+class AddAktivitasRouteArgs {
+  const AddAktivitasRouteArgs({this.key, this.existingAktivitas});
+
+  final Key? key;
+
+  final AktivitasModel? existingAktivitas;
+
+  @override
+  String toString() {
+    return 'AddAktivitasRouteArgs{key: $key, existingAktivitas: $existingAktivitas}';
+  }
 }
 
 /// generated route for
@@ -76,6 +105,22 @@ class AddTaskRouteArgs {
   String toString() {
     return 'AddTaskRouteArgs{key: $key, existingTask: $existingTask}';
   }
+}
+
+/// generated route for
+/// [AktivitasPage]
+class AktivitasRoute extends PageRouteInfo<void> {
+  const AktivitasRoute({List<PageRouteInfo>? children})
+    : super(AktivitasRoute.name, initialChildren: children);
+
+  static const String name = 'AktivitasRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const AktivitasPage();
+    },
+  );
 }
 
 /// generated route for
@@ -211,22 +256,6 @@ class ProfileRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return const ProfilePage();
-    },
-  );
-}
-
-/// generated route for
-/// [SchedulePage]
-class ScheduleRoute extends PageRouteInfo<void> {
-  const ScheduleRoute({List<PageRouteInfo>? children})
-    : super(ScheduleRoute.name, initialChildren: children);
-
-  static const String name = 'ScheduleRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const SchedulePage();
     },
   );
 }

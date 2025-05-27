@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:aturin_app/features/schedule/screens/add_schedule/widgets/form_field_widgets.dart';
+import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/form_field_widgets.dart';
 
 class ActivityFormSection extends StatefulWidget {
   final String initialTitle;

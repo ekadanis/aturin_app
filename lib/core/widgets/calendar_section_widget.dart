@@ -3,14 +3,14 @@ import 'package:aturin_app/core/widgets/interactive_calendar_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:aturin_app/features/schedule/model/schedule_model.dart';
+import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 
 
 class CalendarSectionWidget extends StatefulWidget {
   final DateTime selectedDate;
   final DateTime focusedDate;
   final CalendarFormat calendarFormat;
-  final List<ScheduleModel> schedules;
+  final List<AktivitasModel> schedules;
   final Function(DateTime, DateTime) onDateSelected;
   final Function(DateTime) onPageChanged;
   final Function(CalendarFormat) onFormatChanged;

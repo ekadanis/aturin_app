@@ -1,29 +1,29 @@
-import 'package:aturin_app/features/schedule/screens/add_schedule/validators/schedule_validator.dart';
-import 'package:aturin_app/features/schedule/screens/add_schedule/widgets/category_selection_section.dart';
-import 'package:aturin_app/features/schedule/screens/add_schedule/widgets/schedule_app_bar.dart';
-import 'package:aturin_app/features/schedule/screens/add_schedule/widgets/date_selection_section.dart';
-import 'package:aturin_app/features/schedule/screens/add_schedule/widgets/activity_form_section.dart';
-import 'package:aturin_app/features/schedule/screens/add_schedule/widgets/time_selection_section.dart';
-import 'package:aturin_app/features/schedule/screens/add_schedule/widgets/alarm_configuration_section.dart';
+import 'package:aturin_app/features/jadwal/screens/add_aktivitas/validators/schedule_validator.dart';
+import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/category_selection_section.dart';
+import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/schedule_app_bar.dart';
+import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/date_selection_section.dart';
+import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/activity_form_section.dart';
+import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/time_selection_section.dart';
+import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/alarm_configuration_section.dart';
 import 'package:aturin_app/features/task/screens/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:aturin_app/routers/app_router.dart';
 import 'package:aturin_app/core/widgets/categories.dart';
-import 'package:aturin_app/features/schedule/model/schedule_model.dart';
+import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:aturin_app/features/alarm/model/alarm.dart';
 
 @RoutePage()
-class AddSchedulePage extends StatefulWidget {
-  final ScheduleModel? existingSchedule;
-  const AddSchedulePage({super.key, this.existingSchedule});
+class AddAktivitasPage extends StatefulWidget {
+  final AktivitasModel? existingAktivitas;
+  const AddAktivitasPage({super.key, this.existingAktivitas});
 
   @override
-  _AddSchedulePageState createState() => _AddSchedulePageState();
+  _AddAktivitasPageState createState() => _AddAktivitasPageState();
 }
 
-class _AddSchedulePageState extends State<AddSchedulePage> {
+class _AddAktivitasPageState extends State<AddAktivitasPage> {
   // Form data
   String activityTitle = '';
   DateTime selectedDate = DateTime.now();
@@ -41,26 +41,25 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
   @override
   void initState() {
     super.initState();
-    _initializeExistingSchedule();
+    _initializeExistingAktivitas();
   }
 
-  void _initializeExistingSchedule() {
-    final schedule = widget.existingSchedule;
-    if (schedule != null) {
-      activityTitle = schedule.activityTitle;
-      selectedDate = schedule.activityDate;
-      focusedDate = schedule.activityDate;
-      startTime = TimeOfDay.fromDateTime(schedule.activityStartTime);
-      endTime = TimeOfDay.fromDateTime(schedule.activityCompleteTime);
+  void _initializeExistingAktivitas() {
+    final aktivitas = widget.existingAktivitas;
+    if (aktivitas != null) {
+      activityTitle = aktivitas.activityTitle;
+      selectedDate = aktivitas.activityDate;
+      focusedDate = aktivitas.activityDate;
+      startTime = TimeOfDay.fromDateTime(aktivitas.activityStartTime);
+      endTime = TimeOfDay.fromDateTime(aktivitas.activityCompleteTime);
       selectedCategory = categories.firstWhere(
-        (c) => c.name == _getCategoryName(schedule.activityCategory),
+        (c) => c.name == _getCategoryName(aktivitas.activityCategory),
         orElse: () => categories.first,
       );
-      isAlarmEnabled = schedule.alarm?.alarmEnabled ?? false;
-      alarmDateTime = schedule.alarm?.alarmDateTime;
+      isAlarmEnabled = aktivitas.alarm?.alarmEnabled ?? false;
+      alarmDateTime = aktivitas.alarm?.alarmDateTime;
     }
   }
-
   String _getCategoryName(ActivityCategory category) {
     return category.displayName;
   }
@@ -107,8 +106,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
       endTime!.minute,
     );
 
-    final schedule = ScheduleModel(
-      activityId: widget.existingSchedule?.activityId ?? DateTime.now().millisecondsSinceEpoch,
+    final schedule = AktivitasModel(
+      activityId: widget.existingAktivitas?.activityId ?? DateTime.now().millisecondsSinceEpoch,
       userId: 1,
       alarmId: isAlarmEnabled ? DateTime.now().millisecondsSinceEpoch : 0,
       activityTitle: activityTitle.trim(),
@@ -126,7 +125,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
     if (mounted) {
       showCustomTopSnackbar(
         context: context,
-        message: widget.existingSchedule != null 
+        message: widget.existingAktivitas != null
             ? 'Aktivitas berhasil diperbarui'
             : 'Aktivitas berhasil ditambahkan',
         isError: false,
@@ -134,7 +133,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
 
       Future.delayed(const Duration(seconds: 1), () {
         context.router.pushAndPopUntil(
-          const ScheduleRoute(),
+          const AktivitasRoute(),
           predicate: (_) => false,
         );
       });
@@ -148,7 +147,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         context.router.pushAndPopUntil(
-          const ScheduleRoute(),
+          const AktivitasRoute(),
           predicate: (_) => false,
         );
         return;
@@ -156,7 +155,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: ScheduleAppBar(
-          isEditMode: widget.existingSchedule != null,
+          isEditMode: widget.existingAktivitas != null,
           onSave: _validateAndSave,
         ),
         body: SingleChildScrollView(

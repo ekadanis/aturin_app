@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:aturin_app/features/task/database/task_database.dart';
-import 'package:aturin_app/features/task/model/task.dart' as TaskModel;
+import 'package:aturin_app/features/task/model/task_model.dart' as TaskModel;
 import 'package:aturin_app/features/home/models/task_model.dart';
 
 class TaskService extends ChangeNotifier {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/widgets/alarm_picker.dart';
-import 'package:aturin_app/features/schedule/screens/add_schedule/widgets/alarm_picker_bottom_sheet.dart';
+import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/alarm_picker_bottom_sheet.dart';
 
 class AlarmConfigurationSection extends StatelessWidget {
   final bool isEnabled;

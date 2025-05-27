@@ -47,6 +47,7 @@ class Task {
   final double estimatedHours;
   final DateTime? completedAt;
   final TaskStatus? previousStatus;
+  final String? slug;
 
   Task({
     this.id,
@@ -63,6 +64,7 @@ class Task {
     double? estimatedHours,
     this.completedAt,
     this.previousStatus,
+    this.slug,
   }) : status = status ?? calculateStatus(deadline),
        isCompleted = isCompleted ?? isDone,
        isAlarmActive = isAlarmActive ?? isAlarmEnabled,

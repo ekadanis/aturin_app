@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:aturin_app/features/schedule/screens/add_schedule/widgets/form_field_widgets.dart';
-import 'package:aturin_app/features/schedule/screens/add_schedule/widgets/time_picker_bottom_sheet.dart';
+import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/form_field_widgets.dart';
+import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/time_picker_bottom_sheet.dart';
 
 class TimeSelectionSection extends StatelessWidget {
   final TimeOfDay? startTime;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../model/task.dart';
+import '../../model/task_model.dart';
 import '../../services/task_services.dart';
 import 'task_card.dart';
 import 'snackbar.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:aturin_app/features/schedule/screens/add_schedule/widgets/category_picker_screen.dart';
-import 'package:aturin_app/features/schedule/screens/add_schedule/widgets/form_field_widgets.dart';
+import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/category_picker_screen.dart';
+import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/form_field_widgets.dart';
 import 'package:aturin_app/core/widgets/categories.dart';
 
 class CategorySelectionSection extends StatelessWidget {

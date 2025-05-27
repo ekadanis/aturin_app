@@ -35,7 +35,7 @@ extension ActivityCategoryExtension on ActivityCategory {
   String get name => displayName;
 }
 
-class ScheduleModel {
+class AktivitasModel {
   final int activityId;
   final int userId;
   final int alarmId;
@@ -45,8 +45,8 @@ class ScheduleModel {
   final DateTime activityCompleteTime;  
   final ActivityCategory activityCategory;
   final AlarmModel? alarm;
-
-  ScheduleModel({
+  final String? slug;
+  AktivitasModel({
     required this.activityId,
     required this.userId,
     required this.alarmId,
@@ -56,10 +56,11 @@ class ScheduleModel {
     required this.activityCompleteTime,
     required this.activityCategory,
     this.alarm,
+    this.slug,
   });
 
-  factory ScheduleModel.fromJson(Map<String, dynamic> json) {
-    return ScheduleModel(
+  factory AktivitasModel.fromJson(Map<String, dynamic> json) {
+    return AktivitasModel(
       activityId: json['activity_id'],
       userId: json['user_id'],
       alarmId: json['alarm_id'],
@@ -84,8 +85,7 @@ class ScheduleModel {
       'activity_category': activityCategory.displayName,
       'alarm': alarm?.toJson(),
     };
-  }
-  ScheduleModel copyWith({
+  }  AktivitasModel copyWith({
     int? activityId,
     int? userId,
     int? alarmId,
@@ -95,8 +95,9 @@ class ScheduleModel {
     DateTime? activityCompleteTime,
     ActivityCategory? activityCategory,
     AlarmModel? alarm,
+    String? sourceModel,
   }) {
-    return ScheduleModel(
+    return AktivitasModel(
       activityId: activityId ?? this.activityId,
       userId: userId ?? this.userId,
       alarmId: alarmId ?? this.alarmId,
@@ -106,6 +107,7 @@ class ScheduleModel {
       activityCompleteTime: activityCompleteTime ?? this.activityCompleteTime,
       activityCategory: activityCategory ?? this.activityCategory,
       alarm: alarm ?? this.alarm,
+      slug: slug ?? this.slug,
     );
   }
 

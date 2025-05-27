@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:aturin_app/features/schedule/widgets/activity_detail_card.dart';
+import 'package:aturin_app/features/jadwal/widgets/activity_detail_card.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:aturin_app/core/widgets/confirm_dialog.dart';
 
