@@ -136,10 +136,10 @@ class _ActivityDetailListPageState extends State<ActivityDetailListPage> {
                       SizedBox(width: 3.w),
                       Text(
                         'Detail Aktivitas',
-                        style: TextStyle(
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
                           fontSize: 18.sp,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.black,
+                          color: const Color(0xFF131927),
                         ),
                       ),
                     ],
@@ -181,9 +181,7 @@ class _ActivityDetailListPageState extends State<ActivityDetailListPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 GestureDetector(
-                  onTap: () {
-                    
-                  },
+                  onTap: () {},
                   child: Container(
                     width: 12.w,
                     height: 12.w,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sizer/sizer.dart';
 import 'package:aturin_app/features/detailactivity/widgets/category.dart';
+import 'package:aturin_app/features/detailactivity/widgets/chip.dart';
 
 class DetailActivityCard extends StatelessWidget {
   final String title;
@@ -227,32 +228,29 @@ class DetailActivityCard extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      SizedBox(
-                        child: SvgPicture.asset(
-                          categoryDetails.category,
-                          fit: BoxFit.contain,
-                          width: 12.w,
-                          height: 2.5.h,
+                      CustomChip(
+                        iconPath: categoryDetails.iconChip,
+                        label: categoryDetails.name,
+                        foregroundColor: categoryDetails.color,
+                        backgroundColor: categoryDetails.color.withOpacity(
+                          0.15,
                         ),
                       ),
-                      SizedBox(width: 2.w),
-                      SizedBox(
-                        child: SvgPicture.asset(
-                          categoryDetails.activity,
-                          fit: BoxFit.contain,
-                          width: 12.w,
-                          height: 2.5.h,
-                        ),
+                      SizedBox(width: 3.w),
+                      CustomChip(
+                        iconPath:
+                            'assets/activitycategory/chipicon/aktivitas.svg',
+                        label: 'Aktivitas',
+                        foregroundColor: Color(0xFF5263F3),
+                        backgroundColor: Color(0xFF5263F3).withOpacity(0.15),
                       ),
+                      SizedBox(width: 3.w),
                       if (alarmId != null) ...[
-                        SizedBox(width: 2.w),
-                        SizedBox(
-                          child: SvgPicture.asset(
-                            'assets/activitycategory/chip/alarm.svg',
-                            fit: BoxFit.contain,
-                            width: 15.w,
-                            height: 2.5.h,
-                          ),
+                        CustomChip(
+                          iconPath:
+                              'assets/activitycategory/chipicon/alarm2.svg',
+                          foregroundColor: Color(0xFF5263F3),
+                          backgroundColor: Color(0xFF5263F3).withOpacity(0.15),
                         ),
                       ],
                     ],
