@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:sizer/sizer.dart';
 
 class ConfirmExitDialog extends StatelessWidget {
   const ConfirmExitDialog({super.key});
@@ -7,38 +8,36 @@ class ConfirmExitDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12), // Atur radius di sini
-      ),
-      insetPadding: const EdgeInsets.all(16), // Padding dari tepi layar
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2.w)),
+      insetPadding: EdgeInsets.all(4.w),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 400), // Atur lebar maksimum
+        constraints: BoxConstraints(maxWidth: 92.w),
         child: Padding(
-          padding: const EdgeInsets.all(16), // Padding dalam kartu dialog
+          padding: EdgeInsets.all(4.w),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               SvgPicture.asset(
                 'assets/icons/log-out_besar.svg',
-                width: 80,
-                height: 80,
+                width: 15.w,
+                height: 15.w,
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'Keluar',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+              SizedBox(height: 2.h),
+              Text(
+                'Hapus Aktivitas',
+                style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w900),
               ),
-              const SizedBox(height: 15),
-              const Text(
-                'Yakin nih kamu mau keluar?',
+              SizedBox(height: 2.h),
+              Text(
+                'Yakin nih kamu mau hapus aktivitas?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w400,
-                  color: Color(0xFF6D717F),
+                  color: const Color(0xFF6D717F),
                 ),
               ),
-              const SizedBox(height: 30),
+              SizedBox(height: 4.h),
               Row(
                 children: [
                   Expanded(
@@ -49,50 +48,47 @@ class ConfirmExitDialog extends StatelessWidget {
                         foregroundColor: Theme.of(context).colorScheme.primary,
                         side: BorderSide(
                           color: Theme.of(context).colorScheme.primary,
-                          width: 2,
+                          width: 0.5.w,
                         ),
-                        minimumSize: const Size(
-                          double.infinity,
-                          40,
-                        ), // biar lebar penuh Expanded
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                        minimumSize: Size(double.infinity, 6.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 3.w,
+                          vertical: 1.5.h,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(2.w),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Batal',
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: 17.5.sp,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16), // jarak antar tombol
+                  SizedBox(width: 4.w),
                   Expanded(
                     child: TextButton(
                       onPressed: () => Navigator.pop(context),
                       style: TextButton.styleFrom(
                         backgroundColor: Colors.red,
                         foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 40),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                        minimumSize: Size(double.infinity, 6.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 3.w,
+                          vertical: 1.5.h,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(2.w),
                         ),
                       ),
-                      child: const Text(
-                        'Keluar',
+                      child: Text(
+                        'Hapus',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 20,
+                          fontSize: 17.5.sp,
                         ),
                       ),
                     ),

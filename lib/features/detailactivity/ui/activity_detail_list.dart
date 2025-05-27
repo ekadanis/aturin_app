@@ -180,38 +180,38 @@ class _ActivityDetailListPageState extends State<ActivityDetailListPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  width: 12.w,
-                  height: 12.w,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
-                    borderRadius: BorderRadius.circular(60),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        spreadRadius: 1,
-                        blurRadius: 5,
+                GestureDetector(
+                  onTap: () {
+                    
+                  },
+                  child: Container(
+                    width: 12.w,
+                    height: 12.w,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.circular(60),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          spreadRadius: 1,
+                          blurRadius: 5,
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: SvgPicture.asset(
+                        'assets/activitycategory/edit-pencil.svg',
+                        width: 6.w,
+                        height: 6.w,
                       ),
-                    ],
-                  ),
-                  child: Center(
-                    child: SvgPicture.asset(
-                      'assets/activitycategory/edit-pencil.svg',
-                      width: 6.w,
-                      height: 6.w,
                     ),
                   ),
                 ),
+
                 SizedBox(width: 16.w),
                 GestureDetector(
-                  onTap: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => const ConfirmDialog(),
-                    );
-                    if (confirm == true) {
-                      Navigator.pop(context);
-                    }
+                  onTap: () {
+                    showDeleteDialog(context);
                   },
                   child: Container(
                     width: 12.w,
@@ -243,4 +243,21 @@ class _ActivityDetailListPageState extends State<ActivityDetailListPage> {
       ),
     );
   }
+}
+
+void showDeleteDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder:
+        (_) => ConfirmDialog(
+          iconPath: 'assets/activitycategory/trash-round-tipis.svg',
+          title: 'Hapus Aktivitas',
+          description: 'Yakin nih kamu mau hapus aktivitas?',
+          confirmText: 'Hapus',
+          cancelText: 'Batal',
+          onConfirm: () {
+            print('Aktivitas dihapus!');
+          },
+        ),
+  );
 }
