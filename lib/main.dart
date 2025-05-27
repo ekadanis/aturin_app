@@ -20,6 +20,7 @@ TaskServiceBridge? _taskServiceBridge;
 Future<void> main() async {
   // Preserve splash screen until initialization is complete
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  await DatabaseHelper.instance.resetDatabase(); // untuk dev/test saja
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   // Set orientasi hanya potrait
   await SystemChrome.setPreferredOrientations([

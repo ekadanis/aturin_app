@@ -5,6 +5,7 @@ class TaskDatabase {
   static const table = 'tasks';
   static const columnId = 'id';
   static const columnTitle = 'title';
+  static const columnDescription = 'description';
   static const columnDeadline = 'deadline';
   static const columnEstimatedDuration = 'estimatedDuration';
   static const columnCategory = 'category';

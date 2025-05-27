@@ -43,12 +43,26 @@ class _SchedulePageState extends State<SchedulePage> {
           foregroundColor: AppTheme.lightTextColor,
         ),
         body: Center(
-          child: ElevatedButton(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            
+            children: [
+              ElevatedButton(
             onPressed: () {
               context.pushRoute(const ActivityDetailListRoute());
             },
             child: const Text('Yahahayuk'),
           ),
+
+          const SizedBox(width: 16),
+          ElevatedButton(
+            onPressed: () {
+              context.pushRoute(const TaskDetailListRoute());
+            },
+            child: const Text('Hayuk'),
+          ),
+            ],
+          )
         ),
         bottomNavigationBar: const BottomNavbar(currentIndex: 1),
       ),

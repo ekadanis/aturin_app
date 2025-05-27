@@ -2,19 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class ConfirmDialog extends StatelessWidget {
-  const ConfirmDialog({super.key});
+  final bool isTask; // true = task, false = activity
+
+  const ConfirmDialog({super.key, this.isTask = false});
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12), // Atur radius di sini
+        borderRadius: BorderRadius.circular(12),
       ),
-      insetPadding: const EdgeInsets.all(16), // Padding dari tepi layar
+      insetPadding: const EdgeInsets.all(16),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 400), // Atur lebar maksimum
+        constraints: const BoxConstraints(maxWidth: 400),
         child: Padding(
-          padding: const EdgeInsets.all(16), // Padding dalam kartu dialog
+          padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -24,15 +26,17 @@ class ConfirmDialog extends StatelessWidget {
                 height: 80,
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Hapus Aktivitas',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+              Text(
+                isTask ? 'Hapus Tugas' : 'Hapus Aktivitas',
+                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 15),
-              const Text(
-                'Yakin nih kamu mau hapus aktivitas?',
+              Text(
+                isTask
+                    ? 'Yakin nih kamu mau hapus tugas?'
+                    : 'Yakin nih kamu mau hapus aktivitas?',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFF6D717F),
@@ -51,10 +55,7 @@ class ConfirmDialog extends StatelessWidget {
                           color: Theme.of(context).colorScheme.primary,
                           width: 2,
                         ),
-                        minimumSize: const Size(
-                          double.infinity,
-                          40,
-                        ), // biar lebar penuh Expanded
+                        minimumSize: const Size(double.infinity, 40),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 12,
@@ -72,7 +73,7 @@ class ConfirmDialog extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16), // jarak antar tombol
+                  const SizedBox(width: 16),
                   Expanded(
                     child: TextButton(
                       onPressed: () => Navigator.pop(context),

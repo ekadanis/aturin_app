@@ -10,7 +10,6 @@ import '../../models/task.dart';
 import '../../services/task_services.dart';
 import '../widgets/deadline_picker_bottom.dart';
 import '../widgets/duration_picker_bottom.dart';
-import '../widgets/category_list.dart';
 import 'category_picker_screen.dart';
 import '../../../../../../routers/app_router.dart';
 import 'package:aturin_app/features/task/ui/widgets/alarm_picker_bottom.dart';
@@ -29,6 +28,7 @@ class AddTaskScreen extends StatefulWidget {
 class _AddTaskScreenState extends State<AddTaskScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
 
   String? _deadlineError;
   String? _durationError;
@@ -50,6 +50,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     final task = widget.existingTask;
     if (task != null) {
       _titleController.text = task.title;
+      _descriptionController.text = task.description ?? '';
       _deadline = task.deadline;
       _estimatedDuration = task.estimatedDuration;
       _selectedCategory = categories.firstWhere((c) => c.name == task.category);
@@ -57,17 +58,22 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       _alarmDateTime = task.alarmDateTime;
     }
     _updateWordCount();
+    _updateDescriptionWordCount();
     _titleController.addListener(_updateWordCount);
+    _descriptionController.addListener(_updateDescriptionWordCount);
   }
 
   @override
   void dispose() {
     _titleController.removeListener(_updateWordCount);
+    _descriptionController.removeListener(_updateDescriptionWordCount);
     _titleController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
   int _currentWordCount = 0;
+  int _currentDescriptionWordCount = 0;
 
   void _updateWordCount() {
     final text = _titleController.text;
@@ -77,6 +83,20 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     if (text.length > 20) {
       final limitedText = text.substring(0, 20);
       _titleController.value = TextEditingValue(
+        text: limitedText,
+        selection: TextSelection.collapsed(offset: limitedText.length),
+      );
+    }
+  }
+
+  void _updateDescriptionWordCount() {
+    final text = _descriptionController.text;
+    setState(() {
+      _currentDescriptionWordCount = text.length;
+    });
+    if (text.length > 200) {
+      final limitedText = text.substring(0, 200);
+      _descriptionController.value = TextEditingValue(
         text: limitedText,
         selection: TextSelection.collapsed(offset: limitedText.length),
       );
@@ -109,6 +129,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       task: Task(
         id: widget.existingTask?.id,
         title: _titleController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty 
+            ? null 
+            : _descriptionController.text.trim(),
         deadline: _deadline!,
         estimatedDuration: _estimatedDuration!,
         category: _selectedCategory!.name,
@@ -129,7 +152,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           });
         }
       },
-
       onError: (msg) {
         ScaffoldMessenger.of(
           context,
@@ -173,6 +195,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 validator: _taskService.validateTitle,
               ),
               const SizedBox(height: 32),
+              
+              // Description Field
+              _buildDescriptionField(),
+              const SizedBox(height: 32),
+              
               FieldTile(
                 title: 'Deadline',
                 value:
@@ -302,6 +329,68 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDescriptionField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Deskripsi (Opsional)',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.grey[300]!,
+              width: 1,
+            ),
+          ),
+          child: TextFormField(
+            controller: _descriptionController,
+            maxLines: 4,
+            maxLength: 200,
+            decoration: InputDecoration(
+              hintText: 'Tambahkan deskripsi tugas (maksimal 200 karakter)',
+              hintStyle: GoogleFonts.plusJakartaSans(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.all(16),
+              counterText: '',
+            ),
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 14,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text(
+              '$_currentDescriptionWordCount/200',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                color: _currentDescriptionWordCount > 180 
+                    ? Colors.orange 
+                    : Colors.grey[500],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
