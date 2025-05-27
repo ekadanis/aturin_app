@@ -2,12 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:aturin_app/features/task/models/task_model.dart';
 
-class DeletePopUp extends StatelessWidget {
+class DeletePopup extends StatelessWidget {
   final int? id;
   final String category;
   final String title;
 
-  const DeletePopUp({
+  const DeletePopup({
     super.key,
     required this.id,
     required this.category,

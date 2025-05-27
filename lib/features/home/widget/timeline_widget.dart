@@ -1,4 +1,4 @@
-import 'package:aturin_app/features/home/widget/task_card.dart';
+import 'package:aturin_app/features/task/ui/widgets/task_card.dart';
 import 'package:aturin_app/features/task/models/task_model.dart';
 import 'package:flutter/material.dart';
 import 'package:timelines_plus/timelines_plus.dart';
@@ -30,11 +30,7 @@ class TimelineWidget extends StatelessWidget {
                   color: Colors.green,
                   child: Icon(Icons.check, size: 16, color: Colors.white),
                 )
-                : const OutlinedDotIndicator(
-                  size: 24,
-                  borderWidth: 2,
-                  color: Colors.red,
-                ),
+                : const DotIndicator(size: 24, color: Colors.red),
         startConnector:
             index == 0
                 ? null
@@ -45,7 +41,9 @@ class TimelineWidget extends StatelessWidget {
                   indent:
                       index == 1
                           ? (previousIsFlagged ? 2.5 : 0.5) // untuk card ke-2
-                          : (previousIsFlagged ? 8 : 6),  // card ke-3 dan seterusnya
+                          : (previousIsFlagged
+                              ? 8
+                              : 6), // card ke-3 dan seterusnya
                 ),
         endConnector:
             isLast
@@ -68,7 +66,14 @@ class TimelineWidget extends StatelessWidget {
               isLast ? 0 : 4.0, // Tidak perlu margin bawah untuk card terakhir
         ),
         padding: const EdgeInsets.only(left: 8.0),
-        child: TaskCard(task: task),
+        // child: TaskCard(
+        //   task: task,
+        //   onToggleCompletion: onToggleCompletion,
+        //   onDelete: onDelete,
+        //   onViewDetails: onViewDetails,
+        //   onToggleAlarm: onToggleAlarm,
+        //   currentFilter: currentFilter,
+        // ),
       ),
     );
   }

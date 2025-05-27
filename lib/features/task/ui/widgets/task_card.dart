@@ -1,4 +1,8 @@
+import 'package:aturin_app/core/widgets/delete_popup.dart';
 import 'package:aturin_app/core/widgets/edit_popup.dart';
+import 'package:aturin_app/features/home/services/task_service.dart';
+import 'package:aturin_app/features/task/ui/screens/add_task_screen.dart';
+import 'package:aturin_app/features/task/ui/screens/task_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../models/task_model.dart';
@@ -117,465 +121,362 @@ class _TaskCardState extends State<TaskCard> {
       ),
 
       clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(width: 20),
-                  if (widget.showCheckbox)
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => TaskDetailScreen(task: widget.task),
+            ),
+          );
+        },
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(width: 20),
+
+                    // checbox
+                    if (widget.showCheckbox)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 28),
+                        child: GestureDetector(
+                          onTap: _handleToggleCompletion,
+                          child: Container(
+                            width: 26,
+                            height: 26,
+                            decoration: BoxDecoration(
+                              color:
+                                  widget.task.isCompleted
+                                      ? AppTheme.primaryColor
+                                      : Colors.transparent,
+                              border: Border.all(
+                                color: AppTheme.primaryColor,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child:
+                                widget.task.isCompleted
+                                    ? const Icon(
+                                      Icons.check,
+                                      size: 18,
+                                      color: AppTheme.lightCardColor,
+                                    )
+                                    : null,
+                          ),
+                        ),
+                      )
+                    else
+                      const SizedBox(width: 0),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              spacing: 6,
+                              children: [
+                                // badge category
+                                _buildBadge(
+                                  icon: SvgPicture.asset(
+                                    _getCategoryIconPath(widget.task.category),
+                                    width: 12,
+                                    height: 12,
+                                  ),
+                                  label: _getCategoryName(widget.task.category),
+                                  bgColor: _getCategoryColor(
+                                    widget.task.category,
+                                  ).withAlpha(45),
+                                  textColor: _getCategoryColor(
+                                    widget.task.category,
+                                  ),
+                                ),
+
+                                // badge tugas / aktivitas
+                                _buildBadge(
+                                  icon: SvgPicture.asset(
+                                    widget.task.category == 'Akademik'
+                                        ? 'assets/icons/tugas.svg'
+                                        : 'assets/icons/activity.svg',
+                                    width: 12,
+                                    height: 12,
+                                    colorFilter: const ColorFilter.mode(
+                                      Color(0xFF3498DB),
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
+                                  label:
+                                      widget.task.category == 'Akademik'
+                                          ? 'Tugas'
+                                          : 'Aktivitas',
+                                  bgColor: const Color(0xFFDFEAFF),
+                                  textColor: const Color(0xFF3498DB),
+                                ),
+
+                                // badge alarm
+                                if (hasAlarmIndicator)
+                                  _buildBadge(
+                                    icon: SvgPicture.asset(
+                                      'assets/icons/alarm.svg',
+                                      width: 12,
+                                      height: 12,
+                                      colorFilter: const ColorFilter.mode(
+                                        Color(0xFF3498DB),
+                                        BlendMode.srcIn,
+                                      ),
+                                    ),
+                                    label: '',
+                                    bgColor: const Color(0xFFDFEAFF),
+                                    textColor: const Color(0xFF3498DB),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              widget.task.title,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF131927),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.access_time_filled,
+                                  size: 12,
+                                  color: Colors.black,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Estimasi: ${widget.task.estimatedDuration.inHours}:${(widget.task.estimatedDuration.inMinutes % 60).toString().padLeft(2, '0')}',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                     Padding(
                       padding: const EdgeInsets.only(top: 28),
-                      child: GestureDetector(
-                        onTap: _handleToggleCompletion,
-                        child: Container(
-                          width: 26,
-                          height: 26,
-                          decoration: BoxDecoration(
-                            color:
-                                widget.task.isCompleted
-                                    ? AppTheme.primaryColor
-                                    : Colors.transparent,
-                            border: Border.all(
-                              color: AppTheme.primaryColor,
-                              width: 2,
-                            ),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child:
-                              widget.task.isCompleted
-                                  ? const Icon(
-                                    Icons.check,
-                                    size: 18,
-                                    color: AppTheme.lightCardColor,
-                                  )
-                                  : null,
-                        ),
-                      ),
-                    )
-                  else
-                    const SizedBox(width: 0),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Row(
-                            spacing: 6,
-                            children: [
-                              // badge category
-                              _buildBadge(
-                                icon: Icons.school,
-                                label: _getCategoryName(widget.task.category),
-                                bgColor: const Color(0xFFCCEAFF),
-                                textColor: const Color(0xFF3498DB),
-                              ),
-
-                              // badge tugas / aktivitas
-                              _buildBadge(
-                                icon: Icons.list,
-                                label: 'Tugas',
-                                bgColor: const Color(0xFFDFEAFF),
-                                textColor: const Color(0xFF5263F3),
-                              ),
-
-                              // badge alarm
-                              _buildBadge(
-                                icon: Icons.timer,
-                                label: '',
-                                bgColor: const Color(0xFFDFEAFF),
-                                textColor: const Color(0xFF5263F3),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            widget.task.title,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF131927),
+                          // badge status
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.access_time_filled,
-                                size: 12,
-                                color: Colors.black,
+                            decoration: BoxDecoration(
+                              color:
+                                  widget.task.isCompleted
+                                      ? const Color(
+                                        0xFFC5E9CD,
+                                      ) // Hijau untuk selesai
+                                      : _getStatusColor(widget.task.status),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              widget.task.isCompleted
+                                  ? 'Selesai'
+                                  : _getStatusName(
+                                    widget.task.status,
+                                    task: widget.task,
+                                  ),
+                              style: TextStyle(
+                                color:
+                                    widget.task.isCompleted
+                                        ? const Color(0xFF3DA755) // Teks hijau
+                                        : _getStatusTextColor(
+                                          widget.task.status,
+                                        ),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                height: 1.2,
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Estimasi: ${widget.task.estimatedDuration.inHours}:${(widget.task.estimatedDuration.inMinutes % 60).toString().padLeft(2, '0')}',
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 28),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // badge status
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _getBadgeColor(
-                              widget.task,
-                              widget.currentFilter,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            _getBadgeText(widget.task, widget.currentFilter),
-                            style: TextStyle(
-                              color: _getBadgeTextColor(
-                                widget.task,
-                                widget.currentFilter,
-                              ),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              height: 1.2,
-                            ),
-                          ),
+
+                    // titik tiga, popup edit dan hapus
+                    PopupMenuButton<String>(
+                      offset: const Offset(0, 40),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: const BorderSide(
+                          color: Color(0xFFFFCE73),
+                          width: 1,
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+                      color: const Color(0xFFFFF9F0),
+                      onSelected: (value) async {
+                        if (value == 'edit') {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (_) =>
+                                      AddTaskScreen(existingTask: widget.task),
+                            ),
+                          );
 
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert, size: 20),
-                    onSelected: (value) {
-                      if (value == 'edit') {
-                        showDialog(
-                          context: context,
-                          builder:
-                              (_) => Dialog(
-                                backgroundColor: Colors.transparent,
-                                insetPadding: const EdgeInsets.all(16),
-                                child: EditPopup(
-                                  currentIndex: widget.task.id!,
-                                  task: widget.task,
+                          if (result == true) {
+                            final updatedTask = widget.task.id;
+                            if (updatedTask != null) {
+                              setState(() {
+                                // update jika perlu
+                              });
+                              Navigator.pop(context, true);
+                            }
+                          }
+                        } else if (value == 'delete') {
+                          // Tampilkan DeletePopup
+                          showDialog(
+                            context: context,
+                            builder:
+                                (_) => DeletePopup(
+                                  id: widget.task.id,
+                                  category: widget.task.category,
+                                  title: widget.task.title,
                                 ),
+                          );
+                        }
+                      },
+                      itemBuilder:
+                          (context) => [
+                            PopupMenuItem<String>(
+                              value: 'edit',
+                              child: Row(
+                                children: const [
+                                  Icon(
+                                    Icons.edit,
+                                    color: Colors.black,
+                                    size: 20,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Ubah',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
-                        );
-                      }
-                    },
-                    itemBuilder:
-                        (context) => const [
-                          PopupMenuItem<String>(
-                            value: 'edit',
-                            child: Text('Opsi'),
-                          ),
-                        ],
-                  ),
-                ],
-              ),
-              if (hasLateIndicator)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
-                  ),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFDECEC),
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
+                            ),
+                            PopupMenuItem<String>(
+                              value: 'delete',
+                              child: Row(
+                                children: const [
+                                  Icon(
+                                    Icons.delete_outline,
+                                    color: Color(0xFFD93E39),
+                                    size: 20,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Hapus',
+                                    style: TextStyle(
+                                      color: Color(0xFFD93E39),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                      icon: const Icon(Icons.more_vert, size: 20),
                     ),
-                  ),
-                  child: const Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      'Diselesaikan terlambat',
-                      style: TextStyle(
-                        color: Color(0xFFD93E39),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                        height: 1.4,
+                  ],
+                ),
+                if (hasLateIndicator)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFDECEC),
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(12),
+                        bottomRight: Radius.circular(12),
+                      ),
+                    ),
+                    child: const Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        'Diselesaikan terlambat',
+                        style: TextStyle(
+                          color: Color(0xFFD93E39),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          height: 1.4,
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
-          ),
-          Positioned(
-            left: 0,
-            top: 0,
-            bottom: 0,
-            child: Container(
-              width: 10,
-              decoration: const BoxDecoration(
-                color: Color(0xFF5263F3),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  bottomLeft: Radius.circular(12),
+              ],
+            ),
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              child: Container(
+                width: 10,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF5263F3),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    bottomLeft: Radius.circular(12),
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-      // child: Column(
-      //   crossAxisAlignment: CrossAxisAlignment.start,
-      //   children: [
-      //     Stack(
-      //       children: [
-      //         Row(
-      //           crossAxisAlignment: CrossAxisAlignment.start,
-      //           children: [
-      //             //strip biru
-      //             Container(
-      //               width: 6,
-      //               height: 120,
-      //               decoration: const BoxDecoration(
-      //                 color: Color(0xFF3A5AFE), // warna biru
-      //                 borderRadius: BorderRadius.only(
-      //                   topLeft: Radius.circular(12),
-      //                   bottomLeft: Radius.circular(12),
-      //                 ),
-      //               ),
-      //             ),
-      //             const SizedBox(width: 12),
-
-      //             Expanded(
-      //               child: Padding(
-      //                 padding: const EdgeInsets.all(12.0),
-      //                 child: Column(
-      //                 crossAxisAlignment: CrossAxisAlignment.start,
-      //                 children: [
-      //                   Row(
-      //                     crossAxisAlignment: CrossAxisAlignment.start,
-      //                     children: [
-      //
-      //                       // Informasi tugas
-      //                       Expanded(
-      //                         child: Column(
-      //                           crossAxisAlignment: CrossAxisAlignment.start,
-      //                           children: [
-      //                             // Kategori
-      //                             Row(
-      //                               children: [
-      //                                 SvgPicture.asset(
-      //                                   _getCategoryIconPath(
-      //                                     widget.task.category,
-      //                                   ),
-      //                                   width:
-      //                                       16, // Ukuran ikon kategori diperkecil
-      //                                   height:
-      //                                       16, // Untuk proporsi yang lebih baik
-      //                                 ),
-
-      //                                 const SizedBox(
-      //                                   width: 6,
-      //                                 ), // Jarak ditambah
-      //                                 Text(
-      //                                   _getCategoryName(widget.task.category),
-      //                                   style: GoogleFonts.plusJakartaSans(
-      //                                     // Menggunakan font yang konsisten
-      //                                     fontSize:
-      //                                         11, // Ukuran font sedikit dikurangi
-      //                                     fontWeight:
-      //                                         FontWeight
-      //                                             .w500, // Ketebalan sedang
-      //                                     color:
-      //                                         AppTheme.lightSecondaryTextColor,
-      //                                   ),
-      //                                 ),
-      //                               ],
-      //                             ),
-      //                             const SizedBox(height: 6), // Jarak ditambah
-      //                             // Judul tugas
-      //                             Text(
-      //                               widget.task.title,
-      //                               style: GoogleFonts.plusJakartaSans(
-      //                                 fontSize: 14, // Ukuran font diperbesar
-      //                                 fontWeight:
-      //                                     FontWeight
-      //                                         .w700, // Lebih tebal dari sebelumnya
-      //                                 color:
-      //                                     AppTheme
-      //                                         .lightTextColor, // Warna teks utama
-      //                               ),
-      //                             ),
-      //                             const SizedBox(height: 6), // Jarak ditambah
-      //                             // Estimasi waktu
-      //                             Row(
-      //                               children: [
-      //                                 const Icon(
-      //                                   Icons.access_time_filled,
-      //                                   size: 14,
-      //                                 ),
-      //                                 const SizedBox(width: 4),
-      //                                 Text(
-      //                                   'Estimasi: ${widget.task.estimatedDuration.inHours}:${(widget.task.estimatedDuration.inMinutes % 60).toString().padLeft(2, '0')}',
-      //                                   style: const TextStyle(
-      //                                     fontSize: 12,
-      //                                     color: Colors.black54,
-      //                                   ),
-      //                                 ),
-      //                               ],
-      //                             ),
-      //                           ],
-      //                         ),
-      //                       ),
-      //                       
-      //                       EditPopup(currentIndex: widget.task.id!, task: widget.task)
-      //                       // PopupMenuButton<String>(
-      //                       //   icon: const Icon(Icons.more_vert, size: 20),
-      //                       //   onSelected: (value) {
-      //                       //     if (value == 'edit') {
-      //                       //       showDialog(
-      //                       //         context: context,
-      //                       //         builder:
-      //                       //             (_) => Dialog(
-      //                       //               backgroundColor: Colors.transparent,
-      //                       //               insetPadding: const EdgeInsets.all(
-      //                       //                 16,
-      //                       //               ),
-      //                       //               child: EditPopup(
-      //                       //                 currentIndex: widget.task.id!,
-      //                       //                 task: widget.task,
-      //                       //               ),
-      //                       //             ),
-      //                       //       );
-      //                       //     }
-      //                       //   },
-      //                       //   itemBuilder:
-      //                       //       (context) => [
-      //                       //         const PopupMenuItem<String>(
-      //                       //           value: 'edit',
-      //                       //           child: Text('Opsi'),
-      //                       //         ),
-      //                       //       ],
-      //                       // ),
-      //                     ],
-      //                   ),
-      //                 ],
-      //               )
-      //               )
-      //               ,
-      //             ),
-      //           ],
-      //         ),
-      //       ],
-      //     ),
-
-      //     Container(padding: const EdgeInsets.all(16.0)),
-
-      //     // Alarm indicator if active (only shown for non-completed tasks)
-      //     if (widget.task.isAlarmActive && !widget.task.isCompleted)
-      //       ClipRRect(
-      //         // Clip the corners to match the parent container's border radius
-      //         borderRadius: const BorderRadius.only(
-      //           bottomLeft: Radius.circular(12),
-      //           bottomRight: Radius.circular(12),
-      //         ),
-      //         child: Container(
-      //           height: 24,
-      //           padding: const EdgeInsets.symmetric(horizontal: 16),
-      //           decoration: const BoxDecoration(
-      //             border: Border(
-      //               top: BorderSide(color: Color(0xFFEEEEEE), width: 1),
-      //             ),
-      //           ),
-      //           child: Row(
-      //             mainAxisAlignment: MainAxisAlignment.end,
-      //             children: const [
-      //               Icon(
-      //                 Icons.alarm,
-      //                 size: 12,
-      //                 color: AppTheme.alarmActiveColor,
-      //               ),
-      //               SizedBox(width: 4),
-      //               Text(
-      //                 'Alarm aktif',
-      //                 style: TextStyle(
-      //                   fontSize: 12,
-      //                   color: AppTheme.alarmActiveColor,
-      //                 ),
-      //               ),
-      //             ],
-      //           ),
-      //         ),
-      //       ),
-
-      //     // "Diselesaikan terlambat" indicator if applicable
-      //     if (widget.task.isCompleted &&
-      //         widget.task.previousStatus == TaskStatus.late)
-      //       ClipRRect(
-      //         // Clip the corners to match the parent container's border radius
-      //         borderRadius: const BorderRadius.only(
-      //           bottomLeft: Radius.circular(12),
-      //           bottomRight: Radius.circular(12),
-      //         ),
-      //         child: Container(
-      //           width: double.infinity,
-      //           height: 24,
-      //           padding: const EdgeInsets.symmetric(horizontal: 16),
-      //           decoration: const BoxDecoration(
-      //             color: Color(0xFFFFF0F0),
-      //             border: Border(
-      //               top: BorderSide(color: Color(0xFFEEEEEE), width: 1),
-      //             ),
-      //           ),
-      //           child: const Row(
-      //             mainAxisAlignment: MainAxisAlignment.end,
-      //             children: [
-      //               Text(
-      //                 '* Diselesaikan terlambat',
-      //                 style: TextStyle(
-      //                   fontSize: 12,
-      //                   color: Colors.red,
-      //                   fontStyle: FontStyle.italic,
-      //                 ),
-      //               ),
-      //             ],
-      //           ),
-      //         ),
-      //       ),
-      //   ],
-      // ),
     );
   }
 
   Widget _buildBadge({
-    required IconData icon,
+    required Widget icon,
     required String label,
     required Color bgColor,
     required Color textColor,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: textColor),
+          icon,
           if (label.isNotEmpty) ...[
-            const SizedBox(width: 2),
+            const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
@@ -647,6 +548,35 @@ class _TaskCardState extends State<TaskCard> {
     }
   }
 
+  Color _getCategoryColor(String category) {
+    try {
+      final taskCategory = TaskCategory.values.firstWhere(
+        (e) => e.name.toLowerCase() == category.toLowerCase(),
+      );
+
+      switch (taskCategory) {
+        case TaskCategory.akademik:
+          return const Color(0xFF3498DB);
+        case TaskCategory.hiburan:
+          return const Color(0xFF9A59B6);
+        case TaskCategory.pekerjaan:
+          return const Color(0xFF8D5C42);
+        case TaskCategory.olahraga:
+          return const Color(0xFFE74C3C);
+        case TaskCategory.sosial:
+          return const Color(0xFFE67E22);
+        case TaskCategory.spiritual:
+          return const Color(0xFF27AD60);
+        case TaskCategory.pribadi:
+          return const Color(0xFFF1C410);
+        case TaskCategory.istirahat:
+          return const Color(0xFF283593);
+      }
+    } catch (_) {
+      return const Color.fromARGB(255, 122, 40, 40);
+    }
+  }
+
   String _getStatusName(TaskStatus status, {Task? task}) {
     switch (status) {
       case TaskStatus.completed:
@@ -701,26 +631,5 @@ class _TaskCardState extends State<TaskCard> {
       case TaskStatus.upcoming:
         return const Color(0xFFE89B00);
     }
-  }
-
-  String _getBadgeText(Task task, String currentFilter) {
-    if (task.isCompleted) {
-      return 'Selesai';
-    }
-    return _getStatusName(task.status, task: task);
-  }
-
-  Color _getBadgeColor(Task task, String currentFilter) {
-    if (task.isCompleted) {
-      return AppTheme.completedColor;
-    }
-    return _getStatusColor(task.status);
-  }
-
-  Color _getBadgeTextColor(Task task, String currentFilter) {
-    if (task.isCompleted) {
-      return AppTheme.completedTextColor;
-    }
-    return _getStatusTextColor(task.status);
   }
 }

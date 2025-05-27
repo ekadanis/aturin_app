@@ -1,4 +1,4 @@
-import 'package:aturin_app/core/widgets/delete_pop_up.dart';
+import 'package:aturin_app/core/widgets/delete_popup.dart';
 import 'package:aturin_app/features/task/models/task_model.dart';
 import 'package:aturin_app/routers/app_router.dart';
 import 'package:auto_route/auto_route.dart';

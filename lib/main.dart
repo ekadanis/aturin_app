@@ -53,7 +53,7 @@ Future<void> _initializeApp() async {
 
      // Tambahkan logika redirect berdasarkan status login
     final prefs = await SharedPreferences.getInstance();
-    final isLoggedIn = prefs.getBool('isLoggedIn') ?? false; //inisiasikan false agar login berfungsi
+    final isLoggedIn = prefs.getBool('isLoggedIn') ?? true; //inisiasikan false agar login berfungsi (dengan baik*)
 
     if (isLoggedIn) {
       appRouter.replaceAll([const HomeRoute()]);
