@@ -24,12 +24,12 @@ class ConfirmExitDialog extends StatelessWidget {
               ),
               SizedBox(height: 2.h),
               Text(
-                'Hapus Aktivitas',
+                'Keluar',
                 style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w900),
               ),
               SizedBox(height: 2.h),
               Text(
-                'Yakin nih kamu mau hapus aktivitas?',
+                'Yakin nih kamu mau keluar?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16.sp,
@@ -85,7 +85,7 @@ class ConfirmExitDialog extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        'Hapus',
+                        'Keluar',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 17.5.sp,
