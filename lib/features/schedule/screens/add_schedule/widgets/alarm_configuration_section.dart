@@ -1,4 +1,3 @@
-// AlarmConfigurationSection - Revised with multi-day support
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/widgets/alarm_picker.dart';
@@ -22,8 +21,8 @@ class AlarmConfigurationSection extends StatelessWidget {
     required this.onAlarmTimeChanged,
   });
 
-  // Check if alarm can be enabled with 1-minute minimum gap
-  bool get _canEnableAlarm {
+  // Check if start time allows for alarm (start time should be in the future with 1 minute buffer)
+  bool get _hasValidStartTime {
     if (startTime == null) return false;
 
     final now = DateTime.now();
@@ -35,29 +34,26 @@ class AlarmConfigurationSection extends StatelessWidget {
       startTime!.minute,
     );
 
-    // Alarm hanya bisa diaktifkan jika waktu mulai > waktu sekarang + 1 menit
-    final minimumStartTime = now.add(const Duration(minutes: 1));
-    return startDateTime.isAfter(minimumStartTime);
+    // Start time must be at least 1 minute in the future to allow alarm
+    return startDateTime.isAfter(now.add(const Duration(minutes: 1)));
   }
 
-  // Check if current alarm time is still valid
+  // Check if current alarm time is still valid and not equal to current time
   bool get _isAlarmTimeValid {
     if (alarmDateTime == null) return true;
     
     final now = DateTime.now();
-    // Alarm tidak valid jika waktu alarm sudah lewat
-    return alarmDateTime!.isAfter(now);
-  }
-
-  // Get effective alarm state
-  bool get _effectiveAlarmEnabled {
-    if (!_canEnableAlarm) return false;
-    if (!_isAlarmTimeValid) return false;
-    return isEnabled;
+    // Check if alarm time is in the future and not equal to current time
+    return alarmDateTime!.isAfter(now) && 
+           !(alarmDateTime!.year == now.year &&
+             alarmDateTime!.month == now.month &&
+             alarmDateTime!.day == now.day &&
+             alarmDateTime!.hour == now.hour &&
+             alarmDateTime!.minute == now.minute);
   }
 
   Future<void> _selectCustomAlarmTime(BuildContext context) async {
-    if (startTime != null && _canEnableAlarm) {
+    if (startTime != null && _hasValidStartTime) {
       final selectedAlarmTime = await showCustomAlarmPickerBottomSheet(
         context,
         initialDateTime: _isAlarmTimeValid ? alarmDateTime : null,
@@ -67,28 +63,21 @@ class AlarmConfigurationSection extends StatelessWidget {
 
       if (selectedAlarmTime != null) {
         onAlarmTimeChanged(selectedAlarmTime);
+        // Auto-enable alarm when time is selected (only if it's valid)
+        if (!isEnabled && selectedAlarmTime.isAfter(DateTime.now())) {
+          onToggle(true);
+        }
       }
     }
   }
 
-  String get _getErrorMessage {
+  String get _getInfoMessage {
     if (startTime == null) {
-      return '*Isi dulu waktu mulai alarmnya';
+      return '*Silakan isi waktu mulai terlebih dahulu';
     }
 
-    final now = DateTime.now();
-    final startDateTime = DateTime(
-      selectedDate.year,
-      selectedDate.month,
-      selectedDate.day,
-      startTime!.hour,
-      startTime!.minute,
-    );
-
-    final minimumStartTime = now.add(const Duration(minutes: 1));
-    
-    if (startDateTime.isBefore(minimumStartTime) || startDateTime.isAtSameMomentAs(now)) {
-      return '*Alarm butuh jarak minimal 1 menit dari waktu sekarang';
+    if (!_hasValidStartTime) {
+      return '*Waktu alarm  harus minimal 1 menit dari sekarang untuk mengaktifkan alarm';
     }
 
     if (alarmDateTime != null && !_isAlarmTimeValid) {
@@ -100,9 +89,9 @@ class AlarmConfigurationSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Auto-disable alarm if time is no longer valid
+    // Auto-disable alarm if time equals current time
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (isEnabled && !_isAlarmTimeValid && _canEnableAlarm) {
+      if (isEnabled && alarmDateTime != null && !_isAlarmTimeValid) {
         onToggle(false);
       }
     });
@@ -110,41 +99,37 @@ class AlarmConfigurationSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Alarm picker dengan disabled state
-        Opacity(
-          opacity: _canEnableAlarm ? 1.0 : 0.5,
-          child: IgnorePointer(
-            ignoring: !_canEnableAlarm,
-            child: AlarmPicker(
-              isEnabled: _effectiveAlarmEnabled,
-              alarmDateTime: _isAlarmTimeValid ? alarmDateTime : null,
-              onToggle: _canEnableAlarm 
-                  ? (value) {
-                      if (value && !_isAlarmTimeValid) {
-                        // Reset alarm time if trying to enable with invalid time
-                        final now = DateTime.now();
-                        final defaultAlarmTime = now.add(const Duration(minutes: 15));
-                        onAlarmTimeChanged(defaultAlarmTime);
-                      }
-                      onToggle(value);
-                    }
-                  : (_) {}, // Empty function when disabled
-              onPickTime: _canEnableAlarm 
-                  ? () => _selectCustomAlarmTime(context)
-                  : null,
-              showInitialWarning: false,
-            ),
-          ),
+        // Alarm picker
+        AlarmPicker(
+          isEnabled: isEnabled && _hasValidStartTime && _isAlarmTimeValid,
+          alarmDateTime: (_isAlarmTimeValid && alarmDateTime != null) ? alarmDateTime : null,
+          onToggle: _hasValidStartTime 
+              ? (value) {
+                  if (value && alarmDateTime == null) {
+                    // If enabling alarm but no time set, open picker
+                    _selectCustomAlarmTime(context);
+                  } else if (value && !_isAlarmTimeValid) {
+                    // If enabling alarm but time is invalid, open picker
+                    _selectCustomAlarmTime(context);
+                  } else {
+                    onToggle(value);
+                  }
+                }
+              : (_) {}, // Disabled when start time is invalid
+          onPickTime: _hasValidStartTime 
+              ? () => _selectCustomAlarmTime(context)
+              : null,
+          showInitialWarning: false,
         ),
 
-        // Error message di bawah alarm picker dengan teks merah
-        if (!_canEnableAlarm || !_isAlarmTimeValid) ...[
+        // Info/Error message
+        if (_getInfoMessage.isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(
-            _getErrorMessage,
+            _getInfoMessage,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 12,
-              color: Colors.red,
+              color: (!_hasValidStartTime || !_isAlarmTimeValid) ? Colors.red : Colors.orange,
               fontWeight: FontWeight.w400,
               fontStyle: FontStyle.italic,
             ),

@@ -13,10 +13,7 @@ Future<DateTime?> showCustomAlarmPickerBottomSheet(
 }) async {
   final now = DateTime.now();
   
-  // Calculate max date (selected date and below)
-  final maxDate = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
-  
-  // Calculate max alarm time (1 minute before start time)
+  // Calculate start time as DateTime
   final startDateTime = DateTime(
     selectedDate.year,
     selectedDate.month,
@@ -24,14 +21,26 @@ Future<DateTime?> showCustomAlarmPickerBottomSheet(
     startTime.hour,
     startTime.minute,
   );
+  
+  // Max alarm time is 1 minute before start time
   final maxAlarmDateTime = startDateTime.subtract(const Duration(minutes: 1));
 
-  // Initialize with safe values
-  DateTime initialDate = initialDateTime ?? now;
-  if (initialDate.isBefore(now)) {
-    initialDate = now;
-  } else if (initialDate.isAfter(maxAlarmDateTime)) {
-    initialDate = maxAlarmDateTime;
+  // Initialize alarm time - use provided initialDateTime or default to current time + 15 minutes
+  DateTime initialDate;
+  if (initialDateTime != null) {
+    initialDate = initialDateTime;
+    // Ensure initial date is within valid bounds
+    if (initialDate.isBefore(now)) {
+      initialDate = now.add(const Duration(minutes: 15));
+    } else if (initialDate.isAfter(maxAlarmDateTime)) {
+      initialDate = maxAlarmDateTime;
+    }
+  } else {
+    // Default: 15 minutes from now, but ensure it's before max alarm time
+    initialDate = now.add(const Duration(minutes: 15));
+    if (initialDate.isAfter(maxAlarmDateTime)) {
+      initialDate = maxAlarmDateTime;
+    }
   }
 
   DateTime selectedAlarmDate = DateTime(
@@ -50,9 +59,9 @@ Future<DateTime?> showCustomAlarmPickerBottomSheet(
     barrierColor: Colors.white.withOpacity(0.7),
     builder: (context) {
       final nowTruncated = DateTime(now.year, now.month, now.day);
-      final maxTruncated = DateTime(maxDate.year, maxDate.month, maxDate.day);
+      final maxDateTruncated = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
 
-      final maxDays = maxTruncated.difference(nowTruncated).inDays;
+      final maxDays = maxDateTruncated.difference(nowTruncated).inDays;
       final initialDayIndex = selectedAlarmDate.difference(nowTruncated).inDays;
       final validInitialDayIndex = initialDayIndex.clamp(0, maxDays);
 
@@ -80,6 +89,11 @@ Future<DateTime?> showCustomAlarmPickerBottomSheet(
             int minHour = isToday ? now.hour : 0;
             int maxHour = isSelectedDay ? maxAlarmDateTime.hour : 23;
 
+            // Adjust min hour if we're in the same hour as now
+            if (isToday && minHour == now.hour && now.minute >= 59) {
+              minHour = now.hour + 1;
+            }
+
             for (int h = minHour; h <= maxHour; h++) {
               hours.add(h);
             }
@@ -95,13 +109,13 @@ Future<DateTime?> showCustomAlarmPickerBottomSheet(
                 selectedAlarmDate.day == now.day &&
                 selectedHour == now.hour;
 
-            final isSameAsSelectedDay = selectedAlarmDate.year == selectedDate.year &&
+            final isSameAsMaxAlarm = selectedAlarmDate.year == selectedDate.year &&
                 selectedAlarmDate.month == selectedDate.month &&
                 selectedAlarmDate.day == selectedDate.day &&
                 selectedHour == maxAlarmDateTime.hour;
 
-            final int minMinute = isSameAsNow ? now.minute : 0;
-            final int maxMinute = isSameAsSelectedDay ? maxAlarmDateTime.minute : 59;
+            int minMinute = isSameAsNow ? now.minute + 1 : 0;
+            int maxMinute = isSameAsMaxAlarm ? maxAlarmDateTime.minute : 59;
 
             for (int m = minMinute; m <= maxMinute; m++) {
               minutes.add(m);
@@ -113,14 +127,25 @@ Future<DateTime?> showCustomAlarmPickerBottomSheet(
           final validHours = getValidHours();
           final validMinutes = getValidMinutes();
 
+          // Ensure we have at least one valid option
           if (validHours.isEmpty) {
-            validHours.add(0);
+            return BottomSheetContainer(
+              title: 'Kustom Alarm',
+              subtitle: 'Tidak ada waktu yang tersedia',
+              content: const Center(
+                child: Text('Tidak ada waktu alarm yang valid untuk tanggal ini'),
+              ),
+              onCancel: () => Navigator.pop(context),
+              onConfirm: null,
+              isConfirmEnabled: false,
+            );
           }
 
           if (validMinutes.isEmpty) {
             validMinutes.add(0);
           }
 
+          // Adjust selected values if they're not valid
           if (!validHours.contains(selectedHour)) {
             selectedHour = validHours.first;
           }
@@ -167,14 +192,15 @@ Future<DateTime?> showCustomAlarmPickerBottomSheet(
                               setState(() {
                                 selectedAlarmDate = availableDates[index];
 
+                                // Update hour and minute based on new date
                                 final newValidHours = getValidHours();
-                                if (newValidHours.isNotEmpty) {
+                                if (newValidHours.isNotEmpty && !newValidHours.contains(selectedHour)) {
                                   selectedHour = newValidHours.first;
+                                }
 
-                                  final newValidMinutes = getValidMinutes();
-                                  if (newValidMinutes.isNotEmpty) {
-                                    selectedMinute = newValidMinutes.first;
-                                  }
+                                final newValidMinutes = getValidMinutes();
+                                if (newValidMinutes.isNotEmpty && !newValidMinutes.contains(selectedMinute)) {
+                                  selectedMinute = newValidMinutes.first;
                                 }
                               });
                             }
@@ -255,12 +281,12 @@ Future<DateTime?> showCustomAlarmPickerBottomSheet(
                                 return numberText.padLeft(2, '0');
                               },
                               onChanged: (value) => setState(() {
-                                if (value >= validHours.first &&
-                                    value <= validHours.last) {
+                                if (validHours.contains(value)) {
                                   selectedHour = value;
 
+                                  // Update valid minutes for new hour
                                   final newValidMinutes = getValidMinutes();
-                                  if (newValidMinutes.isNotEmpty) {
+                                  if (newValidMinutes.isNotEmpty && !newValidMinutes.contains(selectedMinute)) {
                                     selectedMinute = newValidMinutes.first;
                                   }
                                 }
@@ -298,8 +324,7 @@ Future<DateTime?> showCustomAlarmPickerBottomSheet(
                                 return numberText.padLeft(2, '0');
                               },
                               onChanged: (value) => setState(() {
-                                if (value >= validMinutes.first &&
-                                    value <= validMinutes.last) {
+                                if (validMinutes.contains(value)) {
                                   selectedMinute = value;
                                 }
                               }),
@@ -313,19 +338,17 @@ Future<DateTime?> showCustomAlarmPickerBottomSheet(
               ],
             ),
             onCancel: () => Navigator.pop(context),
-            onConfirm: validHours.isEmpty
-                ? null
-                : () {
-                    finalDate = DateTime(
-                      selectedAlarmDate.year,
-                      selectedAlarmDate.month,
-                      selectedAlarmDate.day,
-                      selectedHour,
-                      selectedMinute,
-                    );
-                    Navigator.pop(context, finalDate);
-                  },
-            isConfirmEnabled: validHours.isNotEmpty,
+            onConfirm: () {
+              finalDate = DateTime(
+                selectedAlarmDate.year,
+                selectedAlarmDate.month,
+                selectedAlarmDate.day,
+                selectedHour,
+                selectedMinute,
+              );
+              Navigator.pop(context, finalDate);
+            },
+            isConfirmEnabled: true,
           );
         },
       );

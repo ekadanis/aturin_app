@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class ActivityNameField extends StatelessWidget {
+class ActivityNameField extends StatefulWidget {
   final TextEditingController controller;
   final String? errorText;
   final int maxCharCount;
@@ -12,6 +12,32 @@ class ActivityNameField extends StatelessWidget {
     this.errorText,
     this.maxCharCount = 20,
   });
+
+  @override
+  State<ActivityNameField> createState() => _ActivityNameFieldState();
+}
+
+class _ActivityNameFieldState extends State<ActivityNameField> {
+  int _currentLength = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentLength = widget.controller.text.length;
+    widget.controller.addListener(_updateLength);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_updateLength);
+    super.dispose();
+  }
+
+  void _updateLength() {
+    setState(() {
+      _currentLength = widget.controller.text.length;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +54,7 @@ class ActivityNameField extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         TextFormField(
-          controller: controller,
+          controller: widget.controller,
           decoration: InputDecoration(
             hintText: 'Masukkan nama aktivitas',
             hintStyle: GoogleFonts.plusJakartaSans(
@@ -51,8 +77,11 @@ class ActivityNameField extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: Colors.red),
             ),
-            errorText: errorText,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            errorText: widget.errorText,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
+            ),
           ),
           style: GoogleFonts.plusJakartaSans(fontSize: 14),
         ),
@@ -60,7 +89,7 @@ class ActivityNameField extends StatelessWidget {
         Align(
           alignment: Alignment.centerRight,
           child: Text(
-            '$maxCharCount karakter',
+            '$_currentLength/${widget.maxCharCount} karakter',
             style: GoogleFonts.plusJakartaSans(
               fontSize: 12,
               color: Colors.grey[500],
@@ -118,14 +147,13 @@ class TimeField extends StatelessWidget {
                   value,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
-                    color: value == 'Pilih waktu' ? Colors.grey[500] : Colors.black,
+                    color:
+                        value == 'Pilih waktu'
+                            ? Colors.grey[500]
+                            : Colors.black,
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  color: Colors.grey[400],
-                  size: 20,
-                ),
+                Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
               ],
             ),
           ),
@@ -134,10 +162,7 @@ class TimeField extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             error!,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 12,
-              color: Colors.red,
-            ),
+            style: GoogleFonts.plusJakartaSans(fontSize: 12, color: Colors.red),
           ),
         ],
       ],
@@ -181,15 +206,14 @@ class CategorySelectionField extends StatelessWidget {
                     selectedCategoryName ?? 'Tidak ada kategori',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 14,
-                      color: selectedCategoryName == null ? Colors.grey[500] : Colors.black,
+                      color:
+                          selectedCategoryName == null
+                              ? Colors.grey[500]
+                              : Colors.black,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Icon(
-                    Icons.chevron_right,
-                    color: Colors.grey[400],
-                    size: 20,
-                  ),
+                  Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
                 ],
               ),
             ],

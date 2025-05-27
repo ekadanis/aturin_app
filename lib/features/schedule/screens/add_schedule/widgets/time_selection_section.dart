@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:aturin_app/features/schedule/widgets/form_field_widgets.dart';
+import 'package:aturin_app/features/schedule/screens/add_schedule/widgets/form_field_widgets.dart';
 import 'package:aturin_app/features/schedule/screens/add_schedule/widgets/time_picker_bottom_sheet.dart';
 
 class TimeSelectionSection extends StatelessWidget {

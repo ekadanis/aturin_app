@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:aturin_app/features/schedule/widgets/form_field_widgets.dart';
+import 'package:aturin_app/features/schedule/screens/add_schedule/widgets/form_field_widgets.dart';
 
 class ActivityFormSection extends StatefulWidget {
   final String initialTitle;
@@ -44,9 +44,10 @@ class _ActivityFormSectionState extends State<ActivityFormSection> {
         text: limitedText,
         selection: TextSelection.collapsed(offset: limitedText.length),
       );
-      return;
+      widget.onTitleChanged(limitedText);
+    } else {
+      widget.onTitleChanged(text);
     }
-    widget.onTitleChanged(text);
   }
 
   @override
