@@ -30,6 +30,7 @@ class DatabaseHelper {
   
   // Tasks table columns - all defined from the start
   static const String columnTitle = 'title';
+  static const String columnDescription = 'description';
   static const String columnDeadline = 'deadline';
   static const String columnEstimatedDuration = 'estimatedDuration';
   static const String columnCategory = 'category';
@@ -92,6 +93,7 @@ class DatabaseHelper {
         CREATE TABLE IF NOT EXISTS $tableTasks (
           $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
           $columnTitle TEXT NOT NULL,
+          $columnDescription TEXT,
           $columnDeadline TEXT NOT NULL,
           $columnEstimatedDuration INTEGER NOT NULL,
           $columnCategory TEXT NOT NULL,

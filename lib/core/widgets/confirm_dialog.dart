@@ -3,21 +3,23 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sizer/sizer.dart';
 
 class ConfirmDialog extends StatelessWidget {
-  final String iconPath;
-  final String title;
-  final String description;
+  final String? iconPath;
+  final String? title;
+  final String? description;
   final String cancelText;
   final String confirmText;
   final VoidCallback onConfirm;
+  final bool isTask;
 
   const ConfirmDialog({
     super.key,
-    required this.iconPath,
-    required this.title,
-    required this.description,
+    this.iconPath,
+    this.title,
+    this.description,
     required this.onConfirm,
     this.cancelText = 'Batal',
     this.confirmText = 'Hapus',
+    this.isTask = false,
   });
 
   @override
@@ -32,15 +34,21 @@ class ConfirmDialog extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              SvgPicture.asset(iconPath, width: 15.w, height: 15.w),
+              SvgPicture.asset(
+                iconPath ?? 'assets/activitycategory/trash-round-tipis.svg',
+                width: 15.w,
+                height: 15.w,
+              ),
               SizedBox(height: 2.h),
               Text(
-                title,
+                title ?? (isTask ? 'Hapus Tugas' : 'Hapus Aktivitas'),
                 style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w900),
               ),
               SizedBox(height: 2.h),
               Text(
-                description,
+                description ?? (isTask
+                    ? 'Yakin nih kamu mau hapus tugas?'
+                    : 'Yakin nih kamu mau hapus aktivitas?'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16.sp,

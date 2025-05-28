@@ -248,6 +248,22 @@ class SplashRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [TaskDetailListScreen]
+class TaskDetailListRoute extends PageRouteInfo<void> {
+  const TaskDetailListRoute({List<PageRouteInfo>? children})
+    : super(TaskDetailListRoute.name, initialChildren: children);
+
+  static const String name = 'TaskDetailListRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const TaskDetailListScreen();
+    },
+  );
+}
+
+/// generated route for
 /// [TaskDetailScreen]
 class TaskDetailRoute extends PageRouteInfo<TaskDetailRouteArgs> {
   TaskDetailRoute({Key? key, required Task task, List<PageRouteInfo>? children})
