@@ -3,6 +3,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:aturin_app/features/detailactivity/widgets/activity_detail_card.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:aturin_app/core/widgets/confirm_dialog.dart';
+import 'package:sizer/sizer.dart';
 
 @RoutePage()
 class ActivityDetailListPage extends StatefulWidget {
@@ -30,6 +31,54 @@ class _ActivityDetailListPageState extends State<ActivityDetailListPage> {
       'category': 'Pekerjaan',
       'alarmId': '123',
     },
+    {
+      'title': 'Push up 1000 kali',
+      'date': '21 Mei 2025',
+      'startTime': '09:00',
+      'completeTime': '11:00',
+      'category': 'Olahraga',
+      'alarmId': '123',
+    },
+    {
+      'title': 'Membuat Roket',
+      'date': '21 Mei 2025',
+      'startTime': '09:00',
+      'completeTime': '11:00',
+      'category': 'Akademik',
+      'alarmId': '123',
+    },
+    {
+      'title': 'Bersholawat',
+      'date': '21 Mei 2025',
+      'startTime': '09:00',
+      'completeTime': '11:00',
+      'category': 'Spiritual',
+      'alarmId': '123',
+    },
+    {
+      'title': 'Ngomong',
+      'date': '21 Mei 2025',
+      'startTime': '09:00',
+      'completeTime': '11:00',
+      'category': 'Sosial',
+      'alarmId': '123',
+    },
+    {
+      'title': 'Healing',
+      'date': '21 Mei 2025',
+      'startTime': '09:00',
+      'completeTime': '11:00',
+      'category': 'Pribadi',
+      'alarmId': '123',
+    },
+    {
+      'title': 'Scroll Ig',
+      'date': '21 Mei 2025',
+      'startTime': '09:00',
+      'completeTime': '11:00',
+      'category': 'Istirahat',
+      'alarmId': '123',
+    },
   ];
 
   late final PageController _pageController;
@@ -38,9 +87,7 @@ class _ActivityDetailListPageState extends State<ActivityDetailListPage> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(
-      viewportFraction: 0.85,
-    ); // Card agak kecil biar keliatan preview card lain
+    _pageController = PageController(viewportFraction: 0.85);
     _pageController.addListener(() {
       final page = _pageController.page ?? 0;
       final newIndex = page.round();
@@ -72,10 +119,10 @@ class _ActivityDetailListPageState extends State<ActivityDetailListPage> {
           Positioned.fill(
             child: Padding(
               padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top + 16,
-                left: 16,
-                right: 16,
-                bottom: 16,
+                top: MediaQuery.of(context).padding.top + 2.h,
+                left: 4.w,
+                right: 4.w,
+                bottom: 2.h,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,13 +133,13 @@ class _ActivityDetailListPageState extends State<ActivityDetailListPage> {
                         icon: const Icon(Icons.arrow_back, color: Colors.black),
                         onPressed: () => context.router.pop(),
                       ),
-                      const SizedBox(width: 16),
-                      const Text(
+                      SizedBox(width: 3.w),
+                      Text(
                         'Detail Aktivitas',
-                        style: TextStyle(
-                          fontSize: 20,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          fontSize: 18.sp,
+                          color: const Color(0xFF131927),
                         ),
                       ),
                     ],
@@ -115,73 +162,74 @@ class _ActivityDetailListPageState extends State<ActivityDetailListPage> {
                             completeTime: activity['completeTime']!,
                             category: activity['category']!,
                             alarmId: activity['alarmId'],
-                            isSelected:
-                                isSelected, // Kirim status selected ke card
+                            isSelected: isSelected,
                           ),
                         );
                       },
                     ),
                   ),
-                  const SizedBox(height: 64),
+                  SizedBox(height: 8.h),
                 ],
               ),
             ),
           ),
           Positioned(
-            bottom: 36,
+            bottom: 4.h,
             left: 0,
             right: 0,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
-                    borderRadius: BorderRadius.circular(60),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        spreadRadius: 3,
-                        blurRadius: 8,
+                GestureDetector(
+                  onTap: () {},
+                  child: Container(
+                    width: 12.w,
+                    height: 12.w,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.circular(60),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          spreadRadius: 1,
+                          blurRadius: 5,
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: SvgPicture.asset(
+                        'assets/activitycategory/edit-pencil.svg',
+                        width: 6.w,
+                        height: 6.w,
                       ),
-                    ],
-                  ),
-                  child: Center(
-                    child: SvgPicture.asset(
-                      'assets/activitycategory/edit-pencil.svg',
                     ),
                   ),
                 ),
-                const SizedBox(width: 64),
+
+                SizedBox(width: 16.w),
                 GestureDetector(
-                  onTap: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => const ConfirmDialog(),
-                    );
-                    if (confirm == true) {
-                      Navigator.pop(context);
-                    }
+                  onTap: () {
+                    showDeleteDialog(context);
                   },
                   child: Container(
-                    width: 48,
-                    height: 48,
+                    width: 12.w,
+                    height: 12.w,
                     decoration: BoxDecoration(
                       color: const Color(0xFFFDECEC),
                       borderRadius: BorderRadius.circular(60),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.2),
-                          spreadRadius: 3,
-                          blurRadius: 8,
+                          spreadRadius: 1,
+                          blurRadius: 5,
                         ),
                       ],
                     ),
                     child: Center(
                       child: SvgPicture.asset(
                         'assets/activitycategory/trash.svg',
+                        width: 6.w,
+                        height: 6.w,
                       ),
                     ),
                   ),
@@ -193,4 +241,21 @@ class _ActivityDetailListPageState extends State<ActivityDetailListPage> {
       ),
     );
   }
+}
+
+void showDeleteDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder:
+        (_) => ConfirmDialog(
+          iconPath: 'assets/activitycategory/trash-round-tipis.svg',
+          title: 'Hapus Aktivitas',
+          description: 'Yakin nih kamu mau hapus aktivitas?',
+          confirmText: 'Hapus',
+          cancelText: 'Batal',
+          onConfirm: () {
+            print('Aktivitas dihapus!');
+          },
+        ),
+  );
 }

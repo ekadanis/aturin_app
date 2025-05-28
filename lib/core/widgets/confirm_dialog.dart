@@ -1,48 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:sizer/sizer.dart';
 
 class ConfirmDialog extends StatelessWidget {
-  final bool isTask; // true = task, false = activity
+  final String? iconPath;
+  final String? title;
+  final String? description;
+  final String cancelText;
+  final String confirmText;
+  final VoidCallback onConfirm;
+  final bool isTask;
 
-  const ConfirmDialog({super.key, this.isTask = false});
+  const ConfirmDialog({
+    super.key,
+    this.iconPath,
+    this.title,
+    this.description,
+    required this.onConfirm,
+    this.cancelText = 'Batal',
+    this.confirmText = 'Hapus',
+    this.isTask = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      insetPadding: const EdgeInsets.all(16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2.w)),
+      insetPadding: EdgeInsets.all(4.w),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 400),
+        constraints: BoxConstraints(maxWidth: 92.w),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(4.w),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               SvgPicture.asset(
-                'assets/activitycategory/trash-round-tipis.svg',
-                width: 80,
-                height: 80,
+                iconPath ?? 'assets/activitycategory/trash-round-tipis.svg',
+                width: 15.w,
+                height: 15.w,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 2.h),
               Text(
-                isTask ? 'Hapus Tugas' : 'Hapus Aktivitas',
-                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+                title ?? (isTask ? 'Hapus Tugas' : 'Hapus Aktivitas'),
+                style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w900),
               ),
-              const SizedBox(height: 15),
+              SizedBox(height: 2.h),
               Text(
-                isTask
+                description ?? (isTask
                     ? 'Yakin nih kamu mau hapus tugas?'
-                    : 'Yakin nih kamu mau hapus aktivitas?',
+                    : 'Yakin nih kamu mau hapus aktivitas?'),
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
+                style: TextStyle(
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w400,
-                  color: Color(0xFF6D717F),
+                  color: const Color(0xFF6D717F),
                 ),
               ),
-              const SizedBox(height: 30),
+              SizedBox(height: 4.h),
               Row(
                 children: [
                   Expanded(
@@ -53,47 +67,50 @@ class ConfirmDialog extends StatelessWidget {
                         foregroundColor: Theme.of(context).colorScheme.primary,
                         side: BorderSide(
                           color: Theme.of(context).colorScheme.primary,
-                          width: 2,
+                          width: 0.5.w,
                         ),
-                        minimumSize: const Size(double.infinity, 40),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                        minimumSize: Size(double.infinity, 6.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 3.w,
+                          vertical: 1.5.h,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(2.w),
                         ),
                       ),
-                      child: const Text(
-                        'Batal',
+                      child: Text(
+                        cancelText,
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: 17.5.sp,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 4.w),
                   Expanded(
                     child: TextButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        Navigator.pop(context, true);
+                        onConfirm();
+                      },
                       style: TextButton.styleFrom(
                         backgroundColor: Colors.red,
                         foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 40),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                        minimumSize: Size(double.infinity, 6.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 3.w,
+                          vertical: 1.5.h,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(2.w),
                         ),
                       ),
-                      child: const Text(
-                        'Hapus',
+                      child: Text(
+                        confirmText,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 20,
+                          fontSize: 17.5.sp,
                         ),
                       ),
                     ),
