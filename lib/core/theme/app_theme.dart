@@ -5,10 +5,10 @@ class AppTheme {
   // Colors
   static const Color primaryColor = Color(0xFF5263F3); // Primary blue color
   static const Color buttonBackgroundColor = Color(0xFFC6D6FF);
-
   // Light theme colors
   static const Color lightBackgroundColor = Colors.white;
   static const Color lightCardColor = Colors.white;
+  static const Color inputFieldColor = Color(0xFFEEF3FF); // Light blue input field color
   static const Color lightTextColor = Color(0xFF131927);
   static const Color lightSecondaryTextColor = Color(0xFF71717A);
   static const Color lightDividerColor = Color(0xFFE4E4E7);
@@ -20,12 +20,17 @@ class AppTheme {
   static const Color darkTextColor = Colors.white;
   static const Color darkSecondaryTextColor = Color(0xFFAAAAAA);
   static const Color darkDividerColor = Color(0xFF2A2A2A);
-
   // Accent colors
   static const Color accentColor = Color(0xFF6E7BFF);
   static const Color successColor = Color(0xFF3DA755);
   static const Color warningColor = Color(0xFFE6A73C);
   static const Color dangerColor = Color(0xFFD34141);
+
+  // Password strength colors
+  static const Color weakPasswordColor = Color(0xFFFF8C42); // Orange for weak
+  static const Color mediumPasswordColor = Color(0xFFFFC107); // Yellow for medium
+  static const Color goodPasswordColor = Color(0xFFFF9800); // Orange for good
+  static const Color strongPasswordColor = Color(0xFF4CAF50); // Green for strong
 
   // Task status colors
   static const Color lateColor = Color(0xFFFFDDDD);

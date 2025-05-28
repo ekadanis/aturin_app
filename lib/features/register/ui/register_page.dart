@@ -1,7 +1,15 @@
+import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:aturin_app/features/login/ui/login_page.dart';
+import 'package:aturin_app/features/register/widgets/login_link_widget.dart';
+import 'package:aturin_app/features/register/widgets/register_app_bar_widget.dart';
+import 'package:aturin_app/features/register/widgets/register_form_widget.dart';
+import 'package:aturin_app/features/register/widgets/register_header.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:sizer/sizer.dart';
+import 'package:auto_route/auto_route.dart';
 
+@RoutePage()
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
@@ -10,55 +18,15 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController =
-      TextEditingController();
-  bool isPasswordVisible = false;
-
-  // VALIDATOR
-  bool get hasUppercase => passwordController.text.contains(RegExp(r'[A-Z]'));
-  bool get hasSymbol =>
-      passwordController.text.contains(RegExp(r'[!@#\$&*~._-]'));
-  bool get hasMinLength => passwordController.text.length >= 8;
-  bool get noSpaces => !passwordController.text.contains(' ');
-  bool get isNotEmpty => passwordController.text.isNotEmpty;
-
-  double get strengthValue {
-    int passed =
-        [
-          hasUppercase,
-          hasSymbol,
-          hasMinLength,
-          noSpaces,
-          isNotEmpty,
-        ].where((e) => e).length;
-
-    return passed / 5;
-  }
-
-  String get strengthLabel {
-    if (strengthValue <= 0.4) return "Lemah";
-    if (strengthValue <= 0.7) return "Sedang";
-    if (strengthValue <= 0.99) return "Baik";
-    return "Kuat";
-  }
-
-  Color get strengthColor {
-    if (strengthValue <= 0.4) return Colors.red;
-    if (strengthValue <= 0.7) return Colors.yellow;
-    if (strengthValue <= 0.99) return Colors.orange;
-    return Colors.green;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    passwordController.addListener(() => setState(() {}));
-    confirmPasswordController.addListener(() => setState(() {}));
-  }
+  final TextEditingController confirmPasswordController = TextEditingController();
 
   @override
   void dispose() {
+    nameController.dispose();
+    emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();
@@ -67,223 +35,52 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.lightBackgroundColor,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: SizedBox(
+          height: 100.h,
+          width: 100.w,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 24),
-              Center(
-                child: Image.asset(
-                  'assets/images/register2.png', // ilustrasi login
-                  height: 150,
-                ),
+              // Custom App Bar
+              RegisterAppBarWidget(
+                onBackPressed: () => Navigator.pop(context),
               ),
-              const SizedBox(height: 10),
-              Center(
-                child: Column(
-                  children: [
-                    RichText(
-                      text: TextSpan(
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        children: const [
-                          TextSpan(
-                            text: 'Masuk ke ',
-                            style: TextStyle(color: Colors.black),
-                          ),
-                          TextSpan(
-                            text: 'Atur',
-                            style: TextStyle(color: Color(0xFF5263F3)),
-                          ),
-                          TextSpan(
-                            text: 'in',
-                            style: TextStyle(color: Colors.black),
-                          ),
-                        ],
+              
+              // Scrollable Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 2.h),
+                      
+                      // Header with illustration and title
+                      const RegisterHeaderWidget(),
+                      
+                      SizedBox(height: 3.h),
+                      
+                      // Registration form
+                      RegisterFormWidget(
+                        nameController: nameController,
+                        emailController: emailController,
+                        passwordController: passwordController,
+                        confirmPasswordController: confirmPasswordController,
+                        onRegister: _handleRegister,
+                        onValidationError: _showSnackBar,
                       ),
-                    ),
-
-                    const SizedBox(height: 8),
-                    Text(
-                      'Aturin siap bantu kamu, yuk mulai sekarang!',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 14,
-                        color: Colors.grey[600],
+                      
+                      SizedBox(height: 3.h),
+                      
+                      // Login link
+                      LoginLinkWidget(
+                        onLoginTap: _navigateToLogin,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 16),
-              Text('Nama', style: GoogleFonts.plusJakartaSans(fontSize: 16)),
-              const SizedBox(height: 8),
-              _buildTextField(
-                hintText: 'Masukkan Nama',
-                icon: Icons.person_outline,
-                obscureText: false,
-              ),
-
-              const SizedBox(height: 16),
-              Text('Email', style: GoogleFonts.plusJakartaSans(fontSize: 16)),
-              const SizedBox(height: 8),
-              _buildTextField(
-                hintText: 'contoh@gmail.com',
-                icon: Icons.email_outlined,
-                obscureText: false,
-              ),
-
-              const SizedBox(height: 16),
-              Text(
-                'Kata Sandi',
-                style: GoogleFonts.plusJakartaSans(fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: passwordController,
-                obscureText: !isPasswordVisible,
-                decoration: InputDecoration(
-                  hintText: "****************",
-                  prefixIcon: const Icon(Icons.vpn_key),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      isPasswordVisible
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                    ),
-                    onPressed:
-                        () => setState(() {
-                          isPasswordVisible = !isPasswordVisible;
-                        }),
+                      
+                      SizedBox(height: 4.h),
+                    ],
                   ),
-                  filled: true,
-                  fillColor: const Color.fromARGB(255, 237, 243, 255),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-              Text(
-                'Konfirmasi Kata Sandi',
-                style: GoogleFonts.plusJakartaSans(fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: confirmPasswordController,
-                obscureText: !isPasswordVisible,
-                decoration: InputDecoration(
-                  hintText: "****************",
-                  prefixIcon: const Icon(Icons.vpn_key),
-                  suffixIcon:
-                      passwordController.text.isNotEmpty
-                          ? Icon(
-                            confirmPasswordController.text ==
-                                    passwordController.text
-                                ? Icons.check_circle
-                                : Icons.cancel,
-                            color:
-                                confirmPasswordController.text ==
-                                        passwordController.text
-                                    ? Colors.green
-                                    : Colors.red,
-                          )
-                          : null,
-                  filled: true,
-                  fillColor: const Color.fromARGB(255, 237, 243, 255),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-
-              if (passwordController.text.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                segmentedProgressIndicator(strengthValue),
-
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      strengthLabel,
-                      style: TextStyle(color: strengthColor, fontSize: 12),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 8,
-                  children: [
-                    _buildCriteria('8+ karakter', hasMinLength),
-                    _buildCriteria('huruf besar (A–Z)', hasUppercase),
-                    _buildCriteria('simbol (!@#...)', hasSymbol),
-                    _buildCriteria('tanpa spasi', noSpaces),
-                    _buildCriteria('tidak boleh kosong', isNotEmpty),
-                  ],
-                ),
-              ],
-
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  if (passwordController.text !=
-                      confirmPasswordController.text) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Konfirmasi kata sandi tidak cocok."),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                    return;
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                  backgroundColor: const Color(0xFF5C6EF8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text("Daftar"),
-              ),
-
-              Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Sudah punya akun? Yuk langsung ',
-                      style: TextStyle(
-                        color: Color.fromARGB(255, 128, 128, 128),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const LoginPage()),
-                        );
-                      },
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero, // Hapus padding bawaan
-                        minimumSize: Size(0, 2), // Hapus ukuran minimum
-                      ),
-                      child: const Text(
-                        'Masuk',
-                        style: TextStyle(color: Colors.green),
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ],
@@ -293,74 +90,60 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget _buildTextField({
-    required String hintText,
-    required IconData icon,
-    required bool obscureText,
-    Widget? suffixIcon,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 237, 243, 255),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: TextField(
-        obscureText: obscureText,
-        decoration: InputDecoration(
-          prefixIcon: Icon(icon, size: 20),
-          suffixIcon: suffixIcon,
-          hintText: hintText,
-          filled: true,
-          fillColor: const Color.fromARGB(255, 237, 243, 255),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCriteria(String text, bool passed) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          passed ? Icons.check_circle : Icons.circle,
-          color: passed ? Colors.green : Colors.grey,
-          size: 16,
-        ),
-        const SizedBox(width: 4),
-        Text(
-          text,
+  void _handleRegister() {
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Pendaftaran berhasil! Silakan masuk dengan akun Anda.',
           style: GoogleFonts.plusJakartaSans(
-            fontSize: 12,
-            color: passed ? Colors.black : Colors.grey,
+            fontSize: 13.sp,
+            color: Colors.white,
           ),
         ),
-      ],
+        backgroundColor: AppTheme.successColor,
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.all(4.w),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+
+    // Navigate to login page after a delay
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        _navigateToLogin();
+      }
+    });
+  }
+
+  void _navigateToLogin() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginPage()),
     );
   }
 
-  Widget segmentedProgressIndicator(double strengthValue) {
-    int totalSegments = 4;
-    double segmentValue = 1.0 / totalSegments;
-
-    return Row(
-      children: List.generate(totalSegments, (index) {
-        bool isFilled = strengthValue >= (segmentValue * (index + 1));
-        return Expanded(
-          child: Container(
-            margin: EdgeInsets.symmetric(horizontal: 2), // Jarak antar segmen
-            height: 4,
-            decoration: BoxDecoration(
-              color: isFilled ? strengthColor : Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 13.sp,
+            color: Colors.white,
           ),
-        );
-      }),
+        ),
+        backgroundColor: AppTheme.lightErrorColor,
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.all(4.w),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        duration: const Duration(seconds: 3),
+      ),
     );
   }
 }

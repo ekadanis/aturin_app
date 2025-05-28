@@ -1,9 +1,16 @@
+import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:aturin_app/features/home/ui/page/home_page.dart';
+import 'package:aturin_app/features/login/widgets/google_login_button.dart';
+import 'package:aturin_app/features/login/widgets/login_divider_widget.dart';
+import 'package:aturin_app/features/login/widgets/login_form_widget.dart';
+import 'package:aturin_app/features/login/widgets/login_header_widget.dart';
+import 'package:aturin_app/features/login/widgets/register_link_widget.dart';
 import 'package:aturin_app/features/register/ui/register_page.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sizer/sizer.dart';
 
 @RoutePage()
 class LoginPage extends StatefulWidget {
@@ -14,221 +21,155 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  bool isPasswordVisible = false;
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.lightBackgroundColor,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 24),
-              Center(
-                child: Image.asset(
-                  'assets/images/login.png', // ilustrasi login
-                  height: 180,
+        child: SizedBox(
+          height: 100.h,
+          width: 100.w,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 4.h),
+                
+                // Header with logo and title
+                const LoginHeaderWidget(),
+                
+                SizedBox(height: 5.h),
+                
+                // Login form
+                LoginFormWidget(
+                  emailController: emailController,
+                  passwordController: passwordController,
+                  onLogin: _handleLogin,
                 ),
-              ),
-              const SizedBox(height: 10),
-              Center(
-                child: Column(
-                  children: [
-                    RichText(
-                      text: TextSpan(
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        children: const [
-                          TextSpan(
-                            text: 'Masuk ke ',
-                            style: TextStyle(color: Colors.black),
-                          ),
-                          TextSpan(
-                            text: 'Atur',
-                            style: TextStyle(color: Color(0xFF5263F3)),
-                          ),
-                          TextSpan(
-                            text: 'in',
-                            style: TextStyle(color: Colors.black),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 8),
-                    Text(
-                      'Selamat datang kembali! Yuk atur harimu lagi.',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
+                
+                SizedBox(height: 3.h),
+                
+                // Divider
+                const LoginDividerWidget(),
+                
+                SizedBox(height: 3.h),
+                
+                // Google login button
+                // GoogleLoginButtonWidget(
+                //   onGoogleLogin: _handleGoogleLogin,
+                // ),
+                
+                SizedBox(height: 3.h),
+                
+                // Register link
+                RegisterLinkWidget(
+                  onRegisterTap: _navigateToRegister,
                 ),
-              ),
-              const SizedBox(height: 32),
-              Text('Email', style: GoogleFonts.plusJakartaSans(fontSize: 14)),
-              const SizedBox(height: 8),
-              _buildTextField(
-                hintText: 'contoh@gmail.com',
-                icon: Icons.email_outlined,
-                obscureText: false,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Kata Sandi',
-                style: GoogleFonts.plusJakartaSans(fontSize: 14),
-              ),
-              const SizedBox(height: 8),
-              _buildTextField(
-                hintText: '****************',
-                icon: Icons.vpn_key,
-                obscureText: !isPasswordVisible,
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                  ),
-                  onPressed: () {
-                    setState(() => isPasswordVisible = !isPasswordVisible);
-                  },
-                ),
-              ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    'Lupa kata sandi?',
-                    style: TextStyle(color: Colors.blue),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5C6EF8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () async {
-                    // Misal: validasi berhasil
-                    await saveLoginStatus();
-
-                    // Lalu navigasi ke HomePage
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HomePage()),
-                    );
-                  },
-                  child: const Text('Masuk'),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: const [
-                  Expanded(child: Divider()),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Text('atau'),
-                  ),
-                  Expanded(child: Divider()),
-                ],
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton.icon(
-                  icon: Image.asset('assets/icons/google.png', height: 20),
-                  label: const Text('Masuk dengan Google'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF5F5F5),
-                    foregroundColor: Colors.black87,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  onPressed: () async {},
-                ),
-              ),
-              Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('Belum punya akun? Yuk langsung ',
-                    style: TextStyle(
-                        color: Color.fromARGB(255, 128, 128, 128),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const RegisterPage(),
-                          ),
-                        );
-                      },
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero, // Hapus padding bawaan
-                        minimumSize: Size(0, 1), // Hapus ukuran minimum
-                      ),
-                      child: const Text(
-                        'Daftar',
-                        style: TextStyle(color: Colors.green),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+                
+                SizedBox(height: 4.h),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildTextField({
-    required String hintText,
-    required IconData icon,
-    required bool obscureText,
-    Widget? suffixIcon,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F5FF),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: TextField(
-        obscureText: obscureText,
-        decoration: InputDecoration(
-          prefixIcon: Icon(icon, size: 20),
-          suffixIcon: suffixIcon,
-          hintText: hintText,
-          filled: true,
-          fillColor: const Color.fromARGB(255, 237, 243, 255),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
+  Future<void> _handleLogin() async {
+    if (_validateInputs()) {
+      await _saveLoginStatus();
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    // TODO: Implement Google Sign-In logic
+    try {
+      // Add your Google Sign-In implementation here
+      // For now, we'll simulate a successful login
+      await _saveLoginStatus();
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
+      }
+    } catch (e) {
+      _showSnackBar('Google login failed: $e');
+    }
+  }
+
+  void _navigateToRegister() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const RegisterPage()),
+    );
+  }
+
+  bool _validateInputs() {
+    if (emailController.text.trim().isEmpty) {
+      _showSnackBar('Email tidak boleh kosong');
+      return false;
+    }
+
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+        .hasMatch(emailController.text.trim())) {
+      _showSnackBar('Format email tidak valid');
+      return false;
+    }
+
+    if (passwordController.text.trim().isEmpty) {
+      _showSnackBar('Password tidak boleh kosong');
+      return false;
+    }
+
+    if (passwordController.text.length < 6) {
+      _showSnackBar('Password minimal 6 karakter');
+      return false;
+    }
+
+    return true;
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 13.sp,
+            color: Colors.white,
           ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 16),
         ),
+        backgroundColor: AppTheme.lightErrorColor,
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.all(4.w),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        duration: const Duration(seconds: 3),
       ),
     );
   }
 
-  Future<void> saveLoginStatus() async {
+  Future<void> _saveLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', true);
+    await prefs.setString('userEmail', emailController.text.trim());
+    await prefs.setString('loginTime', DateTime.now().toIso8601String());
   }
 }
