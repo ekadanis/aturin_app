@@ -44,8 +44,9 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = true // Menonaktifkan minifikasi/shrinking
-             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+            isMinifyEnabled = false // Menonaktifkan minifikasi/shrinking
+            isShrinkResources = false // Menonaktifkan pengurangan sumber daya
+            //  proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
         }
     }
 }
