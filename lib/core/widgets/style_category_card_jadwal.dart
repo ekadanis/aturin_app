@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-class CategoryOption {
+class CategoryOptionJadwal {
   final String name;
   final String iconPath;
   final Color color;
   final String iconChip;
 
-  const CategoryOption({
+  const CategoryOptionJadwal({
     required this.name,
     required this.iconPath,
     required this.color,
@@ -14,50 +14,50 @@ class CategoryOption {
   });
 }
 
-const List<CategoryOption> categories = [
-  CategoryOption(
+const List<CategoryOptionJadwal> categories = [
+  CategoryOptionJadwal(
     name: 'Akademik',
     iconPath: 'assets/activitycategory/iconcard/akademik.png',
     iconChip: 'assets/activitycategory/chipicon/akademik.svg',
     color: Color(0xFF3498DB),
   ),
-  CategoryOption(
+  CategoryOptionJadwal(
     name: 'Hiburan',
     iconPath: 'assets/activitycategory/iconcard/hiburan.png',
     iconChip: 'assets/activitycategory/chipicon/hiburan.svg',
     color: Color(0xFF9B59B6),
   ),
-  CategoryOption(
+  CategoryOptionJadwal(
     name: 'Pekerjaan',
     iconPath: 'assets/activitycategory/iconcard/pekerjaan.png',
     iconChip: 'assets/activitycategory/chipicon/pekerjaan.svg',
     color: Color(0xFF8E5C42),
   ),
-  CategoryOption(
+  CategoryOptionJadwal(
     name: 'Olahraga',
     iconPath: 'assets/activitycategory/iconcard/olahraga.png',
     iconChip: 'assets/activitycategory/chipicon/olahraga.svg',
     color: Color(0xFFE74C3C),
   ),
-  CategoryOption(
+  CategoryOptionJadwal(
     name: 'Sosial',
     iconPath: 'assets/activitycategory/iconcard/sosial.png',
     iconChip: 'assets/activitycategory/chipicon/sosial.svg',
     color: Color(0xFFE67E22),
   ),
-  CategoryOption(
+  CategoryOptionJadwal(
     name: 'Spiritual',
     iconPath: 'assets/activitycategory/iconcard/spiritual.png',
     iconChip: 'assets/activitycategory/chipicon/spiritual.svg',
     color: Color(0xFF27AE60),
   ),
-  CategoryOption(
+  CategoryOptionJadwal(
     name: 'Pribadi',
     iconPath: 'assets/activitycategory/iconcard/pribadi.png',
     iconChip: 'assets/activitycategory/chipicon/pribadi.svg',
     color: Color(0xFFF1C40F),
   ),
-  CategoryOption(
+  CategoryOptionJadwal(
     name: 'Istirahat',
     iconPath: 'assets/activitycategory/iconcard/istirahat.png',
     iconChip: 'assets/activitycategory/chipicon/istirahat.svg',

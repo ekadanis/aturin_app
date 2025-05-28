@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sizer/sizer.dart';
-import 'package:aturin_app/features/detailactivity/widgets/category.dart';
+import 'package:aturin_app/core/widgets/style_category_card_jadwal.dart';
 import 'package:aturin_app/features/detailactivity/widgets/chip.dart';
 
 class DetailActivityCard extends StatelessWidget {
@@ -24,7 +24,7 @@ class DetailActivityCard extends StatelessWidget {
     this.isSelected = false,
   });
 
-  CategoryOption _getCategoryDetails() {
+  CategoryOptionJadwal _getCategoryDetails() {
     return categories.firstWhere(
       (item) => item.name == category,
       orElse: () => categories.first,

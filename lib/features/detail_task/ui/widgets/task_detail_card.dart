@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:sizer/sizer.dart';
 import '../../../task/models/task.dart';
+import '../../../../core/widgets/style_category_card_jadwal.dart';
+import '../../../detailactivity/widgets/chip.dart';
 
 class TaskDetailCard extends StatelessWidget {
   final Task task;
@@ -16,77 +18,14 @@ class TaskDetailCard extends StatelessWidget {
     this.onTap,
   }) : super(key: key);
 
-  String _getCategoryIconPath(String category) {
+  CategoryOptionJadwal _getCategoryDetails() {
     try {
-      final taskCategory = TaskCategory.values.firstWhere(
-        (e) => e.name == category.toLowerCase(),
+      return categories.firstWhere(
+        (item) => item.name.toLowerCase() == task.category.toLowerCase(),
+        orElse: () => categories.first,
       );
-      switch (taskCategory) {
-        case TaskCategory.akademik:
-          return 'assets/images/akademik.svg';
-        case TaskCategory.hiburan:
-          return 'assets/images/hiburan.svg';
-        case TaskCategory.pekerjaan:
-          return 'assets/images/pekerjaan.svg';
-        case TaskCategory.olahraga:
-          return 'assets/images/olahraga.svg';
-        case TaskCategory.sosial:
-          return 'assets/images/sosial.svg';
-        case TaskCategory.spiritual:
-          return 'assets/images/spiritual.svg';
-        case TaskCategory.pribadi:
-          return 'assets/images/pribadi.svg';
-        case TaskCategory.istirahat:
-          return 'assets/images/istirahat.svg';
-      }
-    } catch (_) {
-      return 'assets/images/akademik.svg';
-    }
-  }
-
-  Color _getCategoryColor(String category) {
-    const categoryColors = {
-      'akademik': Color(0xFF3498DB),
-      'hiburan': Color(0xFF9B59B6),
-      'pekerjaan': Color(0xFF8E5C42),
-      'olahraga': Color(0xFFE74C3C),
-      'sosial': Color(0xFFE67E22),
-      'spiritual': Color(0xFF27AE60),
-      'pribadi': Color(0xFFF1C40F),
-      'istirahat': Color(0xFF283593),
-    };
-    return categoryColors[category.toLowerCase()] ??
-        categoryColors['akademik']!;
-  }
-
-  String _getCategoryName(String category) {
-    try {
-      final categoryString = category.toLowerCase();
-      final taskCategory = TaskCategory.values.firstWhere(
-        (e) => e.toString().split('.').last.toLowerCase() == categoryString,
-        orElse: () => TaskCategory.akademik,
-      );
-
-      switch (taskCategory) {
-        case TaskCategory.akademik:
-          return 'Akademik';
-        case TaskCategory.hiburan:
-          return 'Hiburan';
-        case TaskCategory.pekerjaan:
-          return 'Pekerjaan';
-        case TaskCategory.olahraga:
-          return 'Olahraga';
-        case TaskCategory.sosial:
-          return 'Sosial';
-        case TaskCategory.spiritual:
-          return 'Spiritual';
-        case TaskCategory.pribadi:
-          return 'Pribadi';
-        case TaskCategory.istirahat:
-          return 'Istirahat';
-      }
     } catch (e) {
-      return category;
+      return categories.first;
     }
   }
 
@@ -95,10 +34,9 @@ class TaskDetailCard extends StatelessWidget {
     return task.isCompleted ? 'Selesai' : 'Belum Dikerjakan';
   }
 
-  // Simplified status color - only 2 options based on isCompleted
   Color _getStatusColor(Task task) {
-    return task.isCompleted 
-        ? const Color(0xFFC5E9CD)  // Green for completed
+    return task.isCompleted
+        ? const Color(0xFFC5E9CD) // Green for completed
         : const Color(0xFFFFEDD9); // Orange for not completed
   }
 
@@ -123,12 +61,12 @@ class TaskDetailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final categoryColor = _getCategoryColor(task.category);
-    final normalWidth = 327.0;
-    final normalHeight = 560.0;
+    final categoryDetails = _getCategoryDetails();
+    final normalWidth = 85.w;
+    final normalHeight = 65.h;
 
-    final width = isSelected ? normalWidth + 20 : normalWidth;
-    final height = isSelected ? normalHeight + 20 : normalHeight;
+    final width = isSelected ? normalWidth + 2.w : normalWidth;
+    final height = isSelected ? normalHeight + 2.h : normalHeight;
 
     return GestureDetector(
       onTap: onTap,
@@ -136,13 +74,13 @@ class TaskDetailCard extends StatelessWidget {
         width: width,
         child: OverflowBox(
           maxHeight: height,
-          minHeight: height,
-          child: Card(
-            elevation: isSelected ? 8 : 4,
+          minHeight: height,          child: Card(
+            elevation: isSelected ? 8 : 0,
             margin: EdgeInsets.zero,
             clipBehavior: Clip.antiAlias,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: Colors.grey.shade200, width: 0.3.w),
             ),
             child: Column(
               children: [
@@ -152,7 +90,7 @@ class TaskDetailCard extends StatelessWidget {
                   child: Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: categoryColor,
+                      color: categoryDetails.color,
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(12),
                       ),
@@ -163,7 +101,7 @@ class TaskDetailCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 20),
-                          
+
                           // Task Title
                           Text(
                             task.title,
@@ -177,50 +115,36 @@ class TaskDetailCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
 
-                          const SizedBox(height: 16),
-
-                          // Chips Row
+                          const SizedBox(height: 16),                          // Chips Row
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               children: [
                                 // Category Chip
-                                _buildChip(
-                                  label: _getCategoryName(task.category),
-                                  icon: SvgPicture.asset(
-                                    _getCategoryIconPath(task.category),
-                                    width: 14,
-                                    height: 14,
-                                    colorFilter: const ColorFilter.mode(
-                                      Colors.white,
-                                      BlendMode.srcIn,
-                                    ),
-                                  ),
+                                CustomChip(
+                                  iconPath: categoryDetails.iconChip,
+                                  label: categoryDetails.name,
+                                  foregroundColor: categoryDetails.color,
+                                  backgroundColor: categoryDetails.color.withOpacity(0.15),
                                 ),
-                                
-                                const SizedBox(width: 8),
-                                
+
+                                SizedBox(width: 3.w),
+
                                 // Task Type Chip
-                                _buildChip(
+                                CustomChip(
+                                  iconPath: 'assets/icons/task-list.svg',
                                   label: 'Tugas',
-                                  icon: const Icon(
-                                    Icons.assignment,
-                                    size: 14,
-                                    color: Colors.white,
-                                  ),
+                                  foregroundColor: Color(0xFF5263F3),
+                                  backgroundColor: Color(0xFF5263F3).withOpacity(0.15),
                                 ),
-                                
+
                                 // Alarm Chip (if enabled)
                                 if (task.isAlarmEnabled) ...[
-                                  const SizedBox(width: 8),
-                                  _buildChip(
-                                    label: '',
-                                    icon: const Icon(
-                                      Icons.alarm,
-                                      size: 14,
-                                      color: Colors.white,
-                                    ),
-                                    isIconOnly: true,
+                                  SizedBox(width: 3.w),
+                                  CustomChip(
+                                    iconPath: 'assets/activitycategory/chipicon/alarm2.svg',
+                                    foregroundColor: Color(0xFF5263F3),
+                                    backgroundColor: Color(0xFF5263F3).withOpacity(0.15),
                                   ),
                                 ],
                               ],
@@ -242,21 +166,34 @@ class TaskDetailCard extends StatelessWidget {
                     child: Column(
                       children: [
                         // Status Row with Badge
-                        _buildStatusRow('Status', _getStatusText(task), _getStatusColor(task)),
+                        _buildStatusRow(
+                          'Status',
+                          _getStatusText(task),
+                          _getStatusColor(task),
+                        ),
                         const SizedBox(height: 16),
-                        
                         // Other Detail Rows
-                        _buildDetailRow('Batas waktu', _formatDate(task.deadline)),
+                        _buildDetailRow(
+                          'Batas waktu',
+                          _formatDate(task.deadline),
+                          categoryDetails.color,
+                        ),
                         const SizedBox(height: 16),
-                        _buildDetailRow('Estimasi', _formatDuration(task.estimatedDuration)),
+                        _buildDetailRow(
+                          'Estimasi',
+                          _formatDuration(task.estimatedDuration),
+                          categoryDetails.color,
+                        ),
 
-                        if (task.description != null && task.description!.isNotEmpty) ...[
+                        if (task.description != null &&
+                            task.description!.isNotEmpty) ...[
                           const SizedBox(height: 16),
                           _buildDetailRow(
                             'Deskripsi',
                             task.description!.length > 15
                                 ? '${task.description!.substring(0, 15)}...'
                                 : task.description!,
+                            categoryDetails.color,
                           ),
                         ],
 
@@ -304,7 +241,7 @@ class TaskDetailCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(String label, String value, Color categoryColor) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -321,52 +258,13 @@ class TaskDetailCard extends StatelessWidget {
             value,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 16,
-              color: _getCategoryColor(task.category),
+              color: categoryColor,
               fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.right,
             overflow: TextOverflow.ellipsis,
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildChip({
-    required String label,
-    Widget? icon,
-    bool isIconOnly = false,
-  }) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isIconOnly ? 8 : 12,
-        vertical: 6,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) icon,
-          if (!isIconOnly && label.isNotEmpty) ...[
-            if (icon != null) const SizedBox(width: 4),
-            Text(
-              label,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 12,
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
+      ],    );
   }
 }

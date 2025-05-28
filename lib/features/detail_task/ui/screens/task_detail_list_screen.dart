@@ -208,15 +208,20 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
                       'assets/activitycategory/trash.svg',
                       width: 48,
                       height: 48,
-                    ),
-                    onPressed: () async {
-                      final confirm = await showDialog<bool>(
+                    ),                    onPressed: () async {
+                      showDialog(
                         context: context,
-                        builder: (context) => const ConfirmDialog(),
+                        builder: (context) => ConfirmDialog(
+                          isTask: true,
+                          onConfirm: () {
+                            // Handle delete task
+                            final currentTask = _tasks[_currentPageIndex];
+                            print('Delete task: ${currentTask.title}');
+                            Navigator.pop(context); // Close dialog
+                            Navigator.pop(context); // Close detail screen
+                          },
+                        ),
                       );
-                      if (confirm == true) {
-                        Navigator.pop(context);
-                      }
                     },
                   ),
                 ),
