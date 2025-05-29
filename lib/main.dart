@@ -23,7 +23,7 @@ TaskServiceBridge? _taskServiceBridge;
 Future<void> main() async {
   // Preserve splash screen until initialization is complete
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-  await DatabaseHelper.instance.resetDatabase(); // untuk dev/test saja
+  // await DatabaseHelper.instance.resetDatabase(); // untuk dev/test saja
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   // Set orientasi hanya potrait
   await SystemChrome.setPreferredOrientations([
@@ -54,7 +54,7 @@ Future<void> _initializeApp() async {
 
      // Tambahkan logika redirect berdasarkan status login
     final prefs = await SharedPreferences.getInstance();
-    final isLoggedIn = prefs.getBool('isLoggedIn') ?? false; //inisiasikan false agar login berfungsi (dengan baik*)
+    final isLoggedIn = prefs.getBool('isLoggedIn') ?? true; //inisiasikan false agar login berfungsi (dengan baik*)
 
     if (isLoggedIn) {
       appRouter.replaceAll([const HomeRoute()]);
