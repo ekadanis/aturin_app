@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:aturin_app/features/task/database/task_database.dart';
-import 'package:aturin_app/features/task/models/task_model.dart' as TaskModel;
-import 'package:aturin_app/features/task/models/task_model.dart';
+import 'package:aturin_app/features/task/model/task_model.dart';
 
 class TaskService extends ChangeNotifier {
   final taskDatabase = TaskDatabase();
@@ -75,7 +74,7 @@ class TaskService extends ChangeNotifier {
 
     try {
       final result = await taskDatabase.queryAll();
-      final dbTasks = result.map((row) => TaskModel.Task.fromMap(row)).toList();
+      final dbTasks = result.map((row) => Task.fromMap(row)).toList();
 
       // Convert from TaskModel.Task to home's Task model
       _tasks = result.map((row) => Task.fromMap(row)).toList();

@@ -30,7 +30,7 @@ class _BottomNavbarState extends State<BottomNavbar>
           context.router.replace(const HomeRoute());
           break;
         case 1:
-          context.router.replace(const ScheduleRoute());
+          context.router.replace(const AktivitasRoute());
           break;
         case 2:
           context.router.replace(const TaskListRoute());
@@ -211,7 +211,7 @@ class _BottomNavbarState extends State<BottomNavbar>
                       elevation: 6,
                       onPressed: () {
                         _navigationThrottle.run(() {
-                          context.router.push(AddScheduleRoute());
+                          context.router.push(AddAktivitasRoute());
                           setState(() => _isRotated = false);
                         });
                       },

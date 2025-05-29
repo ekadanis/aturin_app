@@ -27,19 +27,58 @@ class ActivityDetailListRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [AddSchedulePage]
-class AddScheduleRoute extends PageRouteInfo<void> {
-  const AddScheduleRoute({List<PageRouteInfo>? children})
-    : super(AddScheduleRoute.name, initialChildren: children);
+/// [AddAktivitasPage]
+class AddAktivitasRoute extends PageRouteInfo<AddAktivitasRouteArgs> {
+  AddAktivitasRoute({
+    Key? key,
+    AktivitasModel? existingAktivitas,
+    List<PageRouteInfo>? children,
+  }) : super(
+         AddAktivitasRoute.name,
+         args: AddAktivitasRouteArgs(
+           key: key,
+           existingAktivitas: existingAktivitas,
+         ),
+         initialChildren: children,
+       );
 
-  static const String name = 'AddScheduleRoute';
+  static const String name = 'AddAktivitasRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const AddSchedulePage();
+      final args = data.argsAs<AddAktivitasRouteArgs>(
+        orElse: () => const AddAktivitasRouteArgs(),
+      );
+      return AddAktivitasPage(
+        key: args.key,
+        existingAktivitas: args.existingAktivitas,
+      );
     },
   );
+}
+
+class AddAktivitasRouteArgs {
+  const AddAktivitasRouteArgs({this.key, this.existingAktivitas});
+
+  final Key? key;
+
+  final AktivitasModel? existingAktivitas;
+
+  @override
+  String toString() {
+    return 'AddAktivitasRouteArgs{key: $key, existingAktivitas: $existingAktivitas}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! AddAktivitasRouteArgs) return false;
+    return key == other.key && existingAktivitas == other.existingAktivitas;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ existingAktivitas.hashCode;
 }
 
 /// generated route for
@@ -76,6 +115,32 @@ class AddTaskRouteArgs {
   String toString() {
     return 'AddTaskRouteArgs{key: $key, existingTask: $existingTask}';
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! AddTaskRouteArgs) return false;
+    return key == other.key && existingTask == other.existingTask;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ existingTask.hashCode;
+}
+
+/// generated route for
+/// [AktivitasPage]
+class AktivitasRoute extends PageRouteInfo<void> {
+  const AktivitasRoute({List<PageRouteInfo>? children})
+    : super(AktivitasRoute.name, initialChildren: children);
+
+  static const String name = 'AktivitasRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const AktivitasPage();
+    },
+  );
 }
 
 /// generated route for
@@ -128,6 +193,19 @@ class AlarmRingingRouteArgs {
   String toString() {
     return 'AlarmRingingRouteArgs{key: $key, alarmSettings: $alarmSettings, onDismiss: $onDismiss}';
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! AlarmRingingRouteArgs) return false;
+    return key == other.key &&
+        alarmSettings == other.alarmSettings &&
+        onDismiss == other.onDismiss;
+  }
+
+  @override
+  int get hashCode =>
+      key.hashCode ^ alarmSettings.hashCode ^ onDismiss.hashCode;
 }
 
 /// generated route for
@@ -213,6 +291,16 @@ class ProfileEditRouteArgs {
   String toString() {
     return 'ProfileEditRouteArgs{key: $key, user: $user}';
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! ProfileEditRouteArgs) return false;
+    return key == other.key && user == other.user;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ user.hashCode;
 }
 
 /// generated route for
@@ -227,6 +315,22 @@ class ProfileRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return const ProfilePage();
+    },
+  );
+}
+
+/// generated route for
+/// [RegisterPage]
+class RegisterRoute extends PageRouteInfo<void> {
+  const RegisterRoute({List<PageRouteInfo>? children})
+    : super(RegisterRoute.name, initialChildren: children);
+
+  static const String name = 'RegisterRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const RegisterPage();
     },
   );
 }
@@ -311,6 +415,16 @@ class TaskDetailRouteArgs {
   String toString() {
     return 'TaskDetailRouteArgs{key: $key, task: $task}';
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! TaskDetailRouteArgs) return false;
+    return key == other.key && task == other.task;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ task.hashCode;
 }
 
 /// generated route for

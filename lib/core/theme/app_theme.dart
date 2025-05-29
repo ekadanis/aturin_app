@@ -43,13 +43,45 @@ class AppTheme {
   static const Color upcomingTextColor = Color(0xFF9E9E9E);
   static const Color completedColor = Color(0xFFE3F2E9);
   static const Color completedTextColor = Color(0xFF4CAF50);
-
   // Action colors
   static const Color detailBackgroundColor = Color(0xFFF5F5F5);
   static const Color detailTextColor = Color(0xFF71717A);
   static const Color deleteBackgroundColor = Color(0xFFFFDDDD);
   static const Color deleteTextColor = Color(0xFFFF6B6B);
   static const Color alarmActiveColor = Color(0xFF5263F3);
+  
+  // Category colors - selected state background
+  static const Color selectedTabBackground = Color(0xFF5263F3);
+  static const Color selectedTabTextColor = Color(0xFFEEF3FF);
+  
+  // Category colors - default state
+  static const Color allCategoryText = Color(0xFF5263F3);
+  static const Color allCategoryBackground = Color(0xFFDFEAFF);
+  
+  // Category specific colors
+  static const Color akademikText = Color(0xFF3498DB);
+  static const Color akademikBackground = Color(0xFFDFEAFF);
+  
+  static const Color hiburanText = Color(0xFF9B59B6);
+  static const Color hiburanBackground = Color(0xFFF0DBFF);
+  
+  static const Color pekerjaanText = Color(0xFF8E5C42);
+  static const Color pekerjaanBackground = Color(0xFFFFE2D3);
+  
+  static const Color olahragaText = Color(0xFFE74C3C);
+  static const Color olahragaBackground = Color(0xFFFFD8D8);
+  
+  static const Color sosialText = Color(0xFFE67E22);
+  static const Color sosialBackground = Color(0xFFFFE3CA);
+  
+  static const Color spiritualText = Color(0xFF27AE60);
+  static const Color spiritualBackground = Color(0xFFD3FFE5);
+  
+  static const Color pribadiText = Color(0xFFF1C40F);
+  static const Color pribadiBackground = Color(0xFFFFF3C2);
+  
+  static const Color istirahatText = Color(0xFF283593);
+  static const Color istirahatBackground = Color(0xFFD2D8FF);
 
   // Light theme
   static final ThemeData lightTheme = ThemeData(

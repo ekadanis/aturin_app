@@ -1,4 +1,4 @@
-import 'package:aturin_app/features/task/models/task_model.dart';
+import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';

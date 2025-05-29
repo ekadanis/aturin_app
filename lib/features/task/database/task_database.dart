@@ -14,10 +14,8 @@ class TaskDatabase {
   static const columnIsDone = 'isDone';
   static const columnCompletedAt = 'completedAt';
 
-  // Gunakan DatabaseHelper dari core
   final databaseHelper = DatabaseHelper.instance;
 
-  // CRUD Operations
   Future<int> insert(Map<String, dynamic> row) async {
     final db = await databaseHelper.database;
     return await db.insert(table, row);
