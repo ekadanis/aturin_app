@@ -13,8 +13,7 @@ class ProfileService extends ChangeNotifier {
     // Coba ambil user dengan ID=1 (user default)
     User? user = await _profileDatabase.getUserById(1);
     debugPrint("User with ID=1: $user"); // Debug log
-    
-    // Jika tidak ditemukan, coba ambil berdasarkan email default
+      // Jika tidak ditemukan, coba ambil berdasarkan email default
     if (user == null) {
       user = await _profileDatabase.getUserByEmail(ProfileSeeder.defaultEmail);
       debugPrint("User with email=${ProfileSeeder.defaultEmail}: $user"); // Debug log
@@ -36,13 +35,13 @@ class ProfileService extends ChangeNotifier {
     notifyListeners();
     return user;
   }
-
   // Metode untuk membuat user default jika tidak ada
   Future<int> _createDefaultUser() async {
     final user = User(
-      username: ProfileSeeder.defaultUsername, 
+      name: ProfileSeeder.defaultName, 
       email: ProfileSeeder.defaultEmail, 
-      avatar: ProfileSeeder.defaultAvatar
+      avatar: ProfileSeeder.defaultAvatar,
+      slug: ProfileSeeder.defaultSlug,
     );
     
     return await _profileDatabase.insertUser(user.toMap());
@@ -61,12 +60,11 @@ class ProfileService extends ChangeNotifier {
     return result;
   }
 
-
-  Future<void> changeUsername(int userId, String newUsername) async {
+  Future<void> changeUsername(int userId, String newName) async {
     try {
       final user = await getUserById(userId);
-      if (user != null && user.username != newUsername) {
-        await _profileDatabase.updateUsername(userId, newUsername);
+      if (user != null && user.name != newName) {
+        await _profileDatabase.updateUsername(userId, newName);
         // Dapatkan user yang sudah diupdate dari database
         final updatedUser = await getUserById(userId);
         if (updatedUser != null && _currentUser != null && _currentUser!.id == userId) {

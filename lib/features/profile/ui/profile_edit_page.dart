@@ -39,11 +39,10 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     'assets/avatars/profile11.jpg',
     'assets/avatars/profile12.jpg',
   ];
-
   @override
   void initState() {
     super.initState();
-    _usernameController = TextEditingController(text: widget.user.username);
+    _usernameController = TextEditingController(text: widget.user.name);
     _selectedAvatar = widget.user.avatar;
   }
 
@@ -132,11 +131,10 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       ),
     );
   }
-
   Future<void> _saveChanges() async {
     if (_usernameController.text.isNotEmpty) {
       try {
-        if (_usernameController.text != widget.user.username) {
+        if (_usernameController.text != widget.user.name) {
           await _profileService.changeUsername(widget.user.id!, _usernameController.text);
         }
 
@@ -156,11 +154,10 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
           message: 'Error: $e',
           isError: true,
         );
-      }
-    } else {
+      }    } else {
       showCustomTopSnackbar(
         context: context,
-        message: 'Username tidak boleh kosong',
+        message: 'Nama tidak boleh kosong',
         isError: true,
       );
     }

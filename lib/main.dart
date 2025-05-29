@@ -6,6 +6,7 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:aturin_app/features/task/services/task_services.dart' as task;
 import 'package:aturin_app/features/home/services/task_service.dart' as home;
 import 'package:aturin_app/features/profile/services/profile_service.dart';
+import 'package:aturin_app/features/auth/services/auth_service.dart';
 import 'package:aturin_app/features/task/services/task_service_bridge.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
@@ -79,8 +80,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
+    return MultiProvider(      providers: [
         // Provider untuk TaskService dari features/task
         ChangeNotifierProvider<task.TaskService>(
           create: (_) => task.TaskService(),
@@ -92,6 +92,10 @@ class _MyAppState extends State<MyApp> {
         // Provider untuk ProfileService
         ChangeNotifierProvider<ProfileService>(
           create: (_) => ProfileService(),
+        ),
+        // Provider untuk AuthService
+        ChangeNotifierProvider<AuthService>(
+          create: (_) => AuthService(),
         ),
       ],
       child: Builder(

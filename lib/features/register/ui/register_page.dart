@@ -4,10 +4,12 @@ import 'package:aturin_app/features/register/widgets/login_link_widget.dart';
 import 'package:aturin_app/features/register/widgets/register_app_bar_widget.dart';
 import 'package:aturin_app/features/register/widgets/register_form_widget.dart';
 import 'package:aturin_app/features/register/widgets/register_header.dart';
+import 'package:aturin_app/features/auth/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:provider/provider.dart';
 
 @RoutePage()
 class RegisterPage extends StatefulWidget {
@@ -21,7 +23,8 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
 
   @override
   void dispose() {
@@ -34,89 +37,123 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.lightBackgroundColor,
-      body: SafeArea(
-        child: SizedBox(
-          height: 100.h,
-          width: 100.w,
-          child: Column(
-            children: [
-              // Custom App Bar
-              RegisterAppBarWidget(
-                onBackPressed: () => Navigator.pop(context),
-              ),
-              
-              // Scrollable Content
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+    return Consumer<AuthService>(
+      builder: (context, authService, child) {
+        return Scaffold(
+          backgroundColor: AppTheme.lightBackgroundColor,
+          body: SafeArea(
+            child: SizedBox(
+              height: 100.h,
+              width: 100.w,
+              child: Stack(
+                children: [
+                  Column(
                     children: [
-                      SizedBox(height: 2.h),
-                      
-                      // Header with illustration and title
-                      const RegisterHeaderWidget(),
-                      
-                      SizedBox(height: 3.h),
-                      
-                      // Registration form
-                      RegisterFormWidget(
-                        nameController: nameController,
-                        emailController: emailController,
-                        passwordController: passwordController,
-                        confirmPasswordController: confirmPasswordController,
-                        onRegister: _handleRegister,
-                        onValidationError: _showSnackBar,
+                      // Custom App Bar
+                      RegisterAppBarWidget(
+                        onBackPressed: () => Navigator.pop(context),
                       ),
-                      
-                      SizedBox(height: 3.h),
-                      
-                      // Login link
-                      LoginLinkWidget(
-                        onLoginTap: _navigateToLogin,
+
+                      // Scrollable Content
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 6.w,
+                            vertical: 2.h,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(height: 2.h),
+
+                              // Header with illustration and title
+                              const RegisterHeaderWidget(),
+
+                              SizedBox(height: 3.h),
+
+                              // Registration form
+                              RegisterFormWidget(
+                                nameController: nameController,
+                                emailController: emailController,
+                                passwordController: passwordController,
+                                confirmPasswordController:
+                                    confirmPasswordController,
+                                onRegister: _handleRegister,
+                                onValidationError: _showSnackBar,
+                              ),
+
+                              SizedBox(height: 3.h),
+
+                              // Login link
+                              LoginLinkWidget(onLoginTap: _navigateToLogin),
+
+                              SizedBox(height: 4.h),
+                            ],
+                          ),
+                        ),
                       ),
-                      
-                      SizedBox(height: 4.h),
                     ],
                   ),
-                ),
+
+                  // Loading overlay
+                  if (authService.isLoading)
+                    Container(
+                      color: Colors.black.withOpacity(0.3),
+                      child: const Center(child: CircularProgressIndicator()),
+                    ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  void _handleRegister() {
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Pendaftaran berhasil! Silakan masuk dengan akun Anda.',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 13.sp,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: AppTheme.successColor,
-        behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.all(4.w),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        duration: const Duration(seconds: 3),
-      ),
-    );
+  void _handleRegister() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
 
-    // Navigate to login page after a delay
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        _navigateToLogin();
+    try {
+      final result = await authService.register(
+        name: nameController.text.trim(),
+        email: emailController.text.trim(),
+        password: passwordController.text,
+      );
+
+      if (result.isSuccess) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result.message,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13.sp,
+                color: Colors.white,
+              ),
+            ),
+            backgroundColor: AppTheme.successColor,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(4.w),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+
+        // Navigate to login page after a delay
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted) {
+            _navigateToLogin();
+          }
+        });
+      } else {
+        // Show error message
+        _showSnackBar(result.message);
       }
-    });
+    } catch (e) {
+      _showSnackBar('Terjadi kesalahan: ${e.toString()}');
+    }
   }
 
   void _navigateToLogin() {
@@ -139,9 +176,7 @@ class _RegisterPageState extends State<RegisterPage> {
         backgroundColor: AppTheme.lightErrorColor,
         behavior: SnackBarBehavior.floating,
         margin: EdgeInsets.all(4.w),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         duration: const Duration(seconds: 3),
       ),
     );

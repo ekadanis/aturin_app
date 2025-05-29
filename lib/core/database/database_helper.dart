@@ -12,9 +12,8 @@ class DatabaseHelper {
   
   // Database file name
   static const String _databaseName = 'aturin_app.db';
-  
-  // Database version - starting with version 1 with complete schema
-  static const int _databaseVersion = 1;
+    // Database version - updated to 2 for schema changes
+  static const int _databaseVersion = 2;
   
   // Table names as constants
   static const String tableUsers = 'users';
@@ -22,11 +21,14 @@ class DatabaseHelper {
   
   // Common column names
   static const String columnId = 'id';
-  
-  // Users table columns
-  static const String columnUsername = 'username';
+    // Users table columns
+  static const String columnName = 'name';
   static const String columnEmail = 'email';
+  static const String columnPassword = 'password';
   static const String columnAvatar = 'avatar';
+  static const String columnSlug = 'slug';
+  static const String columnCreatedAt = 'created_at';
+  static const String columnUpdatedAt = 'updated_at';
   
   // Tasks table columns - all defined from the start
   static const String columnTitle = 'title';
@@ -76,14 +78,17 @@ class DatabaseHelper {
   Future<void> _onCreate(Database db, int version) async {
     debugPrint("Creating new database at version $version");
 
-    try {
-      // Create users table with all columns
+    try {      // Create users table with all columns
       await db.execute('''
         CREATE TABLE IF NOT EXISTS $tableUsers (
           $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
-          $columnUsername TEXT NOT NULL,
+          $columnName TEXT NOT NULL,
           $columnEmail TEXT UNIQUE NOT NULL,
-          $columnAvatar TEXT NOT NULL
+          $columnPassword TEXT,
+          $columnAvatar TEXT NOT NULL,
+          $columnSlug TEXT NOT NULL,
+          $columnCreatedAt TEXT,
+          $columnUpdatedAt TEXT
         )
       ''');
 
@@ -113,13 +118,56 @@ class DatabaseHelper {
       throw Exception('Failed to create database tables: $e');
     }
   }
-
   /// Handle database version upgrades for future versions
-  /// This is simplified since we start with a complete schema in version 1
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     debugPrint("Upgrading database from version $oldVersion to $newVersion");
     
-    // No upgrades needed in current implementation as we start with version 1
+    if (oldVersion < 2) {
+      // Upgrade from version 1 to 2: Update users table schema
+      await _upgradeToVersion2(db);
+    }
+  }
+
+  /// Upgrade database to version 2 - Update users table schema
+  Future<void> _upgradeToVersion2(Database db) async {
+    debugPrint("Upgrading to version 2: Updating users table schema");
+    
+    try {
+      // Create new users table with updated schema
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS users_new (
+          $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
+          $columnName TEXT NOT NULL,
+          $columnEmail TEXT UNIQUE NOT NULL,
+          $columnPassword TEXT,
+          $columnAvatar TEXT NOT NULL,
+          $columnSlug TEXT NOT NULL,
+          $columnCreatedAt TEXT,
+          $columnUpdatedAt TEXT
+        )
+      ''');
+
+      // Copy data from old table to new table, mapping username to name
+      await db.execute('''
+        INSERT INTO users_new ($columnId, $columnName, $columnEmail, $columnAvatar, $columnSlug, $columnCreatedAt, $columnUpdatedAt)
+        SELECT id, username, email, avatar, 
+               LOWER(REPLACE(username, ' ', '-')) as slug,
+               datetime('now') as created_at,
+               datetime('now') as updated_at
+        FROM users
+      ''');
+
+      // Drop old table
+      await db.execute('DROP TABLE users');
+      
+      // Rename new table
+      await db.execute('ALTER TABLE users_new RENAME TO users');
+      
+      debugPrint("Successfully upgraded users table to version 2");
+    } catch (e) {
+      debugPrint('Error upgrading to version 2: $e');
+      throw Exception('Failed to upgrade database to version 2: $e');
+    }
   }
 
   /// Execute a SQL query with parameters

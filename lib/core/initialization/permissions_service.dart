@@ -13,10 +13,10 @@ class PermissionsService {
     
     if (Platform.isAndroid) {
 
-      final storageStatus = await Permission.storage.request();
-      if (storageStatus.isDenied) {
-        debugPrint('Storage permission ditolak');
-      }
+      // final storageStatus = await Permission.storage.request();
+      // if (storageStatus.isDenied) {
+      //   debugPrint('Storage permission ditolak');
+      // }
       
       // Pada Android 13+ perlu izin eksplisit untuk notifikasi
       try {

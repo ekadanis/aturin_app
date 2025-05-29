@@ -32,8 +32,9 @@ dependencies:
   animated_toggle_switch: ^0.8.5
   panara_dialogs: ^0.1.5
   popover: ^0.3.1
+  http: ^1.4.0
 
-dev_dependencies:
+dev_dependencies: 
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0

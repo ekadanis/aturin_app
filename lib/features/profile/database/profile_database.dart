@@ -38,13 +38,12 @@ class ProfileDatabase {
     );
     return result.isNotEmpty ? User.fromMap(result.first) : null;
   }
-
-  /// Update hanya username
-  Future<int> updateUsername(int userId, String newUsername) async {
+  /// Update hanya name
+  Future<int> updateUsername(int userId, String newName) async {
     final db = await DatabaseHelper.instance.database;
     return await db.update(
       'users',
-      {'username': newUsername},
+      {'name': newName},
       where: 'id = ?',
       whereArgs: [userId],
     );

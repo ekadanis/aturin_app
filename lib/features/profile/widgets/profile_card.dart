@@ -39,14 +39,13 @@ class ProfileCard extends StatelessWidget {
               ),
               const SizedBox(width: 12),
 
-              // Username & Email
+              // Name & Email
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      user.username,
+                  children: [                    Text(
+                      user.name,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,

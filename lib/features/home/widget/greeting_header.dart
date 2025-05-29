@@ -108,7 +108,7 @@ class GreetingHeader extends StatelessWidget implements PreferredSizeWidget {
                               ),
                             ),
                             TextSpan(
-                              text: user.username,
+                              text: user.name,
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 14, // Diperkecil dari 15
                                 color: AppTheme.lightTextColor,
