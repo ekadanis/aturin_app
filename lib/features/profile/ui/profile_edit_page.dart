@@ -3,12 +3,10 @@ import 'package:aturin_app/features/profile/models/user.dart';
 import 'package:aturin_app/features/profile/services/profile_service.dart';
 import 'package:aturin_app/features/profile/widgets/profile_avatar_edit.dart';
 import 'package:aturin_app/features/profile/widgets/profile_text_field.dart';
-import 'package:aturin_app/features/profile/widgets/avatar_selection_dialog.dart';
+import 'package:aturin_app/features/profile/ui/avatar_selection.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:aturin_app/features/profile/widgets/editusernamedialog.dart';
 import 'package:aturin_app/features/profile/widgets/snackbar.dart';
 import 'package:auto_route/auto_route.dart';
-
 
 @RoutePage()
 class ProfileEditPage extends StatefulWidget {
@@ -52,23 +50,35 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     super.dispose();
   }
 
-  void _showAvatarSelection() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AvatarSelectionDialog(
-          availableAvatars: _availableAvatars,
-          selectedAvatar: _selectedAvatar,
-          onAvatarSelected: (avatar) {
-            setState(() {
-              _selectedAvatar = avatar;
-            });
-            Navigator.pop(context);
-          },
-          onCancel: () => Navigator.pop(context),
-        );
-      },
+  void _showAvatarSelection() async {
+    final selectedAvatar = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => AvatarSelectionPage(
+              availableAvatars: _availableAvatars,
+              selectedAvatar: _selectedAvatar,
+            ),
+      ),
     );
+
+    // Reset username ke username lama jika kosong setelah kembali dari halaman avatar
+    if (_usernameController.text.isEmpty) {
+      setState(() {
+        _usernameController.text = widget.user.name;
+      });
+    }
+
+    // Update avatar jika ada perubahan
+    if (selectedAvatar != null && selectedAvatar != _selectedAvatar) {
+      setState(() {
+        _selectedAvatar = selectedAvatar;
+      });
+
+      await _saveChanges(
+        shouldPop: false,
+      ); // Jangan pop halaman setelah save avatar
+    }
   }
 
   @override
@@ -79,8 +89,9 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         title: Text(
           'Edit Profile',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: const Color(0xFF131927),
-              fontWeight: FontWeight.bold),
+            color: const Color(0xFF131927),
+            fontWeight: FontWeight.bold,
+          ),
         ),
         backgroundColor: Colors.white,
         leading: IconButton(
@@ -89,7 +100,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
             width: 16,
             height: 16,
           ),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context, true),
         ),
         actions: [
           IconButton(
@@ -99,7 +110,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
               height: 14,
               color: const Color(0xFF131927),
             ),
-            onPressed: _saveChanges,
+            onPressed: () => _saveChanges(shouldPop: false),
           ),
         ],
       ),
@@ -114,12 +125,13 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
             const SizedBox(height: 20),
             ProfileTextField(
               label: 'Nama',
-              value: _usernameController.text,
               editable: true,
-              onEditPressed: () {
-                _showEditDialog(context, widget.user.id!);
-              },
+              controller: _usernameController,
+              onSubmitted: () => _saveChanges(shouldPop: false),
+              maxChar: 20,
+              onEditPressed: () {},
             ),
+
             const SizedBox(height: 20),
             ProfileTextField(
               label: 'Email',
@@ -130,8 +142,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         ),
       ),
     );
-  }
-  Future<void> _saveChanges() async {
+  }  Future<void> _saveChanges({bool shouldPop = true}) async {
     if (_usernameController.text.isNotEmpty) {
       try {
         if (_usernameController.text != widget.user.name) {
@@ -147,35 +158,22 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
           message: 'Berhasil Mengedit Profile',
         );
 
-        Navigator.pop(context, true);
+        if (shouldPop) {
+          Navigator.pop(context, true); // hanya pop kalau flag true
+        }
       } catch (e) {
         showCustomTopSnackbar(
           context: context,
           message: 'Error: $e',
           isError: true,
         );
-      }    } else {
+      }
+    } else {
       showCustomTopSnackbar(
         context: context,
         message: 'Nama tidak boleh kosong',
         isError: true,
       );
     }
-  }
-
-  void _showEditDialog(BuildContext context, int userId) {
-    showDialog(
-      context: context,
-      builder: (context) => EditUsernameDialog(
-        currentUsername: _usernameController.text,
-        userId: userId,
-        profileService: _profileService,
-        onUsernameUpdated: (newUsername) {
-          setState(() {
-            _usernameController.text = newUsername;
-          });
-        },
-      ),
-    );
   }
 }

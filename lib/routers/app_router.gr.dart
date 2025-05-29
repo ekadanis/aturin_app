@@ -11,6 +11,38 @@
 part of 'app_router.dart';
 
 /// generated route for
+/// [ActivityDetailListPage]
+class ActivityDetailListRoute extends PageRouteInfo<void> {
+  const ActivityDetailListRoute({List<PageRouteInfo>? children})
+    : super(ActivityDetailListRoute.name, initialChildren: children);
+
+  static const String name = 'ActivityDetailListRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const ActivityDetailListPage();
+    },
+  );
+}
+
+/// generated route for
+/// [AddSchedulePage]
+class AddScheduleRoute extends PageRouteInfo<void> {
+  const AddScheduleRoute({List<PageRouteInfo>? children})
+    : super(AddScheduleRoute.name, initialChildren: children);
+
+  static const String name = 'AddScheduleRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const AddSchedulePage();
+    },
+  );
+}
+
+/// generated route for
 /// [AddTaskScreen]
 class AddTaskRoute extends PageRouteInfo<AddTaskRouteArgs> {
   AddTaskRoute({Key? key, Task? existingTask, List<PageRouteInfo>? children})
@@ -200,6 +232,22 @@ class ProfileRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [SchedulePage]
+class ScheduleRoute extends PageRouteInfo<void> {
+  const ScheduleRoute({List<PageRouteInfo>? children})
+    : super(ScheduleRoute.name, initialChildren: children);
+
+  static const String name = 'ScheduleRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const SchedulePage();
+    },
+  );
+}
+
+/// generated route for
 /// [SplashScreen]
 class SplashRoute extends PageRouteInfo<void> {
   const SplashRoute({List<PageRouteInfo>? children})
@@ -211,6 +259,22 @@ class SplashRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return const SplashScreen();
+    },
+  );
+}
+
+/// generated route for
+/// [TaskDetailListScreen]
+class TaskDetailListRoute extends PageRouteInfo<void> {
+  const TaskDetailListRoute({List<PageRouteInfo>? children})
+    : super(TaskDetailListRoute.name, initialChildren: children);
+
+  static const String name = 'TaskDetailListRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const TaskDetailListScreen();
     },
   );
 }

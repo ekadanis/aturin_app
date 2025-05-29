@@ -17,6 +17,7 @@ class Task {
   final DateTime deadline;
   final Duration estimatedDuration;
   final String category;
+  final String? description; // Tambahan field deskripsi
   final bool isAlarmEnabled;
   final DateTime? alarmDateTime;
   final bool isDone;
@@ -33,6 +34,7 @@ class Task {
     required this.deadline,
     required this.estimatedDuration,
     required this.category,
+    this.description, // Tambahan parameter deskripsi
     this.isAlarmEnabled = false,
     this.alarmDateTime,
     this.isDone = false,
@@ -48,24 +50,24 @@ class Task {
        estimatedHours = estimatedHours ?? (estimatedDuration.inMinutes / 60);
 
   static TaskStatus calculateStatus(DateTime deadline) {
-  final now = DateTime.now();
+    final now = DateTime.now();
 
-  if (deadline.isBefore(now)) {
-    return TaskStatus.late;
+    if (deadline.isBefore(now)) {
+      return TaskStatus.late;
+    }
+
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
+    final deadlineDate = DateTime(deadline.year, deadline.month, deadline.day);
+
+    if (deadlineDate.isAtSameMomentAs(today)) {
+      return TaskStatus.today;
+    } else if (deadlineDate.isAtSameMomentAs(tomorrow)) {
+      return TaskStatus.tomorrow;
+    } else {
+      return TaskStatus.upcoming;
+    }
   }
-
-  final today = DateTime(now.year, now.month, now.day);
-  final tomorrow = today.add(const Duration(days: 1));
-  final deadlineDate = DateTime(deadline.year, deadline.month, deadline.day);
-
-  if (deadlineDate.isAtSameMomentAs(today)) {
-    return TaskStatus.today;
-  } else if (deadlineDate.isAtSameMomentAs(tomorrow)) {
-    return TaskStatus.tomorrow;
-  } else {
-    return TaskStatus.upcoming;
-  }
-}
 
   Map<String, dynamic> toMap() {
     return {
@@ -74,6 +76,7 @@ class Task {
       'deadline': deadline.toIso8601String(),
       'estimatedDuration': estimatedDuration.inMinutes,
       'category': category,
+      'description': description, // Tambahan field deskripsi
       'isAlarmEnabled': isAlarmEnabled ? 1 : 0,
       'alarmDateTime': alarmDateTime?.toIso8601String(),
       'isDone': isDone ? 1 : 0,
@@ -91,20 +94,21 @@ class Task {
       deadline: DateTime.parse(map['deadline']),
       estimatedDuration: Duration(minutes: map['estimatedDuration']),
       category: map['category'],
+      description: map['description'], // Tambahan field deskripsi
       isAlarmEnabled: map['isAlarmEnabled'] == 1,
       alarmDateTime:
           map['alarmDateTime'] != null
               ? DateTime.parse(map['alarmDateTime'])
               : null,
       isDone: map['isDone'] == 1,
-      isCompleted: map['isCompleted'] == 1, // ✅ ambil dari DB
+      isCompleted: map['isCompleted'] == 1,
       status:
           map['status'] != null
               ? TaskStatus.values.firstWhere(
                 (e) => e.name == map['status'],
                 orElse: () => calculateStatus(DateTime.parse(map['deadline'])),
               )
-              : calculateStatus(DateTime.parse(map['deadline'])), // fallback
+              : calculateStatus(DateTime.parse(map['deadline'])),
       completedAt:
           map['completedAt'] != null
               ? DateTime.parse(map['completedAt'])
@@ -125,6 +129,7 @@ class Task {
     DateTime? deadline,
     Duration? estimatedDuration,
     String? category,
+    String? description, // Tambahan parameter deskripsi
     bool? isAlarmEnabled,
     DateTime? alarmDateTime,
     bool? isDone,
@@ -141,6 +146,7 @@ class Task {
       deadline: deadline ?? this.deadline,
       estimatedDuration: estimatedDuration ?? this.estimatedDuration,
       category: category ?? this.category,
+      description: description ?? this.description, // Tambahan field deskripsi
       isAlarmEnabled: isAlarmEnabled ?? this.isAlarmEnabled,
       alarmDateTime: alarmDateTime ?? this.alarmDateTime,
       isDone: isDone ?? this.isDone,
@@ -153,7 +159,6 @@ class Task {
     );
   }
   
-  // /// Creates an empty task instance for placeholder purposes
   factory Task.empty() {
     return Task(
       id: 0,
@@ -161,6 +166,7 @@ class Task {
       deadline: DateTime.now(),
       estimatedDuration: const Duration(minutes: 0),
       category: '',
+      description: '',
     );
   }
 }

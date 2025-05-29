@@ -4,7 +4,7 @@ import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
-
+import 'package:dots_indicator/dots_indicator.dart';
 import 'package:aturin_app/routers/app_router.dart';
 import 'package:aturin_app/features/onboarding/models/on_boarding_content.dart';
 
@@ -34,19 +34,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Future<void> _storeOnboardInfo() async {
     if (!mounted) return;
-    
+
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isFirstTime', false);
-    
+
     if (!mounted) return;
-    
+
     await context.router.replace(const HomeRoute());
   }
 
   @override
   Widget build(BuildContext context) {
     return Sizer(
-      builder: (context, orientationm, deviceType){
+      builder: (context, orientationm, deviceType) {
         return Scaffold(
           body: Container(
             color: Colors.white,
@@ -110,6 +110,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       },
                     ),
                   ),
+                  DotsIndicator(
+                    dotsCount: contents.length,
+                    position: currentPage.toDouble(),
+                    decorator: DotsDecorator(
+                      activeColor: AppTheme.primaryColor,
+                      activeSize: const Size(40, 10),
+                      activeShape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      color: Colors.white,
+                      size: const Size(10, 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: BorderSide(
+                          color: AppTheme.primaryColor,
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                  ),
+
                   const Spacer(flex: 1),
                   Container(
                     height: 12.h,
@@ -156,7 +177,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           ),
                         ),
                         SizedBox(
-                          height: 4.h,
+                          height: 6.h,
                           child:
                               currentPage > 0
                                   ? TextButtonTheme(
@@ -180,7 +201,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         "Sebelumnya",
                                         style: TextStyle(
                                           color: AppTheme.primaryColor,
-                                          fontSize: 16.sp
+                                          fontSize: 16.sp,
                                         ),
                                       ),
                                     ),
@@ -196,7 +217,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
         );
-      }
+      },
     );
   }
 }

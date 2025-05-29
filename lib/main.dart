@@ -10,7 +10,6 @@ import 'package:aturin_app/features/auth/services/auth_service.dart';
 import 'package:aturin_app/features/task/services/task_service_bridge.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
-
 import 'core/initialization/app_initializer.dart';
 import 'core/database/database_helper.dart';
 import 'routers/app_router.dart';
@@ -24,6 +23,7 @@ TaskServiceBridge? _taskServiceBridge;
 Future<void> main() async {
   // Preserve splash screen until initialization is complete
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  await DatabaseHelper.instance.resetDatabase(); // untuk dev/test saja
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   // Set orientasi hanya potrait
   await SystemChrome.setPreferredOrientations([
@@ -64,6 +64,8 @@ Future<void> _initializeApp() async {
     
     // Setup alarm manager
     appInitializer.alarmManager.setAppCreator(() => const MyApp());
+
+
   } catch (e) {
     debugPrint('Failed to initialize app: $e');
     throw Exception('App initialization failed: $e');
