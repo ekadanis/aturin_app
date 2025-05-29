@@ -1,14 +1,18 @@
-import 'package:aturin_app/features/home/services/task_service.dart' as home;
+import 'package:aturin_app/features/home/services/task_service.dart';
 import 'package:aturin_app/features/home/widget/empty_task.dart';
 import 'package:aturin_app/features/home/widget/greeting_header.dart';
 import 'package:aturin_app/features/home/widget/timeline_widget.dart';
 import 'package:aturin_app/features/task/models/task_model.dart';
+import 'package:aturin_app/features/task/ui/screens/task_detail_screen.dart';
+import 'package:aturin_app/features/task/ui/widgets/task_card.dart';
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:aturin_app/core/widgets/bottom_navbar.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:provider/provider.dart';
+import 'package:sizer/sizer.dart';
 
 @RoutePage()
 class HomePage extends StatefulWidget {
@@ -18,20 +22,31 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
+enum TaskViewType { tugas, aktivitas }
+
 class _HomePageState extends State<HomePage> {
+  late TaskService taskService;
+  TaskViewType _selectedView = TaskViewType.tugas;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Fetch tasks when the page loads
-      Provider.of<home.TaskService>(context, listen: false).fetchTasks();
-    });
+    taskService = Provider.of<TaskService>(context, listen: false);
+    taskService.fetchTasks();
   }
 
   @override
   Widget build(BuildContext context) {
     // Mendapatkan tinggi bottom navigation untuk padding scroll
     final bottomNavHeight = kBottomNavigationBarHeight;
+    final tasks = context.watch<TaskService>().tasks;
+
+    final filteredTasks =
+        tasks.where((task) {
+          return _selectedView == TaskViewType.tugas
+              ? task.category.toLowerCase() == 'akademik'
+              : task.category.toLowerCase() != 'akademik';
+        }).toList();
 
     return PopScope(
       canPop: true,
@@ -41,7 +56,7 @@ class _HomePageState extends State<HomePage> {
         // Mengaktifkan extendBody agar body dapat memperluas hingga di bawah bottom navigation bar
         extendBody: true,
         bottomNavigationBar: const BottomNavbar(currentIndex: 0),
-        body: Consumer<home.TaskService>(
+        body: Consumer<TaskService>(
           builder: (context, taskService, _) {
             final tasks = taskService.tasks;
 
@@ -51,35 +66,37 @@ class _HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+
                   children: [
-                    const SizedBox(height: 10),
-                    Text(
-                      'Tugas',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 21,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.lightTextColor,
-                      ),
+                    Image.asset(
+                      'assets/images/home_head1.png',
+                      width: 100.w,
+                      fit: BoxFit.contain,
                     ),
+                    SizedBox(height: 2.h),
+                    Row(
+                      children: [
+                        _buildSwitcherButton(
+                          TaskViewType.aktivitas,
+                          'Aktifitas',
+                        ),
+                        const SizedBox(width: 8),
+                        _buildSwitcherButton(TaskViewType.tugas, 'Tugas'),
+                      ],
+                    ),
+
                     const SizedBox(height: 10),
                     Expanded(
                       child:
-                          tasks.isEmpty
+                          filteredTasks.isEmpty
                               ? const Center(child: EmptyTask())
                               : ListView.builder(
-                                // Menghilangkan padding karena akan kita tambahkan sebagai item terpisah
                                 padding: EdgeInsets.zero,
-                                itemCount:
-                                    tasks.length +
-                                    1, // +1 untuk item gap di bagian bawah
+                                itemCount: filteredTasks.length + 1,
                                 itemBuilder: (context, index) {
-                                  // Item terakhir adalah gap
-                                  if (index == tasks.length) {
-                                    // Menambahkan SizedBox sebagai gap yang jelas di bagian bawah
+                                  if (index == filteredTasks.length) {
                                     return SizedBox(
-                                      height:
-                                          bottomNavHeight +
-                                          40, // Margin yang lebih besar untuk kejelasan visual
+                                      height: bottomNavHeight + 40,
                                       child: Align(
                                         alignment: Alignment.center,
                                         child: Padding(
@@ -87,7 +104,7 @@ class _HomePageState extends State<HomePage> {
                                             bottom: 20,
                                           ),
                                           child: Text(
-                                            'Semua tugas hari ini ditampilkan',
+                                            'Semua ${_selectedView == TaskViewType.tugas ? 'tugas' : 'aktivitas'} hari ini ditampilkan',
                                             style: GoogleFonts.plusJakartaSans(
                                               fontSize: 12,
                                               color: Colors.grey,
@@ -99,26 +116,77 @@ class _HomePageState extends State<HomePage> {
                                     );
                                   }
 
-                                  // Default: false
-                                  bool previousIsFlagged = false;
+                                  final task = filteredTasks[index];
 
-                                  final task = tasks[index];
-                                  final isLast = index == tasks.length - 1;
+                                  if (task.category == 'Akademik') {
+                                    bool previousIsFlagged = false;
+                                    final isLast =
+                                        index == filteredTasks.length - 1;
 
-                                  // Cek task sebelumnya jika bukan task pertama
-                                  if (index > 0) {
-                                    final previousTask = tasks[index - 1];
-                                    previousIsFlagged =
-                                        previousTask.isAlarmEnabled ||
-                                        previousTask.status == TaskStatus.late;
+                                    if (index > 0) {
+                                      final previousTask =
+                                          filteredTasks[index - 1];
+                                      previousIsFlagged =
+                                          previousTask.isAlarmEnabled ||
+                                          previousTask.status ==
+                                              TaskStatus.late;
+                                    }
+
+                                    return TimelineWidget(
+                                      task: task,
+                                      index: index,
+                                      isLast: isLast,
+                                      previousIsFlagged: previousIsFlagged,
+                                      onToggleCompletion:
+                                          () => taskService
+                                              .toggleTaskCompletion(task.id!),
+                                      onDelete:
+                                          () =>
+                                              taskService.deleteTask(task.id!),
+                                      onToggleAlarm:
+                                          () =>
+                                              taskService.toggleAlarm(task.id!),
+                                      onViewDetails: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (_) => TaskDetailScreen(
+                                                  task: task,
+                                                ),
+                                          ),
+                                        );
+                                      },
+                                      currentFilter: "today",
+                                    );
+                                  } else {
+                                    return TaskCard(
+                                      task: task,
+                                      currentFilter: "today",
+                                      onToggleCompletion:
+                                          () => taskService
+                                              .toggleTaskCompletion(task.id!),
+                                      onDelete:
+                                          () =>
+                                              taskService.deleteTask(task.id!),
+                                      onViewDetails: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (_) => TaskDetailScreen(
+                                                  task: task,
+                                                ),
+                                          ),
+                                        );
+                                      },
+                                      onToggleAlarm:
+                                          () =>
+                                              taskService.toggleAlarm(task.id!),
+                                      showCheckbox: false,
+                                      showStatus: false,
+                                    );
                                   }
-
-                                  return TimelineWidget(
-                                    task: task,
-                                    index: index,
-                                    isLast: isLast,
-                                    previousIsFlagged: previousIsFlagged,
-                                  );
                                 },
                               ),
                     ),
@@ -127,6 +195,28 @@ class _HomePageState extends State<HomePage> {
               ),
             );
           },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSwitcherButton(TaskViewType type, String label) {
+    final isSelected = _selectedView == type;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedView = type),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primaryColor : Color(0xFFDCE8F5),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 14,
+            color: isSelected ? Colors.white : AppTheme.primaryColor,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );

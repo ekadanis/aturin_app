@@ -11,12 +11,22 @@ class TimelineWidget extends StatelessWidget {
     required this.index,
     required this.isLast,
     required this.previousIsFlagged,
+    required this.onToggleCompletion,
+    required this.onDelete,
+    required this.onToggleAlarm,
+    required this.onViewDetails,
+    required this.currentFilter,
   });
 
   final Task task;
   final int index;
   final bool isLast;
   final bool previousIsFlagged;
+  final VoidCallback onToggleCompletion;
+  final VoidCallback onDelete;
+  final VoidCallback onToggleAlarm;
+  final VoidCallback onViewDetails;
+  final String currentFilter;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +34,7 @@ class TimelineWidget extends StatelessWidget {
       nodeAlign: TimelineNodeAlign.start,
       node: TimelineNode(
         indicator:
-            task.status == TaskStatus.completed
+            task.isCompleted
                 ? const DotIndicator(
                   size: 24,
                   color: Colors.green,
@@ -40,10 +50,10 @@ class TimelineWidget extends StatelessWidget {
                   gap: 6,
                   indent:
                       index == 1
-                          ? (previousIsFlagged ? 2.5 : 0.5) // untuk card ke-2
+                          ? (previousIsFlagged ? 2 : 0) // untuk card ke-2
                           : (previousIsFlagged
-                              ? 8
-                              : 6), // card ke-3 dan seterusnya
+                              ? 2
+                              : 0), // card ke-3 dan seterusnya
                 ),
         endConnector:
             isLast
@@ -52,7 +62,7 @@ class TimelineWidget extends StatelessWidget {
                   color: Colors.grey,
                   dash: 5,
                   gap: 6,
-                  indent: index == 0 ? 7.0 : 1.5,
+                  indent: index == 0 ? 2.5 : 4,
                 ),
       ),
       contents: Container(
@@ -65,15 +75,16 @@ class TimelineWidget extends StatelessWidget {
           bottom:
               isLast ? 0 : 4.0, // Tidak perlu margin bawah untuk card terakhir
         ),
-        padding: const EdgeInsets.only(left: 8.0),
-        // child: TaskCard(
-        //   task: task,
-        //   onToggleCompletion: onToggleCompletion,
-        //   onDelete: onDelete,
-        //   onViewDetails: onViewDetails,
-        //   onToggleAlarm: onToggleAlarm,
-        //   currentFilter: currentFilter,
-        // ),
+        padding: const EdgeInsets.only(left: 0.0),
+        child: TaskCard(
+          task: task,
+          currentFilter: currentFilter,
+          onToggleCompletion: onToggleCompletion,
+          onDelete: onDelete,
+          onViewDetails: onViewDetails,
+          onToggleAlarm: onToggleAlarm,
+          showCheckbox: false,
+        ),
       ),
     );
   }

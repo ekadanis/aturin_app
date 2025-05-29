@@ -13,6 +13,8 @@ class TaskService extends ChangeNotifier {
   List<Task>? _cachedTodayTasks;
   DateTime _lastFetchTime = DateTime(1970);
 
+  final Map<String, List<Task>> _cachedFilteredTasks = {};
+
   // Getter that returns only today's tasks sorted by deadline
   List<Task> get tasks {
     // Gunakan cache jika tersedia
@@ -123,6 +125,12 @@ class TaskService extends ChangeNotifier {
     return '$hour:$minute – $endHourStr:$endMinuteStr';
   }
 
+  List<Task> get nonAcademicTasks {
+    return _tasks
+        .where((task) => task.category != TaskCategory.akademik)
+        .toList();
+  }
+
   void startStatusChecker() {
     _statusChecker?.cancel();
     _statusChecker = Timer.periodic(
@@ -157,6 +165,53 @@ class TaskService extends ChangeNotifier {
     _cachedTodayTasks = null;
     _lastFetchTime = DateTime(1970); // Reset waktu fetch terakhir
     await fetchTasks();
+  }
+
+  Future<void> toggleTaskCompletion(int? id) async {
+    if (id == null) return;
+
+    final index = _tasks.indexWhere((task) => task.id == id);
+    if (index != -1) {
+      final task = _tasks[index];
+      final now = DateTime.now();
+
+      final updatedTask = task.copyWith(
+        isDone: !task.isDone,
+        isCompleted: !task.isCompleted,
+        completedAt: !task.isCompleted ? now : null,
+        previousStatus: !task.isCompleted ? task.status : task.previousStatus,
+        status: task.isCompleted ? task.previousStatus! : task.status,
+      );
+
+      await taskDatabase.update(updatedTask.toMap());
+      _tasks[index] = updatedTask;
+
+      _cachedFilteredTasks.clear();
+
+      notifyListeners();
+    }
+  }
+
+  Future<void> toggleAlarm(int? id) async {
+    if (id == null) return;
+
+    final index = _tasks.indexWhere((task) => task.id == id);
+    if (index != -1) {
+      final task = _tasks[index];
+      final updatedTask = task.copyWith(
+        isAlarmEnabled: !task.isAlarmEnabled,
+        isAlarmActive: !task.isAlarmActive,
+      );
+
+      await taskDatabase.update(updatedTask.toMap());
+      _tasks[index] = updatedTask;
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteTask(int taskId) async {
+    _tasks.removeWhere((task) => task.id == taskId);
+    notifyListeners();
   }
 
   @override

@@ -1,16 +1,15 @@
-import 'package:aturin_app/core/widgets/delete_popup.dart';
-import 'package:aturin_app/core/widgets/edit_popup.dart';
+import 'package:aturin_app/core/widgets/confirm_dialog.dart';
 import 'package:aturin_app/features/home/services/task_service.dart';
 import 'package:aturin_app/features/task/ui/screens/add_task_screen.dart';
 import 'package:aturin_app/features/task/ui/screens/task_detail_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../models/task_model.dart';
 import '../../../../../../core/theme/app_theme.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/utils/debouncer.dart';
 import 'package:panara_dialogs/panara_dialogs.dart';
+import 'package:sizer/sizer.dart';
 
 class TaskCard extends StatefulWidget {
   final Task task;
@@ -20,6 +19,7 @@ class TaskCard extends StatefulWidget {
   final VoidCallback onToggleAlarm;
   final String currentFilter;
   final bool showCheckbox;
+  final bool showStatus;
 
   const TaskCard({
     Key? key,
@@ -30,6 +30,7 @@ class TaskCard extends StatefulWidget {
     required this.onToggleAlarm,
     required this.currentFilter,
     this.showCheckbox = true, // default aktif
+    this.showStatus = true, // default aktif
   }) : super(key: key);
 
   @override
@@ -104,32 +105,34 @@ class _TaskCardState extends State<TaskCard> {
         widget.task.previousStatus == TaskStatus.late;
     final bool hasAlarmIndicator = widget.task.isAlarmActive;
 
-    return Container(
-      key: ValueKey(widget.task.id),
-      // Memastikan overflow konten dipotong sesuai border
-      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12), // Selalu menggunakan radius 12
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TaskDetailScreen(task: widget.task),
           ),
-        ],
-      ),
-
-      clipBehavior: Clip.antiAlias,
-      child: GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => TaskDetailScreen(task: widget.task),
+        );
+      },
+      child: Container(
+        key: ValueKey(widget.task.id),
+        // Memastikan overflow konten dipotong sesuai border
+        margin: EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 4.w),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(
+            12,
+          ), // Selalu menggunakan radius 12
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: Offset(0, 0.4.h),
             ),
-          );
-        },
+          ],
+        ),
+
+        clipBehavior: Clip.antiAlias,
         child: Stack(
           children: [
             Column(
@@ -138,17 +141,17 @@ class _TaskCardState extends State<TaskCard> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(width: 20),
+                    SizedBox(width: 4.w),
 
                     // checbox
                     if (widget.showCheckbox)
                       Padding(
-                        padding: const EdgeInsets.only(top: 28),
+                        padding: EdgeInsets.only(top: 3.5.h),
                         child: GestureDetector(
                           onTap: _handleToggleCompletion,
                           child: Container(
-                            width: 26,
-                            height: 26,
+                            width: 6.w,
+                            height: 2.7.h,
                             decoration: BoxDecoration(
                               color:
                                   widget.task.isCompleted
@@ -156,15 +159,15 @@ class _TaskCardState extends State<TaskCard> {
                                       : Colors.transparent,
                               border: Border.all(
                                 color: AppTheme.primaryColor,
-                                width: 2,
+                                width: 0.5.w,
                               ),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child:
                                 widget.task.isCompleted
-                                    ? const Icon(
+                                    ? Icon(
                                       Icons.check,
-                                      size: 18,
+                                      size: 4.5.w,
                                       color: AppTheme.lightCardColor,
                                     )
                                     : null,
@@ -173,44 +176,45 @@ class _TaskCardState extends State<TaskCard> {
                       )
                     else
                       const SizedBox(width: 0),
+
                     Expanded(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 2.w,
+                          vertical: 1.5.h,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                              spacing: 6,
+                              spacing: 0,
                               children: [
                                 // badge category
                                 _buildBadge(
                                   icon: SvgPicture.asset(
                                     _getCategoryIconPath(widget.task.category),
-                                    width: 12,
-                                    height: 12,
+                                    width: 3.w,
+                                    height: 3.w,
                                   ),
                                   label: _getCategoryName(widget.task.category),
                                   bgColor: _getCategoryColor(
                                     widget.task.category,
-                                  ).withAlpha(45),
+                                  ).withAlpha(50),
                                   textColor: _getCategoryColor(
                                     widget.task.category,
                                   ),
                                 ),
-
+                                SizedBox(width: 1.5.w),
                                 // badge tugas / aktivitas
                                 _buildBadge(
                                   icon: SvgPicture.asset(
                                     widget.task.category == 'Akademik'
                                         ? 'assets/icons/tugas.svg'
                                         : 'assets/icons/activity.svg',
-                                    width: 12,
-                                    height: 12,
+                                    width: 3.w,
+                                    height: 3.w,
                                     colorFilter: const ColorFilter.mode(
-                                      Color(0xFF3498DB),
+                                      AppTheme.primaryColor,
                                       BlendMode.srcIn,
                                     ),
                                   ),
@@ -219,49 +223,50 @@ class _TaskCardState extends State<TaskCard> {
                                           ? 'Tugas'
                                           : 'Aktivitas',
                                   bgColor: const Color(0xFFDFEAFF),
-                                  textColor: const Color(0xFF3498DB),
+                                  textColor: AppTheme.primaryColor,
                                 ),
 
+                                SizedBox(width: 1.5.w),
                                 // badge alarm
                                 if (hasAlarmIndicator)
                                   _buildBadge(
                                     icon: SvgPicture.asset(
                                       'assets/icons/alarm.svg',
-                                      width: 12,
-                                      height: 12,
+                                      width: 3.w,
+                                      height: 3.w,
                                       colorFilter: const ColorFilter.mode(
-                                        Color(0xFF3498DB),
+                                        AppTheme.primaryColor,
                                         BlendMode.srcIn,
                                       ),
                                     ),
                                     label: '',
                                     bgColor: const Color(0xFFDFEAFF),
-                                    textColor: const Color(0xFF3498DB),
+                                    textColor: AppTheme.primaryColor,
                                   ),
                               ],
                             ),
-                            const SizedBox(height: 4),
+                            SizedBox(height: 0.7.h),
                             Text(
                               widget.task.title,
                               style: GoogleFonts.plusJakartaSans(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w500,
                                 color: const Color(0xFF131927),
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            SizedBox(height: 0.5.h),
                             Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.access_time_filled,
-                                  size: 12,
+                                  size: 3.w,
                                   color: Colors.black,
                                 ),
-                                const SizedBox(width: 4),
+                                SizedBox(width: 4),
                                 Text(
                                   'Estimasi: ${widget.task.estimatedDuration.inHours}:${(widget.task.estimatedDuration.inMinutes % 60).toString().padLeft(2, '0')}',
-                                  style: const TextStyle(
-                                    fontSize: 10,
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
                                     color: Colors.black,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -273,52 +278,55 @@ class _TaskCardState extends State<TaskCard> {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.only(top: 28),
+                      padding: EdgeInsets.only(top: 3.5.h),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // badge status
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                                  widget.task.isCompleted
-                                      ? const Color(
-                                        0xFFC5E9CD,
-                                      ) // Hijau untuk selesai
-                                      : _getStatusColor(widget.task.status),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              widget.task.isCompleted
-                                  ? 'Selesai'
-                                  : _getStatusName(
-                                    widget.task.status,
-                                    task: widget.task,
-                                  ),
-                              style: TextStyle(
+                          if (widget.showStatus)
+                            // badge status
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 3.w,
+                                vertical: 0.7.h,
+                              ),
+                              decoration: BoxDecoration(
                                 color:
                                     widget.task.isCompleted
-                                        ? const Color(0xFF3DA755) // Teks hijau
-                                        : _getStatusTextColor(
-                                          widget.task.status,
-                                        ),
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                height: 1.2,
+                                        ? const Color(
+                                          0xFFC5E9CD,
+                                        ) // Hijau untuk selesai
+                                        : _getStatusColor(widget.task.status),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                widget.task.isCompleted
+                                    ? 'Selesai'
+                                    : _getStatusName(
+                                      widget.task.status,
+                                      task: widget.task,
+                                    ),
+                                style: TextStyle(
+                                  color:
+                                      widget.task.isCompleted
+                                          ? const Color(
+                                            0xFF3DA755,
+                                          ) // Teks hijau
+                                          : _getStatusTextColor(
+                                            widget.task.status,
+                                          ),
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.2,
+                                ),
                               ),
                             ),
-                          ),
                         ],
                       ),
                     ),
 
                     // titik tiga, popup edit dan hapus
                     PopupMenuButton<String>(
-                      offset: const Offset(0, 40),
+                      offset: Offset(0, 1.h),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                         side: const BorderSide(
@@ -344,7 +352,6 @@ class _TaskCardState extends State<TaskCard> {
                               setState(() {
                                 // update jika perlu
                               });
-                              Navigator.pop(context, true);
                             }
                           }
                         } else if (value == 'delete') {
@@ -352,10 +359,12 @@ class _TaskCardState extends State<TaskCard> {
                           showDialog(
                             context: context,
                             builder:
-                                (_) => DeletePopup(
-                                  id: widget.task.id,
-                                  category: widget.task.category,
-                                  title: widget.task.title,
+                                (_) => ConfirmDialog(
+                                  onConfirm: () {
+                                    // Tutup dialog
+                                    widget
+                                        .onDelete(); // Panggil fungsi delete dari task_card
+                                  },
                                 ),
                           );
                         }
@@ -365,18 +374,18 @@ class _TaskCardState extends State<TaskCard> {
                             PopupMenuItem<String>(
                               value: 'edit',
                               child: Row(
-                                children: const [
+                                children: [
                                   Icon(
                                     Icons.edit,
                                     color: Colors.black,
-                                    size: 20,
+                                    size: 5.w,
                                   ),
-                                  SizedBox(width: 8),
+                                  SizedBox(width: 2.w),
                                   Text(
                                     'Ubah',
                                     style: TextStyle(
                                       color: Colors.black,
-                                      fontSize: 14,
+                                      fontSize: 13.sp,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -386,18 +395,18 @@ class _TaskCardState extends State<TaskCard> {
                             PopupMenuItem<String>(
                               value: 'delete',
                               child: Row(
-                                children: const [
+                                children: [
                                   Icon(
                                     Icons.delete_outline,
                                     color: Color(0xFFD93E39),
-                                    size: 20,
+                                    size: 5.w,
                                   ),
-                                  SizedBox(width: 8),
+                                  SizedBox(width: 2.w),
                                   Text(
                                     'Hapus',
                                     style: TextStyle(
                                       color: Color(0xFFD93E39),
-                                      fontSize: 14,
+                                      fontSize: 13.sp,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -405,16 +414,16 @@ class _TaskCardState extends State<TaskCard> {
                               ),
                             ),
                           ],
-                      icon: const Icon(Icons.more_vert, size: 20),
+                      icon: Icon(Icons.more_vert, size: 5.w),
                     ),
                   ],
                 ),
                 if (hasLateIndicator)
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 4.w,
+                      vertical: 0.5.h,
                     ),
                     decoration: const BoxDecoration(
                       color: Color(0xFFFDECEC),
@@ -423,13 +432,13 @@ class _TaskCardState extends State<TaskCard> {
                         bottomRight: Radius.circular(12),
                       ),
                     ),
-                    child: const Align(
+                    child: Align(
                       alignment: Alignment.centerRight,
                       child: Text(
                         'Diselesaikan terlambat',
                         style: TextStyle(
                           color: Color(0xFFD93E39),
-                          fontSize: 10,
+                          fontSize: 12.5.sp,
                           fontWeight: FontWeight.w500,
                           height: 1.4,
                         ),
@@ -443,7 +452,7 @@ class _TaskCardState extends State<TaskCard> {
               top: 0,
               bottom: 0,
               child: Container(
-                width: 10,
+                width: 2.w,
                 decoration: const BoxDecoration(
                   color: Color(0xFF5263F3),
                   borderRadius: BorderRadius.only(
@@ -466,7 +475,7 @@ class _TaskCardState extends State<TaskCard> {
     required Color textColor,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 0.8.w, vertical: 0.3.h),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(8),
@@ -476,13 +485,13 @@ class _TaskCardState extends State<TaskCard> {
         children: [
           icon,
           if (label.isNotEmpty) ...[
-            const SizedBox(width: 4),
+            SizedBox(width: 1.w),
             Text(
               label,
               style: TextStyle(
                 color: textColor,
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
