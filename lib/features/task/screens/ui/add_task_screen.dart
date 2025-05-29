@@ -5,12 +5,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:auto_route/auto_route.dart';
 import '../../model/task_model.dart';
+import '../../../alarm/model/alarm.dart';
 import 'package:aturin_app/core/widgets/categories.dart';
 import '../../services/task_services.dart';
 import '../widgets/deadline_picker_bottom.dart';
 import '../widgets/duration_picker_bottom.dart';
 import 'category_picker_screen.dart';
-import 'alarm_picker_screen.dart';
+import '../../../jadwal/screens/add_aktivitas/ui/alarm_picker_screen.dart';
 import '../../../../../../routers/app_router.dart';
 import 'package:aturin_app/core/widgets/field_tile.dart';
 import 'package:aturin_app/features/task/screens/widgets/snackbar.dart';
@@ -168,10 +169,16 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 ? null
                 : _descriptionController.text.trim(),
         deadline: _deadline!,
-        estimatedDuration: _estimatedDuration!,
-        category: _selectedCategory!.name,
-        isAlarmEnabled: _isAlarmEnabled,
-        alarmDateTime: _isAlarmEnabled ? _alarmDateTime : null,
+        estimatedDuration: _estimatedDuration!,        category: _selectedCategory!.name,
+        alarm: _isAlarmEnabled && _alarmDateTime != null 
+            ? AlarmModel(
+                id: widget.existingTask?.alarm?.id,
+                alarmEnabled: _isAlarmEnabled,
+                alarmDateTime: _alarmDateTime!,
+                slug: 'task_${DateTime.now().millisecondsSinceEpoch}',
+              )
+            : null,
+
       ),
       isEdit: widget.existingTask != null,
       onSuccess: () {

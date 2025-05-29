@@ -15,7 +15,7 @@ import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:aturin_app/features/alarm/ui/screens/alarm_ringing_screen.dart';
 import 'package:alarm/alarm.dart';
 import 'package:aturin_app/routers/data_prefetch_guard.dart';
-import 'package:aturin_app/features/jadwal/screens/aktivtias_screen/ui/aktivitas_screen.dart';
+import 'package:aturin_app/features/jadwal/screens/aktivitas_screen/ui/aktivitas_screen.dart';
 import 'package:aturin_app/features/jadwal/screens/add_aktivitas/ui/add_aktivitas.dart';
 import 'package:aturin_app/features/jadwal/screens/activity_detail_list.dart';
 import 'package:aturin_app/features/login/ui/login_page.dart';

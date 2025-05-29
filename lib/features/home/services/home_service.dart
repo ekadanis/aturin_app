@@ -2,20 +2,24 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:aturin_app/features/task/database/task_database.dart';
 import 'package:aturin_app/features/task/model/task_model.dart';
+import 'package:aturin_app/features/alarm/model/alarm.dart';
+import 'package:aturin_app/features/jadwal/database/aktivitas_database.dart';
+import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 
-class TaskService extends ChangeNotifier {
+class HomeService extends ChangeNotifier {
   final taskDatabase = TaskDatabase();
+  final aktivitasDatabase = AktivitasDatabase();
   List<Task> _tasks = [];
+  List<AktivitasModel> _aktivitas = [];
   Timer? _statusChecker;
 
   // Cache dan throttling untuk optimasi performa
   List<Task>? _cachedTodayTasks;
+  List<AktivitasModel>? _cachedTodayAktivitas;
   DateTime _lastFetchTime = DateTime(1970);
 
-  final Map<String, List<Task>> _cachedFilteredTasks = {};
-
-  // Getter that returns only today's tasks sorted by deadline
-  List<Task> get tasks {
+  final Map<String, List<Task>> _cachedFilteredTasks = {};  // Getter that returns only today's tasks sorted by deadline
+  List<Task> get todayTasks {
     // Gunakan cache jika tersedia
     if (_cachedTodayTasks != null) {
       return _cachedTodayTasks!;
@@ -33,7 +37,6 @@ class TaskService extends ChangeNotifier {
               task.deadline.month,
               task.deadline.day,
             );
-            final today = DateTime(now.year, now.month, now.day);
             return taskDate.isAtSameMomentAs(today);
           }).toList()
           ..sort((a, b) {
@@ -53,88 +56,91 @@ class TaskService extends ChangeNotifier {
     return _cachedTodayTasks!;
   }
 
-  // Getter for all tasks (unfiltered)
-  List<Task> get allTasks => _tasks;
+  // Getter that returns only today's activities sorted by start time
+  List<AktivitasModel> get todayAktivitas {
+    // Gunakan cache jika tersedia
+    if (_cachedTodayAktivitas != null) {
+      return _cachedTodayAktivitas!;
+    }
 
-  TaskService() {
-    fetchTasks();
-    startStatusChecker();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // Filter activities for today and sort them by start time
+    _cachedTodayAktivitas =
+        _aktivitas.where((aktivitas) {
+            // Include activities from today
+            final aktivitasDate = DateTime(
+              aktivitas.activityDate.year,
+              aktivitas.activityDate.month,
+              aktivitas.activityDate.day,
+            );
+            return aktivitasDate.isAtSameMomentAs(today);
+          }).toList()
+          ..sort((a, b) {
+            // Urutkan berdasarkan start time
+            return a.activityStartTime.compareTo(b.activityStartTime);
+          });
+
+    return _cachedTodayAktivitas!;
   }
 
-  // Fetch all tasks from the database and convert to Home Task model
-  Future<void> fetchTasks() async {
+  // Backward compatibility - alias for todayTasks
+  List<Task> get tasks => todayTasks;
+
+  // Getter for all tasks (unfiltered)
+  List<Task> get allTasks => _tasks;
+  HomeService() {
+    fetchData();
+    startStatusChecker();
+  }  // Fetch both tasks and activities from the database
+  Future<void> fetchData() async {
     // Throttling: Batasi fetch maksimal sekali tiap 2 detik
     final now = DateTime.now();
-    if (now.difference(_lastFetchTime).inSeconds < 2 && _tasks.isNotEmpty) {
+    if (now.difference(_lastFetchTime).inSeconds < 2 && _tasks.isNotEmpty && _aktivitas.isNotEmpty) {
       debugPrint(
-        'Home: Using cached tasks (fetched ${now.difference(_lastFetchTime).inSeconds}s ago)',
+        'Home: Using cached data (fetched ${now.difference(_lastFetchTime).inSeconds}s ago)',
       );
       return;
     }
 
     try {
-      final result = await taskDatabase.queryAll();
-      final dbTasks = result.map((row) => Task.fromMap(row)).toList();
+      // Fetch tasks
+      final taskResult = await taskDatabase.queryAll();
+      _tasks = taskResult.map((row) => Task.fromMap(row)).toList();
 
-      // Convert from TaskModel.Task to home's Task model
-      _tasks = result.map((row) => Task.fromMap(row)).toList();
+      // Fetch activities
+      final aktivitasResult = await aktivitasDatabase.queryAll();
+      _aktivitas = aktivitasResult.map((row) => AktivitasModel.fromMap(row)).toList();
 
       // Reset cache
       _cachedTodayTasks = null;
+      _cachedTodayAktivitas = null;
       _lastFetchTime = now;
 
       notifyListeners();
     } catch (e) {
-      debugPrint('Error fetching tasks: $e');
+      debugPrint('Error fetching data: $e');
       _tasks = [];
+      _aktivitas = [];
       notifyListeners();
     }
   }
 
-  // Convert status to just two options: completed or upcoming
-  TaskStatus _convertToHomeStatus(bool isCompleted) {
-    return isCompleted ? TaskStatus.completed : TaskStatus.upcoming;
+  // Legacy method for backward compatibility
+  Future<void> fetchTasks() async {
+    await fetchData();
   }
-
-  // Convert category string to home's TaskCategory enum
-  TaskCategory _convertToHomeCategory(String category) {
-    final categoryLower = category.toLowerCase();
-
-    if (categoryLower.contains('akademik')) return TaskCategory.akademik;
-    if (categoryLower.contains('hiburan')) return TaskCategory.hiburan;
-    if (categoryLower.contains('pekerjaan')) return TaskCategory.pekerjaan;
-    if (categoryLower.contains('olahraga')) return TaskCategory.olahraga;
-    if (categoryLower.contains('sosial')) return TaskCategory.sosial;
-    if (categoryLower.contains('spiritual')) return TaskCategory.spiritual;
-    if (categoryLower.contains('pribadi')) return TaskCategory.pribadi;
-    if (categoryLower.contains('istirahat')) return TaskCategory.istirahat;
-
-    return TaskCategory.akademik;
-  }
-
-  String _formatTimeRange(DateTime deadline, Duration duration) {
-    final hour = deadline.hour.toString().padLeft(2, '0');
-    final minute = deadline.minute.toString().padLeft(2, '0');
-
-    final endHour = (deadline.hour + duration.inHours) % 24;
-    final endMinute = (deadline.minute + (duration.inMinutes % 60)) % 60;
-    final endHourStr = endHour.toString().padLeft(2, '0');
-    final endMinuteStr = endMinute.toString().padLeft(2, '0');
-
-    return '$hour:$minute – $endHourStr:$endMinuteStr';
-  }
-
   List<Task> get nonAcademicTasks {
     return _tasks
         .where((task) => task.category != TaskCategory.akademik)
         .toList();
   }
-
   void startStatusChecker() {
     _statusChecker?.cancel();
     _statusChecker = Timer.periodic(
       const Duration(minutes: 1),
-      (_) => fetchTasks(),
+      (_) => fetchData(),
     );
   }
 
@@ -142,7 +148,6 @@ class TaskService extends ChangeNotifier {
     _statusChecker?.cancel();
     _statusChecker = null;
   }
-
   // Count today's tasks that aren't completed
   int getTodayTasksCount() {
     final now = DateTime.now();
@@ -158,14 +163,13 @@ class TaskService extends ChangeNotifier {
           task.status != TaskStatus.completed;
     }).length;
   }
-
   // Force refresh untuk memastikan data terbaru
   Future<void> forceRefresh() async {
     _cachedTodayTasks = null;
+    _cachedTodayAktivitas = null;
     _lastFetchTime = DateTime(1970); // Reset waktu fetch terakhir
-    await fetchTasks();
+    await fetchData();
   }
-
   Future<void> toggleTaskCompletion(int? id) async {
     if (id == null) return;
 
@@ -174,12 +178,14 @@ class TaskService extends ChangeNotifier {
       final task = _tasks[index];
       final now = DateTime.now();
 
+      // Toggle status antara selesai dan belum_selesai
+      final newStatus = task.isCompleted 
+          ? TaskDatabaseStatus.belumSelesai 
+          : TaskDatabaseStatus.selesai;
+
       final updatedTask = task.copyWith(
-        isDone: !task.isDone,
-        isCompleted: !task.isCompleted,
-        completedAt: !task.isCompleted ? now : null,
-        previousStatus: !task.isCompleted ? task.status : task.previousStatus,
-        status: task.isCompleted ? task.previousStatus! : task.status,
+        taskStatus: newStatus,
+        completedAt: newStatus == TaskDatabaseStatus.selesai ? now : null,
       );
 
       await taskDatabase.update(updatedTask.toMap());
@@ -190,16 +196,26 @@ class TaskService extends ChangeNotifier {
       notifyListeners();
     }
   }
-
   Future<void> toggleAlarm(int? id) async {
     if (id == null) return;
 
     final index = _tasks.indexWhere((task) => task.id == id);
     if (index != -1) {
       final task = _tasks[index];
+      
+      // Toggle alarm enabled status
+      AlarmModel? updatedAlarm;
+      if (task.alarm != null) {
+        updatedAlarm = AlarmModel(
+          id: task.alarm!.id,
+          alarmDateTime: task.alarm!.alarmDateTime,
+          alarmEnabled: !task.alarm!.alarmEnabled,
+          slug: task.alarm!.slug,
+        );
+      }
+
       final updatedTask = task.copyWith(
-        isAlarmEnabled: !task.isAlarmEnabled,
-        isAlarmActive: !task.isAlarmActive,
+        alarm: updatedAlarm,
       );
 
       await taskDatabase.update(updatedTask.toMap());
@@ -210,6 +226,13 @@ class TaskService extends ChangeNotifier {
 
   Future<void> deleteTask(int taskId) async {
     _tasks.removeWhere((task) => task.id == taskId);
+    notifyListeners();
+  }
+
+  Future<void> deleteActivity(int activityId) async {
+    await aktivitasDatabase.delete(activityId);
+    _aktivitas.removeWhere((activity) => activity.id == activityId);
+    _cachedTodayAktivitas = null; // Reset cache
     notifyListeners();
   }
 

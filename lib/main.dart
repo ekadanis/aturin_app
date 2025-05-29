@@ -1,13 +1,12 @@
-import 'package:aturin_app/features/login/ui/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:aturin_app/features/task/services/task_services.dart' as task;
-import 'package:aturin_app/features/home/services/task_service.dart' as home;
+import 'package:aturin_app/features/home/services/home_service.dart';
 import 'package:aturin_app/features/profile/services/profile_service.dart';
 import 'package:aturin_app/features/auth/services/auth_service.dart';
-import 'package:aturin_app/features/task/services/task_service_bridge.dart';
+import 'package:aturin_app/features/jadwal/services/aktivitas_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
 import 'core/initialization/app_initializer.dart';
@@ -17,8 +16,6 @@ import 'core/theme/app_theme.dart';
 
 // Membuat instance AppRouter di level global
 final appRouter = AppRouter();
-// Instance TaskServiceBridge untuk diakses secara global
-TaskServiceBridge? _taskServiceBridge;
 
 Future<void> main() async {
   // Preserve splash screen until initialization is complete
@@ -82,14 +79,19 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(      providers: [
-        // Provider untuk TaskService dari features/task
+    return MultiProvider(
+      providers: [
+        // Provider untuk TaskService dari features/task (untuk backward compatibility)
         ChangeNotifierProvider<task.TaskService>(
           create: (_) => task.TaskService(),
         ),
-        // Provider untuk TaskService dari features/home
-        ChangeNotifierProvider<home.TaskService>(
-          create: (_) => home.TaskService(),
+        // Provider untuk HomeService (unified service for home page)
+        ChangeNotifierProvider<HomeService>(
+          create: (_) => HomeService(),
+        ),
+        // Provider untuk AktivitasService
+        ChangeNotifierProvider<AktivitasService>(
+          create: (_) => AktivitasService(),
         ),
         // Provider untuk ProfileService
         ChangeNotifierProvider<ProfileService>(
@@ -100,42 +102,17 @@ class _MyAppState extends State<MyApp> {
           create: (_) => AuthService(),
         ),
       ],
-      child: Builder(
-        builder: (context) {
-          _initTaskServiceBridge(context);
-          return Sizer(
-            builder: (context, orientation, deviceType) {
-              return MaterialApp.router(
-                title: 'Aturin',
-                theme: AppTheme.lightTheme,
-                debugShowCheckedModeBanner: false,
-                routerConfig: appRouter.config(),
-              );
-            },
+      child: Sizer(
+        builder: (context, orientation, deviceType) {
+          return MaterialApp.router(
+            title: 'Aturin',
+            theme: AppTheme.lightTheme,
+            debugShowCheckedModeBanner: false,
+            routerConfig: appRouter.config(),
           );
         },
       ),
     );
-  }
-
-  void _initTaskServiceBridge(BuildContext context) {
-    // Memastikan bridge diinisialisasi sekali saja
-    if (_taskServiceBridge == null) {
-      final taskService = Provider.of<task.TaskService>(context, listen: false);
-      final homeTaskService = Provider.of<home.TaskService>(context, listen: false);
-      
-      _taskServiceBridge = TaskServiceBridge(taskService, homeTaskService);
-      // Sinkronkan data awal
-      _taskServiceBridge!.syncServices();
-    }
-  }
-
-  @override
-  void dispose() {
-    // Bersihkan resource TaskServiceBridge
-    _taskServiceBridge?.dispose();
-    _taskServiceBridge = null;
-    super.dispose();
   }
 }
 

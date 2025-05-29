@@ -1,14 +1,14 @@
-import 'package:aturin_app/features/home/services/task_service.dart';
+import 'package:aturin_app/features/home/services/home_service.dart';
 import 'package:aturin_app/features/home/widget/empty_task.dart';
 import 'package:aturin_app/features/home/widget/greeting_header.dart';
 import 'package:aturin_app/features/home/widget/timeline_widget.dart';
+import 'package:aturin_app/features/home/widget/activity_card.dart';
 import 'package:aturin_app/features/task/model/task_model.dart';
+import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:aturin_app/features/task/screens/ui/task_detail_screen.dart';
-import 'package:aturin_app/features/task/screens/widgets/task_card.dart';
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:aturin_app/core/widgets/bottom_navbar.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:provider/provider.dart';
@@ -25,28 +25,20 @@ class HomePage extends StatefulWidget {
 enum TaskViewType { tugas, aktivitas }
 
 class _HomePageState extends State<HomePage> {
-  late TaskService taskService;
+  late HomeService homeService;
   TaskViewType _selectedView = TaskViewType.tugas;
 
   @override
   void initState() {
     super.initState();
-    taskService = Provider.of<TaskService>(context, listen: false);
-    taskService.fetchTasks();
+    homeService = Provider.of<HomeService>(context, listen: false);
+    homeService.fetchData();
   }
 
   @override
   Widget build(BuildContext context) {
     // Mendapatkan tinggi bottom navigation untuk padding scroll
     final bottomNavHeight = kBottomNavigationBarHeight;
-    final tasks = context.watch<TaskService>().tasks;
-
-    final filteredTasks =
-        tasks.where((task) {
-          return _selectedView == TaskViewType.tugas
-              ? task.category.toLowerCase() == 'akademik'
-              : task.category.toLowerCase() != 'akademik';
-        }).toList();
 
     return PopScope(
       canPop: true,
@@ -56,9 +48,13 @@ class _HomePageState extends State<HomePage> {
         // Mengaktifkan extendBody agar body dapat memperluas hingga di bawah bottom navigation bar
         extendBody: true,
         bottomNavigationBar: const BottomNavbar(currentIndex: 0),
-        body: Consumer<TaskService>(
-          builder: (context, taskService, _) {
-            final tasks = taskService.tasks;
+        body: Consumer<HomeService>(
+          builder: (context, homeService, _) {
+            // Get the appropriate data based on selected view
+            final items =
+                _selectedView == TaskViewType.tugas
+                    ? homeService.todayTasks
+                    : homeService.todayAktivitas;
 
             return SafeArea(
               bottom: false, // Menghilangkan padding bawah
@@ -66,7 +62,6 @@ class _HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-
                   children: [
                     Image.asset(
                       'assets/images/home_head1.png',
@@ -84,17 +79,16 @@ class _HomePageState extends State<HomePage> {
                         _buildSwitcherButton(TaskViewType.tugas, 'Tugas'),
                       ],
                     ),
-
                     const SizedBox(height: 10),
                     Expanded(
                       child:
-                          filteredTasks.isEmpty
+                          items.isEmpty
                               ? const Center(child: EmptyTask())
                               : ListView.builder(
                                 padding: EdgeInsets.zero,
-                                itemCount: filteredTasks.length + 1,
+                                itemCount: items.length + 1,
                                 itemBuilder: (context, index) {
-                                  if (index == filteredTasks.length) {
+                                  if (index == items.length) {
                                     return SizedBox(
                                       height: bottomNavHeight + 40,
                                       child: Align(
@@ -114,77 +108,68 @@ class _HomePageState extends State<HomePage> {
                                         ),
                                       ),
                                     );
-                                  }
-
-                                  final task = filteredTasks[index];
-
-                                  if (task.category == 'Akademik') {
+                                  }                                  // Display tasks
+                                  if (_selectedView == TaskViewType.tugas) {
+                                    final task = items[index] as Task;
+                                    
+                                    // Semua tugas menggunakan Timeline Widget
                                     bool previousIsFlagged = false;
-                                    final isLast =
-                                        index == filteredTasks.length - 1;
+                                    final isLast = index == items.length - 1;
 
                                     if (index > 0) {
-                                      final previousTask =
-                                          filteredTasks[index - 1];
+                                      final previousTask = items[index - 1] as Task;
                                       previousIsFlagged =
                                           previousTask.isAlarmEnabled ||
-                                          previousTask.status ==
-                                              TaskStatus.late;
+                                          previousTask.status == TaskStatus.late;
                                     }
-
+                                    
                                     return TimelineWidget(
                                       task: task,
                                       index: index,
                                       isLast: isLast,
                                       previousIsFlagged: previousIsFlagged,
                                       onToggleCompletion:
-                                          () => taskService
-                                              .toggleTaskCompletion(task.id!),
+                                          () => homeService.toggleTaskCompletion(task.id!),
                                       onDelete:
-                                          () =>
-                                              taskService.deleteTask(task.id!),
+                                          () => homeService.deleteTask(task.id!),
                                       onToggleAlarm:
-                                          () =>
-                                              taskService.toggleAlarm(task.id!),
+                                          () => homeService.toggleAlarm(task.id!),
                                       onViewDetails: () {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder:
-                                                (_) => TaskDetailScreen(
-                                                  task: task,
-                                                ),
+                                            builder: (_) => TaskDetailScreen(task: task),
                                           ),
                                         );
                                       },
                                       currentFilter: "today",
                                     );
-                                  } else {
-                                    return TaskCard(
-                                      task: task,
-                                      currentFilter: "today",
-                                      onToggleCompletion:
-                                          () => taskService
-                                              .toggleTaskCompletion(task.id!),
-                                      onDelete:
-                                          () =>
-                                              taskService.deleteTask(task.id!),
-                                      onViewDetails: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder:
-                                                (_) => TaskDetailScreen(
-                                                  task: task,
-                                                ),
-                                          ),
-                                        );
+                                  }
+                                  // Display activities
+                                  else {
+                                    final activity =
+                                        items[index] as AktivitasModel;
+
+                                    return ActivityCard(
+                                      activity: activity,
+                                      onTap: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => ActivityDetailListPage(
+        activities: items.whereType<AktivitasModel>().toList(),
+        initialIndex: index,
+      ),
+    ),
+  );
+},
+                                      onEdit: () {
+                                        // TODO: Navigate to edit activity screen
                                       },
-                                      onToggleAlarm:
-                                          () =>
-                                              taskService.toggleAlarm(task.id!),
-                                      showCheckbox: false,
-                                      showStatus: false,
+                                      onDelete:
+                                          () => homeService.deleteActivity(
+                                            activity.id!,
+                                          ),
                                     );
                                   }
                                 },

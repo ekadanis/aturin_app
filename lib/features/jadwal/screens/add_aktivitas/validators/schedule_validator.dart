@@ -86,13 +86,14 @@ class ScheduleValidator {
     }
     return null;
   }
-
   String? _validateTimeSequence(TimeOfDay startTime, TimeOfDay endTime) {
     final startMinutes = startTime.hour * 60 + startTime.minute;
     final endMinutes = endTime.hour * 60 + endTime.minute;
     
-    if (endMinutes <= startMinutes) {
-      return 'Waktu selesai harus setelah waktu mulai';
+    // Allow activities that span across midnight (e.g., 23:00 to 01:00)
+    // Only invalid if both times are exactly the same
+    if (startMinutes == endMinutes) {
+      return 'Waktu mulai dan selesai tidak boleh sama';
     }
     
     return null;
@@ -104,12 +105,12 @@ class ScheduleValidator {
     }
     return null;
   }
-
   // Additional validation methods for specific use cases
   bool isValidTimeRange(TimeOfDay startTime, TimeOfDay endTime) {
     final startMinutes = startTime.hour * 60 + startTime.minute;
     final endMinutes = endTime.hour * 60 + endTime.minute;
-    return endMinutes > startMinutes;
+    // Allow cross-midnight activities, only invalid if times are exactly the same
+    return startMinutes != endMinutes;
   }
 
   bool isValidTitle(String title) {
