@@ -22,7 +22,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 100),
     );
     _animation = CurvedAnimation(
       parent: _controller,
@@ -45,13 +45,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       // Memastikan database sudah diinisialisasi sebelum melanjutkan
       await DatabaseHelper.instance.database;
 
-      await Future.delayed(const Duration(milliseconds: 3000));
+      await Future.delayed(const Duration(milliseconds: 2500));
 
       if (!mounted) return;
       _checkFirstTime();
     } catch (e) {
       debugPrint("Error initializing database: $e");
-      await Future.delayed(const Duration(milliseconds: 3000));
+      await Future.delayed(const Duration(milliseconds: 2500));
       if (mounted) _checkFirstTime();
     }
   }
