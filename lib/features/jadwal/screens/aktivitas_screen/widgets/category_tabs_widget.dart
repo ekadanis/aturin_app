@@ -17,7 +17,7 @@ class CategoryTabsWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 60,
+      height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListView(
         scrollDirection: Axis.horizontal,

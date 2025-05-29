@@ -76,9 +76,9 @@ class _TaskCardState extends State<TaskCard> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.35), // Ubah di sini
+              color: Colors.grey.withOpacity(0.35), // Ubah di sini
               blurRadius: 8,
-              offset: Offset(0, 0.4.h),
+              offset: Offset(0, 0),
             ),
           ],
         ),
@@ -276,11 +276,11 @@ class _TaskCardState extends State<TaskCard> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                         side: const BorderSide(
-                          color: Color(0xFFFFCE73),
-                          width: 1,
+                          color: Color(0xFF5263F3),
+                          width: 1.5,
                         ),
                       ),
-                      color: const Color(0xFFFFF9F0),
+                      color: const Color.fromARGB(255, 249, 251, 255),
                       onSelected: (value) async {
                         if (value == 'edit') {
                           final result = await Navigator.push(
@@ -325,7 +325,7 @@ class _TaskCardState extends State<TaskCard> {
                                 children: [
                                   Icon(
                                     Icons.edit,
-                                    color: Colors.black,
+                                    color: AppTheme.primaryColor,
                                     size: 5.w,
                                   ),
                                   SizedBox(width: 2.w),
@@ -400,7 +400,7 @@ class _TaskCardState extends State<TaskCard> {
               top: 0,
               bottom: 0,
               child: Container(
-                width: 3.5.w,
+                width: 3.w,
                 decoration: const BoxDecoration(
                   color: Color(0xFF5263F3),
                   borderRadius: BorderRadius.only(

@@ -4,6 +4,7 @@ import '../../model/task_model.dart';
 import '../../services/task_services.dart';
 import 'task_card.dart';
 import 'snackbar.dart';
+import 'package:sizer/sizer.dart';
 
 class TaskListView extends StatefulWidget {
   final List<Task> tasks;
@@ -43,7 +44,7 @@ class _TaskListViewState extends State<TaskListView> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.only(top: 0, bottom: 80),
+      padding: const EdgeInsets.only(top: 0, bottom: 0),
       itemCount: widget.tasks.length,
       itemBuilder: (context, index) {
         final task = widget.tasks[index];
@@ -54,7 +55,7 @@ class _TaskListViewState extends State<TaskListView> {
 
   Widget _buildTaskCard(Task task) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0.75.h),
       child: Hero(
         tag: 'task-${task.id}',
         child: TaskCard(

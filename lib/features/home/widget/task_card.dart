@@ -31,7 +31,7 @@ class TaskCard extends StatelessWidget {
         ),
         shadows: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.20),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

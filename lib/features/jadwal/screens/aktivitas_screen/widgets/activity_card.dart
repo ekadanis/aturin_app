@@ -28,7 +28,7 @@ class ActivityCard extends StatelessWidget {
         return 'Aktivitas';
       }
     }
-    
+
     if (schedule.activityTitle.toLowerCase().contains('tugas') ||
         schedule.activityCategory == ActivityCategory.akademik) {
       return 'Tugas';
@@ -63,22 +63,23 @@ class ActivityCard extends StatelessWidget {
     final typeLabel = _getTypeLabel(activity);
     final durationText = _getDurationText(activity);
     final hasAlarm = activity.alarm != null;
-    final typeIconPath = typeLabel == 'Tugas'
-        ? 'assets/icons/task-list.svg'
-        : 'assets/activitycategory/chipicon/aktivitas.svg';
+    final typeIconPath =
+        typeLabel == 'Tugas'
+            ? 'assets/icons/task-list.svg'
+            : 'assets/activitycategory/chipicon/aktivitas.svg';
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 0),
+        margin: EdgeInsets.symmetric(vertical: 1.2.h, horizontal: 0),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.grey.withOpacity(0.35),
               blurRadius: 8,
-              offset: Offset(0, 0.4.h),
+              offset: Offset(0, 0.h),
             ),
           ],
         ),
@@ -86,10 +87,7 @@ class ActivityCard extends StatelessWidget {
         child: Stack(
           children: [
             Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: 4.w,
-                vertical: 1.5.h,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 1.5.h),
               child: Row(
                 children: [
                   Expanded(
@@ -114,12 +112,12 @@ class ActivityCard extends StatelessWidget {
                               textColor: category.textColor,
                             ),
                             SizedBox(width: 1.5.w),
-                            
+
                             // Type badge
                             _buildBadge(
                               icon: SvgPicture.asset(
-                                typeIconPath, 
-                                width: 3.w, 
+                                typeIconPath,
+                                width: 3.w,
                                 height: 3.w,
                                 colorFilter: const ColorFilter.mode(
                                   Color(0xFF5263F3),
@@ -131,7 +129,7 @@ class ActivityCard extends StatelessWidget {
                               textColor: const Color(0xFF5263F3),
                             ),
                             SizedBox(width: 1.5.w),
-                            
+
                             // Alarm badge
                             if (hasAlarm)
                               _buildBadge(
@@ -151,7 +149,7 @@ class ActivityCard extends StatelessWidget {
                           ],
                         ),
                         SizedBox(height: 0.7.h),
-                        
+
                         // Title
                         Text(
                           activity.activityTitle,
@@ -164,7 +162,7 @@ class ActivityCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         SizedBox(height: 0.5.h),
-                        
+
                         // Duration
                         if (durationText.isNotEmpty)
                           Row(
@@ -188,27 +186,47 @@ class ActivityCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
-                  // Menu button
-                  if (onEdit != null || onDelete != null)
-                    PopupMenuButton<String>(
-                      offset: Offset(0, 1.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: const BorderSide(
-                          color: Color(0xFFFFCE73),
-                          width: 1,
-                        ),
-                      ),
-                      color: const Color(0xFFFFF9F0),
-                      onSelected: (value) {
-                        if (value == 'edit') {
-                          onEdit?.call();
-                        } else if (value == 'delete') {
-                          onDelete?.call();
-                        }
-                      },
-                      itemBuilder: (context) => [
+                ],
+              ),
+            ),
+
+            // Left indicator
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              child: Container(
+                width: 3.w,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF5263F3),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    bottomLeft: Radius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+
+            // Menu button di pojok kanan atas
+            if (onEdit != null || onDelete != null)
+              Positioned(
+                top: 1.h,
+                right: 4.w,
+                child: PopupMenuButton<String>(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: Color(0xFF5263F3), width: 1.5),
+                  ),
+                  color: const Color.fromARGB(255, 249, 251, 255),
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      onEdit?.call();
+                    } else if (value == 'delete') {
+                      onDelete?.call();
+                    }
+                  },
+                  itemBuilder:
+                      (context) => [
                         if (onEdit != null)
                           PopupMenuItem<String>(
                             value: 'edit',
@@ -254,28 +272,9 @@ class ActivityCard extends StatelessWidget {
                             ),
                           ),
                       ],
-                      icon: Icon(Icons.more_vert, size: 5.w),
-                    ),
-                ],
-              ),
-            ),
-            
-            // Left indicator
-            Positioned(
-              left: 0,
-              top: 0,
-              bottom: 0,
-              child: Container(
-                width: 2.w,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF5263F3),
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    bottomLeft: Radius.circular(12),
-                  ),
+                  icon: Icon(Icons.more_vert, size: 5.w),
                 ),
               ),
-            ),
           ],
         ),
       ),
