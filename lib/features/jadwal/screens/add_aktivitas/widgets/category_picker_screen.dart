@@ -7,9 +7,11 @@ class CategoryPickerScreen extends StatelessWidget {
   final String selectedCategory;
 
   const CategoryPickerScreen({super.key, required this.selectedCategory});
-
   @override
   Widget build(BuildContext context) {
+    print('DEBUG: CategoryPickerScreen opened with selectedCategory: "$selectedCategory"');
+    print('DEBUG: selectedCategory.isEmpty: ${selectedCategory.isEmpty}');
+    
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -19,10 +21,13 @@ class CategoryPickerScreen extends StatelessWidget {
       body: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: categories.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
+        separatorBuilder: (_, __) => const SizedBox(height: 12),        itemBuilder: (context, index) {
           final category = categories[index];
           final isSelected = category.name == selectedCategory;
+          
+          if (index == 0) {
+            print('DEBUG: First category "${category.name}" isSelected: $isSelected (category.name == selectedCategory: ${category.name == selectedCategory})');
+          }
 
           return GestureDetector(
             onTap: () => Navigator.pop(context, category.name),
@@ -64,7 +69,7 @@ class CategoryPickerScreen extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
+      ),    );
   }
 }
+

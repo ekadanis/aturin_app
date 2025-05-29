@@ -1,4 +1,4 @@
-import 'package:aturin_app/features/home/services/task_service.dart' as home;
+import 'package:aturin_app/features/home/services/home_service.dart' as home;
 import 'package:aturin_app/features/profile/database/profile_database.dart';
 import 'package:aturin_app/features/profile/models/user.dart';
 import 'package:aturin_app/features/profile/ui/profile_page.dart';
@@ -118,35 +118,49 @@ class GreetingHeader extends StatelessWidget implements PreferredSizeWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 3), // Diperkecil dari 4
-                      // Jumlah tugas hari ini (menggunakan Consumer dengan alias yang benar)
-                      Consumer<home.TaskService>(
-                        builder: (context, taskService, _) {
-                          final tasksCount = taskService.getTodayTasksCount();
-
-                          return RichText(
+                      const SizedBox(height: 3), // Diperkecil dari 4                      // Jumlah tugas + aktivitas hari ini (menggunakan HomeService)
+                      Consumer<home.HomeService>(
+                        builder: (context, homeService, _) {
+                          final taskCount = homeService.todayTasks.length;
+                          final activityCount = homeService.todayAktivitas.length;                          return RichText(
                             text: TextSpan(
                               children: [
                                 TextSpan(
                                   text: 'Hari ini: ',
                                   style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 14, // Diperkecil dari 16
+                                    fontSize: 14,
                                     color: AppTheme.lightTextColor,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
                                 TextSpan(
-                                  text: '$tasksCount',
+                                  text: '($activityCount)',
                                   style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 14, // Diperkecil dari 16
+                                    fontSize: 14,
                                     color: AppTheme.dangerColor,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 TextSpan(
-                                  text: ' Tugas',
+                                  text: ' aktivitas, ',
                                   style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 14, // Diperkecil dari 16
+                                    fontSize: 14,
+                                    color: AppTheme.lightTextColor,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: '($taskCount)',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 14,
+                                    color: AppTheme.dangerColor,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: ' tugas',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 14,
                                     color: AppTheme.lightTextColor,
                                     fontWeight: FontWeight.w800,
                                   ),

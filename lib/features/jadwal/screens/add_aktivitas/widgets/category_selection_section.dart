@@ -14,8 +14,8 @@ class CategorySelectionSection extends StatelessWidget {
     required this.categoryError,
     required this.onCategoryChanged,
   });
-
   Future<void> _onCategoryTap(BuildContext context) async {
+    print('DEBUG: Opening category picker, selectedCategory: ${selectedCategory?.name ?? 'NULL'}');
     final selected = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -25,6 +25,7 @@ class CategorySelectionSection extends StatelessWidget {
       ),
     );
 
+    print('DEBUG: Category picker returned: $selected');
     if (selected != null) {
       final category = categories.firstWhere((c) => c.name == selected);
       onCategoryChanged(category);

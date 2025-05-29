@@ -67,4 +67,26 @@ class User {
       'slug': slug,
     };
   }
+
+  User copyWith({
+    int? id,
+    String? name,
+    String? email,
+    String? password,
+    String? avatar,
+    String? slug,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return User(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      password: password ?? this.password,
+      avatar: avatar ?? this.avatar,
+      slug: slug ?? this.slug,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

@@ -1,93 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:aturin_app/features/jadwal/widgets/activity_detail_card.dart';
+import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:aturin_app/core/widgets/confirm_dialog.dart';
 import 'package:sizer/sizer.dart';
 
 @RoutePage()
 class ActivityDetailListPage extends StatefulWidget {
-  const ActivityDetailListPage({super.key});
+  final List<AktivitasModel>? activities;
+  final int? initialIndex;
+  
+  const ActivityDetailListPage({
+    super.key,
+    this.activities,
+    this.initialIndex,
+  });
 
   @override
   State<ActivityDetailListPage> createState() => _ActivityDetailListPageState();
 }
 
 class _ActivityDetailListPageState extends State<ActivityDetailListPage> {
-  final List<Map<String, String?>> activityData = const [
-    {
-      'title': 'Nonton DBL Hari ini a',
-      'date': '20 Mei 2025',
-      'startTime': '08:00',
-      'completeTime': '12:00',
-      'category': 'Hiburan',
-      'alarmId': null,
-    },
-    {
-      'title': 'Meeting Klien',
-      'date': '21 Mei 2025',
-      'startTime': '09:00',
-      'completeTime': '11:00',
-      'category': 'Pekerjaan',
-      'alarmId': '123',
-    },
-    {
-      'title': 'Push up 1000 kali',
-      'date': '21 Mei 2025',
-      'startTime': '09:00',
-      'completeTime': '11:00',
-      'category': 'Olahraga',
-      'alarmId': '123',
-    },
-    {
-      'title': 'Membuat Roket',
-      'date': '21 Mei 2025',
-      'startTime': '09:00',
-      'completeTime': '11:00',
-      'category': 'Akademik',
-      'alarmId': '123',
-    },
-    {
-      'title': 'Bersholawat',
-      'date': '21 Mei 2025',
-      'startTime': '09:00',
-      'completeTime': '11:00',
-      'category': 'Spiritual',
-      'alarmId': '123',
-    },
-    {
-      'title': 'Ngomong',
-      'date': '21 Mei 2025',
-      'startTime': '09:00',
-      'completeTime': '11:00',
-      'category': 'Sosial',
-      'alarmId': '123',
-    },
-    {
-      'title': 'Healing',
-      'date': '21 Mei 2025',
-      'startTime': '09:00',
-      'completeTime': '11:00',
-      'category': 'Pribadi',
-      'alarmId': '123',
-    },
-    {
-      'title': 'Scroll Ig',
-      'date': '21 Mei 2025',
-      'startTime': '09:00',
-      'completeTime': '11:00',
-      'category': 'Istirahat',
-      'alarmId': '123',
-    },
-  ];
-
   late final PageController _pageController;
   int _currentPageIndex = 0;
+  late List<AktivitasModel> displayActivities;
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(viewportFraction: 0.85);
+    displayActivities = widget.activities ?? _getDummyActivities();
+    _currentPageIndex = widget.initialIndex ?? 0;
+    _pageController = PageController(
+      viewportFraction: 0.85,
+      initialPage: _currentPageIndex,
+    );
     _pageController.addListener(() {
       final page = _pageController.page ?? 0;
       final newIndex = page.round();
@@ -97,6 +44,42 @@ class _ActivityDetailListPageState extends State<ActivityDetailListPage> {
         });
       }
     });
+  }
+
+  List<AktivitasModel> _getDummyActivities() {
+    return [
+      AktivitasModel(
+        id: 1,
+        activityTitle: 'Nonton DBL Hari ini a',
+        activityDate: DateTime(2025, 5, 20),
+        activityStartTime: DateTime(2025, 5, 20, 8, 0),
+        activityCompleteTime: DateTime(2025, 5, 20, 12, 0),
+        activityCategory: ActivityCategory.hiburan,
+        alarmId: null,
+      ),
+      AktivitasModel(
+        id: 2,
+        activityTitle: 'Meeting Klien',
+        activityDate: DateTime(2025, 5, 21),
+        activityStartTime: DateTime(2025, 5, 21, 9, 0),
+        activityCompleteTime: DateTime(2025, 5, 21, 11, 0),
+        activityCategory: ActivityCategory.pekerjaan,
+        alarmId: 123,
+      ),
+      // Tambahkan dummy data lain jika perlu
+    ];
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  String _formatTime(DateTime time) {
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -147,21 +130,21 @@ class _ActivityDetailListPageState extends State<ActivityDetailListPage> {
                   Expanded(
                     child: PageView.builder(
                       controller: _pageController,
-                      itemCount: activityData.length,
+                      itemCount: displayActivities.length,
                       itemBuilder: (context, index) {
-                        final activity = activityData[index];
+                        final activity = displayActivities[index];
                         final isSelected = index == _currentPageIndex;
                         return AnimatedScale(
                           scale: isSelected ? 1.0 : 0.9,
                           duration: const Duration(milliseconds: 300),
                           curve: Curves.easeInOut,
                           child: DetailActivityCard(
-                            title: activity['title']!,
-                            date: activity['date']!,
-                            startTime: activity['startTime']!,
-                            completeTime: activity['completeTime']!,
-                            category: activity['category']!,
-                            alarmId: activity['alarmId'],
+                            title: activity.activityTitle,
+                            date: _formatDate(activity.activityDate),
+                            startTime: _formatTime(activity.activityStartTime),
+                            completeTime: _formatTime(activity.activityCompleteTime),
+                            category: activity.activityCategory.displayName,
+                            alarmId: activity.alarmId?.toString(),
                             isSelected: isSelected,
                           ),
                         );
@@ -205,7 +188,6 @@ class _ActivityDetailListPageState extends State<ActivityDetailListPage> {
                     ),
                   ),
                 ),
-
                 SizedBox(width: 16.w),
                 GestureDetector(
                   onTap: () {

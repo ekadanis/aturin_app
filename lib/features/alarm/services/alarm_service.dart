@@ -143,6 +143,74 @@ class AlarmService {
     }
   }
 
+  // Mengatur alarm untuk aktivitas (umum, bukan hanya task)
+  Future<void> setAlarm(
+    int id,
+    DateTime dateTime,
+    String title,
+    String body,
+  ) async {
+    await ensureInitialized();
+    final now = DateTime.now();
+    if (dateTime.isBefore(now)) {
+      debugPrint('Alarm waktu sudah lewat, tidak diatur: $dateTime');
+      return;
+    }
+
+    try {
+      final alarms = await Alarm.getAlarms();
+      if (alarms.any((alarm) => alarm.id == id)) {
+        await Alarm.stop(id);
+        debugPrint('Alarm lama dengan ID $id dihentikan');
+        await Future.delayed(const Duration(milliseconds: 200));
+      }
+    } catch (e) {
+      debugPrint('Tidak ada alarm sebelumnya dengan ID $id atau error: $e');
+    }
+
+    final alarmSettings = AlarmSettings(
+      id: id,
+      dateTime: dateTime,
+      assetAudioPath: 'assets/audio/alarm.mp3',
+      loopAudio: true,
+      vibrate: true,
+      warningNotificationOnKill: Platform.isAndroid,
+      androidFullScreenIntent: true,
+      allowAlarmOverlap: false,
+      volumeSettings: VolumeSettings.staircaseFade(
+        volume: null,
+        fadeSteps: [VolumeFadeStep(Duration.zero, 0.1)],
+        volumeEnforced: false,
+      ),
+      notificationSettings: NotificationSettings(
+        title: title,
+        body: body,
+        icon: 'mipmap/ic_launcher',
+        iconColor: const Color.fromARGB(255, 255, 255, 255),
+      ),
+    );
+
+    await Alarm.set(alarmSettings: alarmSettings);
+    debugPrint('Alarm berhasil diatur untuk aktivitas: $title pada $dateTime');
+  }
+
+  // Menghapus alarm berdasarkan ID (untuk aktivitas dan task)
+  Future<void> cancelAlarm(int alarmId) async {
+    try {
+      await ensureInitialized();
+      
+      final alarms = await Alarm.getAlarms();
+      if (alarms.any((alarm) => alarm.id == alarmId)) {
+        await Alarm.stop(alarmId);
+        debugPrint('Alarm berhasil dihapus untuk ID: $alarmId');
+      } else {
+        debugPrint('Tidak ada alarm aktif dengan ID: $alarmId');
+      }
+    } catch (e) {
+      debugPrint('Error saat menghapus alarm: $e');
+    }
+  }
+
   // Mendapatkan semua alarm yang aktif
   Future<List<AlarmSettings>> getActiveAlarms() async {
     try {

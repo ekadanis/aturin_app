@@ -10,7 +10,6 @@ class TaskService extends ChangeNotifier {
   final alarmService = AlarmService();
   Timer? _statusChecker;
   List<Task> _tasks = [];
-  
 
   final Map<String, List<Task>> _cachedFilteredTasks = {};
   DateTime _lastFetchTime = DateTime(1970);
@@ -21,12 +20,14 @@ class TaskService extends ChangeNotifier {
   Future<void> fetchTasks() async {
     final now = DateTime.now();
     if (now.difference(_lastFetchTime).inSeconds < 2 && _tasks.isNotEmpty) {
-      debugPrint('Using cached tasks (fetched ${now.difference(_lastFetchTime).inSeconds}s ago)');
+      debugPrint(
+        'Using cached tasks (fetched ${now.difference(_lastFetchTime).inSeconds}s ago)',
+      );
       return;
     }
+    final result = await taskDatabase.queryAllWithRelations();
+    _tasks = result.map((row) => Task.fromMapWithRelations(row)).toList();
 
-    final result = await taskDatabase.queryAll();
-    _tasks = result.map((row) => Task.fromMap(row)).toList();
     _lastFetchTime = now;
 
     _cachedFilteredTasks.clear();
@@ -41,24 +42,24 @@ class TaskService extends ChangeNotifier {
     }
 
     List<Task> filteredTasks;
-    
+
     switch (filter) {
       case 'Terlambat':
-        filteredTasks = _tasks
-            .where(
-              (task) => task.status == TaskStatus.late && !task.isCompleted,
-            )
-            .toList();
+        filteredTasks =
+            _tasks
+                .where(
+                  (task) => task.status == TaskStatus.late && !task.isCompleted,
+                )
+                .toList();
         break;
       case 'Belum Selesai':
-        filteredTasks = _tasks
-            .where(
-              (task) => !task.isCompleted && task.status != TaskStatus.late,
-            )
-            .toList()
-          ..sort(
-            (a, b) => a.deadline!.compareTo(b.deadline!),
-          );
+        filteredTasks =
+            _tasks
+                .where(
+                  (task) => !task.isCompleted && task.status != TaskStatus.late,
+                )
+                .toList()
+              ..sort((a, b) => a.deadline.compareTo(b.deadline));
         break;
       case 'Selesai':
         filteredTasks = _tasks.where((task) => task.isCompleted).toList();
@@ -96,18 +97,18 @@ class TaskService extends ChangeNotifier {
       final now = DateTime.now();
 
       final updatedTask = task.copyWith(
-        isDone: !task.isDone,
-        isCompleted: !task.isCompleted,
+        taskStatus:
+            task.isCompleted
+                ? TaskDatabaseStatus.belumSelesai
+                : TaskDatabaseStatus.selesai,
         completedAt: !task.isCompleted ? now : null,
-        previousStatus: !task.isCompleted ? task.status : task.previousStatus,
-        status: task.isCompleted ? task.previousStatus! : task.status,
       );
 
       await taskDatabase.update(updatedTask.toMap());
       _tasks[index] = updatedTask;
 
       _cachedFilteredTasks.clear();
-  
+
       notifyListeners();
     }
   }
@@ -119,9 +120,15 @@ class TaskService extends ChangeNotifier {
     final index = _tasks.indexWhere((task) => task.id == id);
     if (index != -1) {
       final task = _tasks[index];
+
+      // If task has alarm, toggle it off by removing alarm relationship
+      // If task has no alarm, would need to create one (requires AlarmService integration)
       final updatedTask = task.copyWith(
-        isAlarmEnabled: !task.isAlarmEnabled,
-        isAlarmActive: !task.isAlarmActive,
+        alarmId:
+            task.alarmId != null
+                ? null
+                : task.alarmId, // Toggle alarm relationship
+        alarm: task.alarm != null ? null : task.alarm, // Toggle alarm object
       );
 
       await taskDatabase.update(updatedTask.toMap());
@@ -156,7 +163,7 @@ class TaskService extends ChangeNotifier {
     if (updatedTask.isAlarmEnabled && updatedTask.alarmDateTime != null) {
       await alarmService.setAlarmForTask(updatedTask);
     }
-    
+
     await fetchTasks();
     return id;
   }
@@ -165,24 +172,27 @@ class TaskService extends ChangeNotifier {
   Future<int> updateTask(Task task) async {
     // Validasi alarm sebelum update
     Task updatedTask = task;
-    
-    // Jika alarm diaktifkan, pastikan deadlinenya valid dan waktunya sesuai
-    if (task.isAlarmEnabled && task.alarmDateTime != null) {
+
+    // Jika task memiliki alarm, validasi deadline dan waktu alarm
+    if (task.alarm != null && task.alarm!.alarmEnabled) {
       // Cek apakah deadline valid (minimal 1 jam dari sekarang)
       if (!isDeadlineValid(task.deadline)) {
-        // Jika tidak valid, nonaktifkan alarm
-        updatedTask = task.copyWith(isAlarmEnabled: false, alarmDateTime: null);
+        // Jika tidak valid, nonaktifkan alarm dengan menghapus relasi alarm
+        updatedTask = task.copyWith(alarmId: null, alarm: null);
         debugPrint('Alarm dinonaktifkan karena deadline terlalu dekat');
-      } 
+      }
       // Cek apakah alarm setidaknya 1 jam sebelum deadline
-      else if (task.alarmDateTime!.isAfter(task.deadline!.subtract(Duration(hours: 1)))) {
+      else if (task.alarm!.alarmDateTime.isAfter(
+        task.deadline.subtract(Duration(hours: 1)),
+      )) {
         // Jika alarm terlalu dekat dengan deadline, sesuaikan waktunya
-        final safeAlarmTime = task.deadline!.subtract(Duration(hours: 1));
-        updatedTask = task.copyWith(alarmDateTime: safeAlarmTime);
+        final safeAlarmTime = task.deadline.subtract(Duration(hours: 1));
+        final updatedAlarm = task.alarm!.copyWith(alarmDateTime: safeAlarmTime);
+        updatedTask = task.copyWith(alarm: updatedAlarm);
         debugPrint('Alarm disesuaikan ke 1 jam sebelum deadline');
       }
     }
-    
+
     final result = await taskDatabase.update(updatedTask.toMap());
     // Update alarm status
     await alarmService.updateAlarmStatus(updatedTask);
@@ -207,24 +217,26 @@ class TaskService extends ChangeNotifier {
         // Jika gagal menghapus alarm, tetap lanjutkan proses penghapusan task
         debugPrint('Gagal menghapus alarm untuk task $id: $e');
       }
-      
+
       // Pastikan database melakukan penghapusan dengan benar
       final result = await taskDatabase.delete(id);
       debugPrint('Task dengan ID $id berhasil dihapus dari database: $result');
-      
+
       if (result <= 0) {
-        debugPrint('Database mengembalikan hasil $result untuk penghapusan task $id');
+        debugPrint(
+          'Database mengembalikan hasil $result untuk penghapusan task $id',
+        );
         throw Exception('Database gagal menghapus task');
       }
-      
+
       // Perbarui cache dan UI
       _cachedFilteredTasks.clear();
       _tasks.removeWhere((task) => task.id == id);
       notifyListeners();
-      
+
       // Fetch ulang task untuk memastikan data konsisten
       await fetchTasks();
-      
+
       return result;
     } catch (e) {
       debugPrint('Error fatal saat menghapus task: $e');
@@ -279,14 +291,14 @@ class TaskService extends ChangeNotifier {
     return deadline != null &&
         deadline.isAfter(DateTime.now().add(Duration(hours: 1)));
   }
-  
+
   // Fungsi untuk memeriksa apakah waktu alarm masih valid (belum terlewati)
   bool isAlarmValid(DateTime? deadline) {
     if (deadline == null) return false;
-    
+
     // Waktu alarm adalah 1 jam sebelum deadline
     final alarmTime = deadline.subtract(Duration(hours: 1));
-    
+
     // Jika waktu sekarang sudah melewati waktu alarm, return false
     return alarmTime.isAfter(DateTime.now());
   }
@@ -340,13 +352,18 @@ class TaskService extends ChangeNotifier {
 
     for (int i = 0; i < _tasks.length; i++) {
       final task = _tasks[i];
-      final newStatus = Task.calculateStatus(task.deadline);
 
-      if (task.status != newStatus && !task.isCompleted) {
-        final updatedTask = task.copyWith(status: newStatus);
-        await taskDatabase.update(updatedTask.toMap());
-        _tasks[i] = updatedTask;
-        updated = true;
+      // Check if task is overdue and not completed
+      if (!task.isCompleted && task.deadline.isBefore(DateTime.now())) {
+        // Mark as late if not already
+        if (task.taskStatus != TaskDatabaseStatus.terlambat) {
+          final updatedTask = task.copyWith(
+            taskStatus: TaskDatabaseStatus.terlambat,
+          );
+          await taskDatabase.update(updatedTask.toMap());
+          _tasks[i] = updatedTask;
+          updated = true;
+        }
       }
     }
 
@@ -381,26 +398,27 @@ class TaskService extends ChangeNotifier {
     try {
       final result = await taskDatabase.queryAll();
       final tasks = result.map((row) => Task.fromMap(row)).toList();
-      
+
       int count = 0;
       bool changes = false;
-      
+
       for (var task in tasks) {
-        if (task.isAlarmEnabled && task.alarmDateTime != null && 
+        if (task.isAlarmEnabled &&
+            task.alarmDateTime != null &&
             task.alarmDateTime!.isAfter(DateTime.now())) {
           await alarmService.setAlarmForTask(task);
           count++;
           changes = true;
         }
       }
-      
+
       // Refresh tugas setelah perubahan dan beri notifikasi hanya sekali
       if (changes) {
         _tasks = tasks;
         _cachedFilteredTasks.clear();
         notifyListeners();
       }
-      
+
       debugPrint('Berhasil mengaktifkan kembali $count alarm');
     } catch (e) {
       debugPrint('Error saat mengaktifkan kembali alarm: $e');

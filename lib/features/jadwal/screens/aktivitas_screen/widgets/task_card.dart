@@ -1,8 +1,8 @@
 import 'package:aturin_app/core/widgets/confirm_dialog.dart';
+import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:aturin_app/features/task/screens/ui/add_task_screen.dart';
 import 'package:aturin_app/features/task/screens/ui/task_detail_screen.dart';
 import 'package:flutter/material.dart';
-import '../../model/task_model.dart';
 import '../../../../../../core/theme/app_theme.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -27,7 +27,7 @@ class TaskCard extends StatefulWidget {
     required this.onViewDetails,
     required this.onToggleAlarm,
     required this.currentFilter,
-    this.showCheckbox = true, // default aktif
+    this.showCheckbox = false, // default aktif
     this.showStatus = true, // default aktif
   }) : super(key: key);
 
@@ -42,20 +42,19 @@ class _TaskCardState extends State<TaskCard> {
   void _handleToggleCompletion() {
     _actionThrottle.run(() {
       widget.onToggleCompletion();
-    });
-  }
+    });  }
 
   @override
   void dispose() {
     _actionThrottle.dispose();
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
     // Tentukan apakah card memiliki indikator terlambat atau alarm
     final bool hasLateIndicator =
-        widget.task.isCompleted && widget.task.status == TaskStatus.late;
+        widget.task.isCompleted &&
+        widget.task.status == TaskStatus.late;
     final bool hasAlarmIndicator = widget.task.isAlarmActive;
 
     return GestureDetector(
@@ -73,7 +72,9 @@ class _TaskCardState extends State<TaskCard> {
         margin: EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 4.w),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(
+            12,
+          ), // Selalu menggunakan radius 12
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
@@ -140,22 +141,6 @@ class _TaskCardState extends State<TaskCard> {
                             Row(
                               spacing: 0,
                               children: [
-                                // badge category
-                                _buildBadge(
-                                  icon: SvgPicture.asset(
-                                    _getCategoryIconPath(widget.task.category),
-                                    width: 3.w,
-                                    height: 3.w,
-                                  ),
-                                  label: _getCategoryName(widget.task.category),
-                                  bgColor: _getCategoryColor(
-                                    widget.task.category,
-                                  ).withAlpha(50),
-                                  textColor: _getCategoryColor(
-                                    widget.task.category,
-                                  ),
-                                ),
-                                SizedBox(width: 1.5.w),
                                 // badge tugas / aktivitas
                                 _buildBadge(
                                   icon: SvgPicture.asset(
@@ -311,8 +296,6 @@ class _TaskCardState extends State<TaskCard> {
                             context: context,
                             builder:
                                 (_) => ConfirmDialog(
-                                  isTask:
-                                      true, // Set isTask ke true untuk tugas
                                   onConfirm: () {
                                     // Tutup dialog
                                     widget
@@ -451,92 +434,6 @@ class _TaskCardState extends State<TaskCard> {
         ],
       ),
     );
-  }
-
-  String _getCategoryIconPath(String category) {
-    try {
-      final taskCategory = TaskCategory.values.firstWhere(
-        (e) => e.name == category.toLowerCase(),
-      );
-      switch (taskCategory) {
-        case TaskCategory.akademik:
-          return 'assets/images/akademik.svg';
-        case TaskCategory.hiburan:
-          return 'assets/images/hiburan.svg';
-        case TaskCategory.pekerjaan:
-          return 'assets/images/pekerjaan.svg';
-        case TaskCategory.olahraga:
-          return 'assets/images/olahraga.svg';
-        case TaskCategory.sosial:
-          return 'assets/images/sosial.svg';
-        case TaskCategory.spiritual:
-          return 'assets/images/spiritual.svg';
-        case TaskCategory.pribadi:
-          return 'assets/images/pribadi.svg';
-        case TaskCategory.istirahat:
-          return 'assets/images/istirahat.svg';
-      }
-    } catch (_) {
-      return 'assets/images/akademik.svg';
-    }
-  }
-
-  String _getCategoryName(String category) {
-    try {
-      final taskCategory = TaskCategory.values.firstWhere(
-        (e) => e.toString() == 'TaskCategory.$category',
-      );
-
-      switch (taskCategory) {
-        case TaskCategory.akademik:
-          return 'Akademik';
-        case TaskCategory.hiburan:
-          return 'Hiburan';
-        case TaskCategory.pekerjaan:
-          return 'Pekerjaan';
-        case TaskCategory.olahraga:
-          return 'Olahraga';
-        case TaskCategory.sosial:
-          return 'Sosial';
-        case TaskCategory.spiritual:
-          return 'Spiritual';
-        case TaskCategory.pribadi:
-          return 'Pribadi';
-        case TaskCategory.istirahat:
-          return 'Istirahat';
-      }
-    } catch (_) {
-      return category;
-    }
-  }
-
-  Color _getCategoryColor(String category) {
-    try {
-      final taskCategory = TaskCategory.values.firstWhere(
-        (e) => e.name.toLowerCase() == category.toLowerCase(),
-      );
-
-      switch (taskCategory) {
-        case TaskCategory.akademik:
-          return const Color(0xFF3498DB);
-        case TaskCategory.hiburan:
-          return const Color(0xFF9A59B6);
-        case TaskCategory.pekerjaan:
-          return const Color(0xFF8D5C42);
-        case TaskCategory.olahraga:
-          return const Color(0xFFE74C3C);
-        case TaskCategory.sosial:
-          return const Color(0xFFE67E22);
-        case TaskCategory.spiritual:
-          return const Color(0xFF27AD60);
-        case TaskCategory.pribadi:
-          return const Color(0xFFF1C410);
-        case TaskCategory.istirahat:
-          return const Color(0xFF283593);
-      }
-    } catch (_) {
-      return const Color.fromARGB(255, 122, 40, 40);
-    }
   }
 
   String _getStatusName(TaskStatus status, {Task? task}) {

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../../task/model/task_model.dart';
+import '../../../../../profile/models/user.dart';
+import '../../../../../alarm/model/alarm.dart';
 import '../widgets/task_detail_card.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:aturin_app/core/widgets/confirm_dialog.dart';
@@ -17,38 +19,79 @@ class TaskDetailListScreen extends StatefulWidget {
 class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
   late final PageController _pageController;
   int _currentPageIndex = 0;
-
-  // Dummy data untuk testing
+  // Dummy data untuk testing - sesuai dengan model database baru
   final List<Task> _tasks = [
     Task(
       id: 1,
+      userId: 1,
       title: 'Tugas GIS',
       description: 'Belajar per lembar tentang sistem informasi geografis',
       deadline: DateTime(2024, 3, 20, 14, 0),
-      estimatedDuration: const Duration(minutes: 2),
+      estimatedDuration: const Duration(minutes: 120),
       category: 'akademik',
-      isAlarmEnabled: true,
-      alarmDateTime: DateTime(2024, 3, 20, 13, 30),
-      isCompleted: true,
+      taskStatus: TaskDatabaseStatus.selesai,
+      alarmId: 1,
+      slug: 'tugas-gis',
+      // Relasi dengan User
+      user: User(
+        id: 1,
+        name: 'John Doe',
+        email: 'john@example.com',
+        slug: 'john-doe',
+      ),
+      // Relasi dengan AlarmModel
+      alarm: AlarmModel(
+        id: 1,
+        alarmDateTime: DateTime(2024, 3, 20, 13, 30),
+        alarmEnabled: true,
+        slug: 'alarm-tugas-gis',
+      ),
     ),
     Task(
       id: 2,
+      userId: 1,
       title: 'Meeting Project',
       description: 'Diskusi progress project dengan tim development',
       deadline: DateTime(2024, 3, 21, 10, 0),
       estimatedDuration: const Duration(hours: 2),
       category: 'pekerjaan',
-      isAlarmEnabled: false,
+      taskStatus: TaskDatabaseStatus.belumSelesai,
+      slug: 'meeting-project',
+      // Relasi dengan User
+      user: User(
+        id: 1,
+        name: 'John Doe',
+        email: 'john@example.com',
+        slug: 'john-doe',
+      ),
+      // Tidak ada alarm
+      alarm: null,
     ),
     Task(
       id: 3,
+      userId: 1,
       title: 'Les Bahasa Jepang',
       description: 'Belajar hiragana dan katakana dasar',
       deadline: DateTime(2024, 3, 22, 16, 30),
       estimatedDuration: const Duration(hours: 1, minutes: 30),
       category: 'hiburan',
-      isAlarmEnabled: true,
-      alarmDateTime: DateTime(2024, 3, 22, 16, 0),
+      taskStatus: TaskDatabaseStatus.belumSelesai,
+      alarmId: 2,
+      slug: 'les-bahasa-jepang',
+      // Relasi dengan User
+      user: User(
+        id: 1,
+        name: 'John Doe',
+        email: 'john@example.com',
+        slug: 'john-doe',
+      ),
+      // Relasi dengan AlarmModel
+      alarm: AlarmModel(
+        id: 2,
+        alarmDateTime: DateTime(2024, 3, 22, 16, 0),
+        alarmEnabled: true,
+        slug: 'alarm-les-jepang',
+      ),
     ),
   ];
 

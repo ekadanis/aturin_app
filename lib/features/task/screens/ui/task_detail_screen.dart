@@ -1,6 +1,5 @@
 import 'package:aturin_app/features/task/screens/ui/add_task_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../model/task_model.dart';
 import '../../services/task_services.dart';
@@ -103,17 +102,15 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               ),
             const SizedBox(height: 16),
             _buildDetailField('Deadline', _formatDateTime(_task.deadline)),
-            const SizedBox(height: 16),
-            _buildDetailField(
+            const SizedBox(height: 16),            _buildDetailField(
               'Pengingat',
-              _task.alarmDateTime != null
-                  ? _formatDateTime(_task.alarmDateTime!)
+              _task.alarm != null
+                  ? _formatDateTime(_task.alarm!.alarmDateTime)
                   : 'Tidak diatur',
             ),
-            const SizedBox(height: 16),
-            _buildDetailField(
+            const SizedBox(height: 16),            _buildDetailField(
               'Diselesaikan pada',
-              _task.isCompleted && _task.completedAt != null
+              _task.taskStatus == TaskDatabaseStatus.selesai && _task.completedAt != null
                   ? _formatDateTime(_task.completedAt!)
                   : 'Belum diselesaikan',
             ),
