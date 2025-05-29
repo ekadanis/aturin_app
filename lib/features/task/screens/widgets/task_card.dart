@@ -118,7 +118,7 @@ class _TaskCardState extends State<TaskCard> {
       child: Container(
         key: ValueKey(widget.task.id),
         // Memastikan overflow konten dipotong sesuai border
-        margin: EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 4.w),
+        margin: EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 3.w),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(
@@ -126,7 +126,7 @@ class _TaskCardState extends State<TaskCard> {
           ), // Selalu menggunakan radius 12
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withOpacity(0.35), // Ubah di sini
               blurRadius: 8,
               offset: Offset(0, 0.4.h),
             ),
@@ -142,12 +142,12 @@ class _TaskCardState extends State<TaskCard> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(width: 4.w),
+                    SizedBox(width: 6.w),
 
                     // checbox
                     if (widget.showCheckbox)
                       Padding(
-                        padding: EdgeInsets.only(top: 3.5.h),
+                        padding: EdgeInsets.only(top: 4.h, bottom: 4.h),
                         child: GestureDetector(
                           onTap: _handleToggleCompletion,
                           child: Container(
@@ -181,7 +181,7 @@ class _TaskCardState extends State<TaskCard> {
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.symmetric(
-                          horizontal: 2.w,
+                          horizontal: 4.w,
                           vertical: 1.5.h,
                         ),
                         child: Column(
@@ -209,9 +209,7 @@ class _TaskCardState extends State<TaskCard> {
                                 // badge tugas / aktivitas
                                 _buildBadge(
                                   icon: SvgPicture.asset(
-                                    widget.task.category == 'Akademik'
-                                        ? 'assets/icons/tugas.svg'
-                                        : 'assets/icons/activity.svg',
+                                    'assets/icons/tugas.svg',  
                                     width: 3.w,
                                     height: 3.w,
                                     colorFilter: const ColorFilter.mode(
@@ -220,19 +218,16 @@ class _TaskCardState extends State<TaskCard> {
                                     ),
                                   ),
                                   label:
-                                      widget.task.category == 'Akademik'
-                                          ? 'Tugas'
-                                          : 'Aktivitas',
+                                      'Tugas',
                                   bgColor: const Color(0xFFDFEAFF),
                                   textColor: AppTheme.primaryColor,
                                 ),
-
                                 SizedBox(width: 1.5.w),
                                 // badge alarm
                                 if (hasAlarmIndicator)
                                   _buildBadge(
                                     icon: SvgPicture.asset(
-                                      'assets/icons/alarm.svg',
+                                      'assets/activitycategory/chipicon/alarm2.svg',
                                       width: 3.w,
                                       height: 3.w,
                                       colorFilter: const ColorFilter.mode(
@@ -279,7 +274,7 @@ class _TaskCardState extends State<TaskCard> {
                       ),
                     ),
                     Padding(
-                      padding: EdgeInsets.only(top: 3.5.h),
+                      padding: EdgeInsets.only(top: 4.h),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -288,7 +283,7 @@ class _TaskCardState extends State<TaskCard> {
                             Container(
                               padding: EdgeInsets.symmetric(
                                 horizontal: 3.w,
-                                vertical: 0.7.h,
+                                vertical: 1.h,
                               ),
                               decoration: BoxDecoration(
                                 color:
@@ -453,7 +448,7 @@ class _TaskCardState extends State<TaskCard> {
               top: 0,
               bottom: 0,
               child: Container(
-                width: 2.w,
+                width: 3.5.w,
                 decoration: const BoxDecoration(
                   color: Color(0xFF5263F3),
                   borderRadius: BorderRadius.only(
