@@ -122,7 +122,7 @@ class AlarmPicker extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Waktu Alarm',
+                    'Atur Alarm',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
@@ -133,7 +133,7 @@ class AlarmPicker extends StatelessWidget {
                     children: [
                       Text(
                         alarmDateTime == null
-                            ? 'Pilih waktu alarm'
+                            ? 'Kustom'
                             : DateFormat(
                               'EEEE, d MMM yyyy, HH:mm',
                               'id_ID',

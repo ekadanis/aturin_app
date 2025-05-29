@@ -6,6 +6,7 @@ import '../../models/task_model.dart';
 import '../../services/task_services.dart';
 import '../../../../../../core/theme/app_theme.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 @RoutePage()
 class TaskDetailScreen extends StatefulWidget {
@@ -52,7 +53,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit, color: AppTheme.lightTextColor),
+            icon: SvgPicture.asset(
+              'assets/icons/edit.svg', // Ganti dengan path asset yang kamu siapkan
+              width: 20, // Sesuaikan ukuran ikon
+              height: 20,
+              color: Colors.black, 
+            ),
             onPressed: () async {
               final result = await Navigator.push(
                 context,
@@ -81,6 +87,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildDetailField('Nama Tugas', _task.title),
+            const SizedBox(height: 16),
+            _buildDetailField('Deskripsi', (_task.description != null && _task.description!.isNotEmpty)
+                ? _task.description!
+                : 'Tidak ada deskripsi'),
             const SizedBox(height: 16),
             _buildDetailField(
               'Kategori Tugas',

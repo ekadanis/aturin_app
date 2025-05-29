@@ -1,5 +1,4 @@
 import 'package:aturin_app/core/theme/app_theme.dart';
-import 'package:aturin_app/features/task/ui/widgets/alarm_picker.dart';
 import 'package:aturin_app/features/task/ui/widgets/task_title_field.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -11,8 +10,8 @@ import '../../services/task_services.dart';
 import '../widgets/deadline_picker_bottom.dart';
 import '../widgets/duration_picker_bottom.dart';
 import 'category_picker_screen.dart';
+import 'alarm_picker_screen.dart'; // Import the alarm picker screen
 import '../../../../../../routers/app_router.dart';
-import 'package:aturin_app/features/task/ui/widgets/alarm_picker_bottom.dart';
 import 'package:aturin_app/features/task/ui/widgets/field_tile.dart';
 import 'package:aturin_app/features/task/ui/widgets/snackbar.dart';
 
@@ -42,6 +41,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   bool _isAlarmEnabled = false;
   DateTime? _alarmDateTime;
 
+  // Store the selected alarm option locally (not in the Task model)
+  String? _selectedAlarmOption;
+
+  // Tambahkan di atas
+  DateTime? _customAlarmDateTime;
+
   final TaskService _taskService = TaskService();
 
   @override
@@ -60,11 +65,36 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     } else {
       // Kalau tambah task baru, set default kategori ke "Akademik"
       _selectedCategory = categories.firstWhere((c) => c.name == 'Akademik');
+
+      // Try to determine the alarm option based on the time difference
+      if (_deadline != null && _alarmDateTime != null) {
+        _selectedAlarmOption = _determineAlarmOption(
+          _deadline!,
+          _alarmDateTime!,
+        );
+      }
     }
     _updateWordCount();
     _updateDescriptionWordCount();
     _titleController.addListener(_updateWordCount);
     _descriptionController.addListener(_updateDescriptionWordCount);
+  }
+
+  // Determine which alarm option was used based on the time difference
+  String? _determineAlarmOption(DateTime deadline, DateTime alarmTime) {
+    final difference = deadline.difference(alarmTime);
+
+    if (difference.inSeconds == 0) return 'on_time';
+    if (difference.inMinutes == 5) return '5_minutes';
+    if (difference.inMinutes == 10) return '10_minutes';
+    if (difference.inMinutes == 15) return '15_minutes';
+    if (difference.inMinutes == 30) return '30_minutes';
+    if (difference.inHours == 1) return '1_hour';
+    if (difference.inDays == 1) return '1_day';
+    if (difference.inDays == 2) return '2_days';
+    if (difference.inDays == 7) return '1_week';
+
+    return 'custom'; // If none of the predefined options match
   }
 
   @override
@@ -133,9 +163,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       task: Task(
         id: widget.existingTask?.id,
         title: _titleController.text.trim(),
-        description: _descriptionController.text.trim().isEmpty 
-            ? null 
-            : _descriptionController.text.trim(),
+        description:
+            _descriptionController.text.trim().isEmpty
+                ? null
+                : _descriptionController.text.trim(),
         deadline: _deadline!,
         estimatedDuration: _estimatedDuration!,
         category: _selectedCategory!.name,
@@ -162,6 +193,46 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         ).showSnackBar(SnackBar(content: Text(msg)));
       },
     );
+  }
+
+  // Calculate alarm time based on selected option and deadline
+  DateTime _calculateAlarmTime(String optionId, DateTime deadline) {
+    switch (optionId) {
+      case 'on_time':
+        return deadline;
+      case '15_minutes':
+        return deadline.subtract(const Duration(minutes: 15));
+      case '30_minutes':
+        return deadline.subtract(const Duration(minutes: 30));
+        case '45_minutes':
+        return deadline.subtract(const Duration(minutes: 45));
+      case '1_hour':
+        return deadline.subtract(const Duration(hours: 1));
+      default:
+        return deadline.subtract(const Duration(minutes: 15)); // Default option
+    }
+  }
+
+  // Get display text for selected alarm option
+  String _getAlarmOptionText(String? optionId) {
+    if (optionId == null) return 'Pilih waktu notifikasi';
+
+    switch (optionId) {
+      case 'on_time':
+        return 'Ketika batas waktu';
+      case '15_minutes':
+        return '15 menit sebelum batas waktu';
+      case '30_minutes':
+        return '30 menit sebelum batas waktu';
+      case '45_minutes':
+        return '45 menit sebelum batas waktu';
+      case '1_hour':
+        return '1 jam sebelum batas waktu';
+      case 'custom':
+        return 'Kustom';
+      default:
+        return 'Pilih waktu notifikasi';
+    }
   }
 
   @override
@@ -199,13 +270,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 validator: _taskService.validateTitle,
               ),
               const SizedBox(height: 32),
-              
+
               // Description Field
               _buildDescriptionField(),
               const SizedBox(height: 32),
-              
+
               FieldTile(
-                title: 'Tenggat Waktu',
+                title: 'Batas Waktu',
                 value:
                     _deadline == null
                         ? 'Pilih tenggat waktu'
@@ -229,15 +300,15 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       if (!isNewDeadlineValid) {
                         _isAlarmEnabled = false;
                         _alarmDateTime = null;
+                        _selectedAlarmOption = null;
                       }
-                      // Jika deadline valid tapi alarm sudah diatur dan melebihi deadline baru - 1 jam
-                      else if (_alarmDateTime != null) {
-                        final maxAlarmTime = result.subtract(
-                          const Duration(hours: 1),
+                      // Jika deadline valid dan alarm option sudah dipilih, update alarm time
+                      else if (_selectedAlarmOption != null &&
+                          _selectedAlarmOption != 'custom') {
+                        _alarmDateTime = _calculateAlarmTime(
+                          _selectedAlarmOption!,
+                          result,
                         );
-                        if (_alarmDateTime!.isAfter(maxAlarmTime)) {
-                          _alarmDateTime = maxAlarmTime;
-                        }
                       }
                     });
                   }
@@ -270,10 +341,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   final selected = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder:
-                          (_) => CategoryPickerScreen(
-                            selectedCategory: _selectedCategory?.name ?? '',
-                          ),
+                      builder: (_) => CategoryPickerScreen(
+                        selectedCategory: _selectedCategory?.name ?? '',
+                      ),
                     ),
                   );
                   if (selected != null) {
@@ -288,46 +358,133 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 error: _categoryError,
               ),
               const SizedBox(height: 32),
-              AlarmPicker(
-                isEnabled: _isAlarmEnabled,
-                alarmDateTime: _alarmDateTime,
-                onToggle:
-                    isDeadlineValid
-                        ? (value) {
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Alarm',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black,
+                        ),
+                      ),
+                      Switch(
+                        value: _isAlarmEnabled,
+                        trackColor: WidgetStateProperty.resolveWith(
+                          (states) =>
+                              states.contains(WidgetState.selected)
+                                  ? const Color(0xFF5263F3)
+                                  : Colors.grey.shade300,
+                        ),
+                        onChanged:
+                            isDeadlineValid
+                                ? (value) {
+                                  setState(() {
+                                    _isAlarmEnabled = value;
+                                    if (!value) {
+                                      _alarmDateTime = null;
+                                      _selectedAlarmOption = null;
+                                    }
+                                    _alarmToggleError = null;
+                                  });
+                                }
+                                : (_) {
+                                  setState(() {
+                                    _alarmToggleError =
+                                        'Alarm hanya bisa diatur jika deadline > 1 jam dari sekarang';
+                                  });
+                                },
+                        thumbColor: const WidgetStatePropertyAll(Colors.white),
+                        overlayColor: const WidgetStatePropertyAll(
+                          Colors.transparent,
+                        ),
+                        trackOutlineColor: const WidgetStatePropertyAll(
+                          Colors.transparent,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_isAlarmEnabled && _deadline != null) ...[
+                    const SizedBox(height: 16),
+                    FieldTile(
+                      title: 'Atur Alarm',
+                      value: _selectedAlarmOption == 'custom' && _customAlarmDateTime != null
+                          ? DateFormat('EEEE, d MMM yyyy, HH:mm', 'id_ID').format(_customAlarmDateTime!)
+                          : _selectedAlarmOption != null
+                              ? _getAlarmOptionText(_selectedAlarmOption)
+                              : 'Kustom',
+                      onTap: () async {
+                        if (_deadline == null) {
+                          showCustomTopSnackbar(
+                            context: context,
+                            message: 'Silakan pilih deadline terlebih dahulu',
+                            isError: true,
+                          );
+                          return;
+                        }
+
+                        // Navigate to AlarmPickerScreen
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AlarmPickerScreen(
+                              selectedOption: _selectedAlarmOption,
+                            ),
+                          ),
+                        );
+
+                        // Handle the result from AlarmPickerScreen
+                        if (result != null) {
                           setState(() {
-                            _isAlarmEnabled = value;
-                            if (!value) _alarmDateTime = null;
-                            _alarmToggleError = null;
+                            if (result is String && result.startsWith('custom:')) {
+                              final dateStr = result.substring(7);
+                              _selectedAlarmOption = 'custom';
+                              _customAlarmDateTime = DateTime.tryParse(dateStr);
+                              _alarmDateTime = _customAlarmDateTime;
+                              _alarmDateTimeError = null;
+                            } else if (result is String) {
+                              _selectedAlarmOption = result;
+                              _alarmDateTime = _calculateAlarmTime(
+                                result,
+                                _deadline!,
+                              );
+                              _alarmDateTimeError = null;
+                            }
                           });
                         }
-                        : (_) {
-                          setState(() {
-                            _alarmToggleError =
-                                'Alarm hanya bisa diatur jika tenggat waktu > 1 jam dari sekarang';
-                          });
-                        },
-                onPickTime: () async {
-                  final maxDate = _deadline!.subtract(const Duration(hours: 1));
-                  final result = await showAlarmPickerBottomSheet(
-                    context,
-                    initialDateTime: _alarmDateTime ?? maxDate,
-                    maxDateTime: maxDate,
-                  );
-                  if (result != null) {
-                    setState(() {
-                      _alarmDateTime = result;
-                      _alarmDateTimeError = null;
-                    });
-                  }
-                },
-                isDeadlineTooClose: !isDeadlineValid && _deadline != null,
-                isAlarmTimePassed: isAlarmTimePassed,
-                showInitialWarning: _deadline == null,
-                errorText:
-                    !isDeadlineValid && _deadline != null
-                        ? 'Alarm hanya bisa diatur jika tenggat waktu > 1 jam dari sekarang'
-                        : null,
-                showError: !isDeadlineValid && _deadline != null,
+                      },
+                      error: _alarmDateTimeError,
+                    ),
+                  ],
+                  if (_isAlarmEnabled && _alarmDateTime != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        'Alarm akan berbunyi pada: ${DateFormat('EEEE, d MMM yyyy, HH:mm', 'id_ID').format(_alarmDateTime!)}',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                  if (_alarmToggleError != null ||
+                      (!isDeadlineValid && _deadline != null))
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        _alarmToggleError ??
+                            'Alarm hanya bisa diatur jika deadline > 1 jam dari sekarang',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ],
           ),
@@ -349,33 +506,35 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Colors.grey[300]!,
-              width: 1,
+        TextFormField(
+          controller: _descriptionController,
+          maxLines: 4,
+          maxLength: 100,
+          decoration: InputDecoration(
+            hintText: 'Tambahkan deskripsi tugas (maksimal 50 karakter)',
+            hintStyle: GoogleFonts.plusJakartaSans(
+              fontSize: 14,
+              color: Colors.grey[500],
+            ),
+            contentPadding: const EdgeInsets.all(16),
+            counterText: '',
+            filled: true,
+            fillColor: Colors.white,
+            enabledBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.grey, width: 1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: const BorderSide(
+                color: AppTheme.primaryColor,
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
-          child: TextFormField(
-            controller: _descriptionController,
-            maxLines: 4,
-            maxLength: 200,
-            decoration: InputDecoration(
-              hintText: 'Tambahkan deskripsi tugas (maksimal 200 karakter)',
-              hintStyle: GoogleFonts.plusJakartaSans(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.all(16),
-              counterText: '',
-            ),
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 14,
-              color: Colors.black87,
-            ),
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 14,
+            color: Colors.black87,
           ),
         ),
         const SizedBox(height: 4),
@@ -383,12 +542,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Text(
-              '$_currentDescriptionWordCount/200',
+              '$_currentDescriptionWordCount/50 karakter',
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 12,
-                color: _currentDescriptionWordCount > 180 
-                    ? Colors.orange 
-                    : Colors.grey[500],
+                color:
+                    _currentDescriptionWordCount > 35
+                        ? Colors.orange
+                        : Colors.grey[500],
                 fontWeight: FontWeight.w500,
               ),
             ),
