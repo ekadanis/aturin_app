@@ -1,5 +1,6 @@
 import 'package:aturin_app/core/theme/app_theme.dart';
-import 'package:aturin_app/features/login/widgets/custom_text_field.dart';
+import 'package:aturin_app/features/auth/login/widgets/custom_text_field.dart';
+import 'package:aturin_app/core/widgets/email_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
@@ -8,12 +9,14 @@ class LoginFormWidget extends StatefulWidget {
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final VoidCallback onLogin;
+  final bool isLoading;
 
   const LoginFormWidget({
     super.key,
     required this.emailController,
     required this.passwordController,
     required this.onLogin,
+    this.isLoading = false,
   });
 
   @override
@@ -35,14 +38,12 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
             fontSize: 14.sp,
             fontWeight: FontWeight.w500,
             color: AppTheme.lightTextColor,
-          ),
-        ),
+          ),        ),
         SizedBox(height: 1.h),
-        CustomTextFieldWidget(
+        EmailTextFieldWidget(
           controller: widget.emailController,
           hintText: 'contoh@gmail.com',
           icon: Icons.email_outlined,
-          obscureText: false,
         ),
 
         SizedBox(height: 2.5.h),
@@ -73,9 +74,7 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
           ),
         ),
 
-        SizedBox(height: 4.h),
-
-        // Login Button
+        SizedBox(height: 4.h),        // Login Button
         SizedBox(
           width: 100.w,
           height: 6.h,
@@ -88,15 +87,24 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
               elevation: 4,
               shadowColor: AppTheme.primaryColor.withOpacity(0.4),
             ),
-            onPressed: widget.onLogin,
-            child: Text(
-              'Masuk',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
+            onPressed: widget.isLoading ? null : widget.onLogin,
+            child: widget.isLoading 
+              ? SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : Text(
+                  'Masuk',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
           ),
         ),
       ],

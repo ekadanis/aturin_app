@@ -1,21 +1,41 @@
 import 'package:aturin_app/features/home/services/home_service.dart' as home;
-import 'package:aturin_app/features/profile/database/profile_database.dart';
 import 'package:aturin_app/features/profile/models/user.dart';
 import 'package:aturin_app/features/profile/ui/profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class GreetingHeader extends StatelessWidget implements PreferredSizeWidget {
   const GreetingHeader({super.key});
 
+  Future<User?> _getLoggedInUser() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt('userId');
+      final userName = prefs.getString('userName');
+      final userEmail = prefs.getString('userEmail');
+      
+      if (userId != null && userName != null && userEmail != null) {
+        return User(
+          id: userId,
+          name: userName,
+          email: userEmail,
+          avatar: 'assets/avatars/profile1.jpg', // Default avatar for now
+          slug: userName.toLowerCase().replaceAll(' ', '-'),
+        );
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error getting logged in user: $e');
+      return null;
+    }
+  }
   @override
   Widget build(BuildContext context) {
-    final ProfileDatabase profileDb = ProfileDatabase();
-
     return FutureBuilder<User?>(
-      future: profileDb.getUserById(1),
+      future: _getLoggedInUser(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return PreferredSize(

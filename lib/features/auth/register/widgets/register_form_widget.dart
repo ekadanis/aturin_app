@@ -1,8 +1,9 @@
 import 'package:aturin_app/core/theme/app_theme.dart';
-import 'package:aturin_app/features/login/widgets/custom_text_field.dart';
-import 'package:aturin_app/features/register/widgets/confirm_password_field_widget.dart';
-import 'package:aturin_app/features/register/widgets/password_field_widget.dart';
-import 'package:aturin_app/features/register/widgets/password_stregth_widget.dart';
+import 'package:aturin_app/features/auth/login/widgets/custom_text_field.dart';
+import 'package:aturin_app/core/widgets/email_text_field.dart';
+import 'package:aturin_app/features/auth/register/widgets/confirm_password_field_widget.dart';
+import 'package:aturin_app/features/auth/register/widgets/password_field_widget.dart';
+import 'package:aturin_app/features/auth/register/widgets/password_stregth_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
@@ -68,16 +69,13 @@ class _RegisterFormWidgetState extends State<RegisterFormWidget> {
           obscureText: false,
         ),
         
-        SizedBox(height: 2.h),
-        
-        // Email Input
+        SizedBox(height: 2.h),        // Email Input
         _buildInputLabel('Email'),
         SizedBox(height: 1.h),
-        CustomTextFieldWidget(
+        EmailTextFieldWidget(
           controller: widget.emailController,
           hintText: 'contoh@gmail.com',
           icon: Icons.email_outlined,
-          obscureText: false,
         ),
         
         SizedBox(height: 2.h),
@@ -161,7 +159,6 @@ class _RegisterFormWidgetState extends State<RegisterFormWidget> {
       ),
     );
   }
-
   bool _validateForm() {
     if (widget.nameController.text.trim().isEmpty) {
       widget.onValidationError('Nama tidak boleh kosong');
@@ -173,8 +170,12 @@ class _RegisterFormWidgetState extends State<RegisterFormWidget> {
       return false;
     }
     
-    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-        .hasMatch(widget.emailController.text.trim())) {
+    // Normalize email to lowercase
+    final normalizedEmail = widget.emailController.text.trim().toLowerCase();
+    widget.emailController.text = normalizedEmail;
+    
+    if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+        .hasMatch(normalizedEmail)) {
       widget.onValidationError('Format email tidak valid');
       return false;
     }

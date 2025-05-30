@@ -5,12 +5,12 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:aturin_app/features/task/services/task_services.dart' as task;
 import 'package:aturin_app/features/home/services/home_service.dart';
 import 'package:aturin_app/features/profile/services/profile_service.dart';
-import 'package:aturin_app/features/auth/services/auth_service.dart';
+import 'package:aturin_app/core/services/api/auth/auth_service.dart';
 import 'package:aturin_app/features/jadwal/services/aktivitas_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
 import 'core/initialization/app_initializer.dart';
-import 'core/database/database_helper.dart';
+// import 'core/database/database_helper.dart'; // SQLite disabled
 import 'routers/app_router.dart';
 import 'core/theme/app_theme.dart';
 
@@ -20,6 +20,7 @@ final appRouter = AppRouter();
 Future<void> main() async {
   // Preserve splash screen until initialization is complete
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  // SQLite reset disabled
   // await DatabaseHelper.instance.resetDatabase(); // untuk dev/test saja
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   // Set orientasi hanya potrait
@@ -42,16 +43,20 @@ Future<void> main() async {
 
 Future<void> _initializeApp() async {
   try {
-    final dbHelper = DatabaseHelper.instance;
-    await dbHelper.database;
-    debugPrint('Database initialized successfully');
+    // Disable SQLite database initialization
+    // final dbHelper = DatabaseHelper.instance;
+    // await dbHelper.database;
+    // debugPrint('Database initialized successfully');
+    
+    debugPrint('App initialization started (SQLite disabled)');
+    
     // Initialize the app with AppInitializer
     final appInitializer = AppInitializer(appRouter);
     await appInitializer.initialize();
 
      // Tambahkan logika redirect berdasarkan status login
     final prefs = await SharedPreferences.getInstance();
-    final isLoggedIn = prefs.getBool('isLoggedIn') ?? true; //inisiasikan false agar login berfungsi (dengan baik*)
+    final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
 
     if (isLoggedIn) {
       appRouter.replaceAll([const HomeRoute()]);
@@ -61,7 +66,6 @@ Future<void> _initializeApp() async {
     
     // Setup alarm manager
     appInitializer.alarmManager.setAppCreator(() => const MyApp());
-
 
   } catch (e) {
     debugPrint('Failed to initialize app: $e');
@@ -161,14 +165,15 @@ class ErrorApp extends StatelessWidget {
                     SizedBox(height: 3.h),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton(
+                      children: [                        ElevatedButton(
                           onPressed: () async {
                             try {
-                              await DatabaseHelper.instance.resetDatabase();
+                              // SQLite reset disabled
+                              // await DatabaseHelper.instance.resetDatabase();
+                              debugPrint('Database reset disabled - restarting app');
                               main();
                             } catch (e) {
-                              debugPrint('Error resetting database: $e');
+                              debugPrint('Error during app restart: $e');
                             }
                           },
                           style: ElevatedButton.styleFrom(

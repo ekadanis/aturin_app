@@ -1,16 +1,16 @@
 import 'package:aturin_app/core/theme/app_theme.dart';
-import 'package:aturin_app/features/home/ui/page/home_page.dart';
-import 'package:aturin_app/features/login/widgets/google_login_button.dart';
-import 'package:aturin_app/features/login/widgets/login_divider_widget.dart';
-import 'package:aturin_app/features/login/widgets/login_form_widget.dart';
-import 'package:aturin_app/features/login/widgets/login_header_widget.dart';
-import 'package:aturin_app/features/login/widgets/register_link_widget.dart';
-import 'package:aturin_app/features/register/ui/register_page.dart';
+import 'package:aturin_app/core/services/api/auth/auth_service.dart';
+import 'package:aturin_app/features/auth/login/widgets/login_divider_widget.dart';
+import 'package:aturin_app/features/auth/login/widgets/login_form_widget.dart';
+import 'package:aturin_app/features/auth/login/widgets/login_header_widget.dart';
+import 'package:aturin_app/features/auth/login/widgets/register_link_widget.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import 'package:sizer/sizer.dart';
+import 'package:aturin_app/routers/app_router.dart';
 
 @RoutePage()
 class LoginPage extends StatefulWidget {
@@ -30,7 +30,6 @@ class _LoginPageState extends State<LoginPage> {
     passwordController.dispose();
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,11 +50,16 @@ class _LoginPageState extends State<LoginPage> {
                 
                 SizedBox(height: 5.h),
                 
-                // Login form
-                LoginFormWidget(
-                  emailController: emailController,
-                  passwordController: passwordController,
-                  onLogin: _handleLogin,
+                // Login form with loading state from AuthService
+                Consumer<AuthService>(
+                  builder: (context, authService, child) {
+                    return LoginFormWidget(
+                      emailController: emailController,
+                      passwordController: passwordController,
+                      onLogin: _handleLogin,
+                      isLoading: authService.isLoading,
+                    );
+                  },
                 ),
                 
                 SizedBox(height: 3.h),
@@ -85,51 +89,54 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-
   Future<void> _handleLogin() async {
-    if (_validateInputs()) {
-      await _saveLoginStatus();
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
+    if (!_validateInputs()) return;
+    
+    final authService = Provider.of<AuthService>(context, listen: false);
+    
+    final result = await authService.login(
+      email: emailController.text.trim(),
+      password: passwordController.text.trim(),
+    );
+    
+    if (mounted) {
+      if (result.isSuccess) {        // Save user data to SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isLoggedIn', true);
+        await prefs.setInt('userId', result.user!.id ?? 0);
+        await prefs.setString('userName', result.user!.name);
+        await prefs.setString('userEmail', result.user!.email);
+        if (result.token != null) {
+          await prefs.setString('userToken', result.token!);
+        }
+        await prefs.setString('loginTime', DateTime.now().toIso8601String());
+        
+        // Navigate to home using router
+        context.router.pushAndPopUntil(
+          const HomeRoute(),
+          predicate: (_) => false,
         );
+      } else {
+        _showSnackBar(result.message);
       }
-    }
-  }
-
-  Future<void> _handleGoogleLogin() async {
-    // TODO: Implement Google Sign-In logic
-    try {
-      // Add your Google Sign-In implementation here
-      // For now, we'll simulate a successful login
-      await _saveLoginStatus();
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
-        );
-      }
-    } catch (e) {
-      _showSnackBar('Google login failed: $e');
     }
   }
 
   void _navigateToRegister() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const RegisterPage()),
-    );
+    context.router.push(const RegisterRoute());
   }
-
   bool _validateInputs() {
     if (emailController.text.trim().isEmpty) {
       _showSnackBar('Email tidak boleh kosong');
       return false;
     }
 
-    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-        .hasMatch(emailController.text.trim())) {
+    // Normalize email to lowercase
+    final normalizedEmail = emailController.text.trim().toLowerCase();
+    emailController.text = normalizedEmail;
+
+    if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+        .hasMatch(normalizedEmail)) {
       _showSnackBar('Format email tidak valid');
       return false;
     }
@@ -146,7 +153,6 @@ class _LoginPageState extends State<LoginPage> {
 
     return true;
   }
-
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -164,12 +170,5 @@ class _LoginPageState extends State<LoginPage> {
         duration: const Duration(seconds: 3),
       ),
     );
-  }
-
-  Future<void> _saveLoginStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', true);
-    await prefs.setString('userEmail', emailController.text.trim());
-    await prefs.setString('loginTime', DateTime.now().toIso8601String());
   }
 }

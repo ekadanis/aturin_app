@@ -1,24 +1,23 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:aturin_app/features/task/database/task_database.dart';
+// import 'package:aturin_app/features/task/database/task_database.dart'; // SQLite disabled
 import 'package:aturin_app/features/task/model/task_model.dart';
-import 'package:aturin_app/features/alarm/model/alarm.dart';
-import 'package:aturin_app/features/jadwal/database/aktivitas_database.dart';
+// import 'package:aturin_app/features/alarm/model/alarm.dart'; // SQLite disabled
+// import 'package:aturin_app/features/jadwal/database/aktivitas_database.dart'; // SQLite disabled
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 
 class HomeService extends ChangeNotifier {
-  final taskDatabase = TaskDatabase();
-  final aktivitasDatabase = AktivitasDatabase();
+  // final taskDatabase = TaskDatabase(); // SQLite disabled
+  // final aktivitasDatabase = AktivitasDatabase(); // SQLite disabled
   List<Task> _tasks = [];
   List<AktivitasModel> _aktivitas = [];
   Timer? _statusChecker;
-
   // Cache dan throttling untuk optimasi performa
   List<Task>? _cachedTodayTasks;
   List<AktivitasModel>? _cachedTodayAktivitas;
   DateTime _lastFetchTime = DateTime(1970);
 
-  final Map<String, List<Task>> _cachedFilteredTasks = {};  // Getter that returns only today's tasks sorted by deadline
+  // Getter that returns only today's tasks sorted by deadline
   List<Task> get todayTasks {
     // Gunakan cache jika tersedia
     if (_cachedTodayTasks != null) {
@@ -102,16 +101,16 @@ class HomeService extends ChangeNotifier {
         'Home: Using cached data (fetched ${now.difference(_lastFetchTime).inSeconds}s ago)',
       );
       return;
-    }
+    }    try {
+      // SQLite disabled - using empty data for now
+      // TODO: Replace with API calls when available
+      // final taskResult = await taskDatabase.queryAll();
+      // _tasks = taskResult.map((row) => Task.fromMap(row)).toList();
+      _tasks = []; // Empty data since SQLite is disabled
 
-    try {
-      // Fetch tasks
-      final taskResult = await taskDatabase.queryAll();
-      _tasks = taskResult.map((row) => Task.fromMap(row)).toList();
-
-      // Fetch activities
-      final aktivitasResult = await aktivitasDatabase.queryAll();
-      _aktivitas = aktivitasResult.map((row) => AktivitasModel.fromMap(row)).toList();
+      // final aktivitasResult = await aktivitasDatabase.queryAll();
+      // _aktivitas = aktivitasResult.map((row) => AktivitasModel.fromMap(row)).toList();
+      _aktivitas = []; // Empty data since SQLite is disabled
 
       // Reset cache
       _cachedTodayTasks = null;
@@ -169,10 +168,12 @@ class HomeService extends ChangeNotifier {
     _cachedTodayAktivitas = null;
     _lastFetchTime = DateTime(1970); // Reset waktu fetch terakhir
     await fetchData();
-  }
-  Future<void> toggleTaskCompletion(int? id) async {
+  }  Future<void> toggleTaskCompletion(int? id) async {
     if (id == null) return;
 
+    // SQLite disabled - task completion toggle disabled
+    // TODO: Implement with API when available
+    /*
     final index = _tasks.indexWhere((task) => task.id == id);
     if (index != -1) {
       final task = _tasks[index];
@@ -195,10 +196,13 @@ class HomeService extends ChangeNotifier {
 
       notifyListeners();
     }
-  }
-  Future<void> toggleAlarm(int? id) async {
+    */
+  }  Future<void> toggleAlarm(int? id) async {
     if (id == null) return;
 
+    // SQLite disabled - alarm toggle disabled
+    // TODO: Implement with API when available
+    /*
     final index = _tasks.indexWhere((task) => task.id == id);
     if (index != -1) {
       final task = _tasks[index];
@@ -222,15 +226,19 @@ class HomeService extends ChangeNotifier {
       _tasks[index] = updatedTask;
       notifyListeners();
     }
+    */
   }
 
   Future<void> deleteTask(int taskId) async {
     _tasks.removeWhere((task) => task.id == taskId);
     notifyListeners();
   }
-
   Future<void> deleteActivity(int activityId) async {
+    // SQLite disabled - activity deletion disabled
+    // TODO: Implement with API when available
+    /*
     await aktivitasDatabase.delete(activityId);
+    */
     _aktivitas.removeWhere((activity) => activity.id == activityId);
     _cachedTodayAktivitas = null; // Reset cache
     notifyListeners();

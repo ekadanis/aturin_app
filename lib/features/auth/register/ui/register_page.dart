@@ -1,10 +1,10 @@
 import 'package:aturin_app/core/theme/app_theme.dart';
-import 'package:aturin_app/features/login/ui/login_page.dart';
-import 'package:aturin_app/features/register/widgets/login_link_widget.dart';
-import 'package:aturin_app/features/register/widgets/register_app_bar_widget.dart';
-import 'package:aturin_app/features/register/widgets/register_form_widget.dart';
-import 'package:aturin_app/features/register/widgets/register_header.dart';
-import 'package:aturin_app/features/auth/services/auth_service.dart';
+import 'package:aturin_app/features/auth/login/ui/login_page.dart';
+import 'package:aturin_app/features/auth/register/widgets/login_link_widget.dart';
+import 'package:aturin_app/features/auth/register/widgets/register_app_bar_widget.dart';
+import 'package:aturin_app/features/auth/register/widgets/register_form_widget.dart';
+import 'package:aturin_app/features/auth/register/widgets/register_header.dart';
+import 'package:aturin_app/core/services/api/auth/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
