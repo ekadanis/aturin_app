@@ -1,6 +1,8 @@
 import 'package:aturin_app/core/widgets/calendar_section_widget.dart';
 import 'package:aturin_app/features/jadwal/screens/aktivitas_screen/widgets/category_tabs_widget.dart';
 import 'package:aturin_app/features/jadwal/screens/aktivitas_screen/widgets/infinite_schedule_list_widget.dart';
+import 'package:aturin_app/features/jadwal/widgets/realtime_status_widget.dart';
+import 'package:aturin_app/features/jadwal/widgets/realtime_notification_listener.dart';
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -34,10 +36,35 @@ class _AktivitasPageState extends State<AktivitasPage> {
     final now = DateTime.now();
     selectedDate = DateTime(now.year, now.month, now.day);
     focusedDate = DateTime(now.year, now.month, now.day);
-    // Fetch both activities and tasks data after hot reload
+    
+    // Initialize realtime updates after widget is built
     Future.microtask(() {
-      _refreshData();
+      _initializeRealtimeData();
     });
+  }
+  Future<void> _initializeRealtimeData() async {
+    try {
+      final aktivitasService = Provider.of<AktivitasService>(context, listen: false);
+      
+      // Initialize realtime updates
+      aktivitasService.initializeRealtimeUpdates();
+      
+      // Initial data fetch
+      await _refreshData();
+    } catch (e) {
+      debugPrint('Error initializing realtime data: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    // Stop realtime updates when screen is disposed
+    try {
+      Provider.of<AktivitasService>(context, listen: false).stopRealtimeUpdates();
+    } catch (e) {
+      debugPrint('Error stopping realtime updates: $e');
+    }
+    super.dispose();
   }
 
   Future<void> _refreshData() async {
@@ -48,24 +75,23 @@ class _AktivitasPageState extends State<AktivitasPage> {
       debugPrint('Error refreshing data: $e');
     }
   }
-
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        context.router.pushAndPopUntil(
-          const HomeRoute(),
-          predicate: (_) => false,
-        );
-      },
-      child: Scaffold(
-        backgroundColor: AppTheme.lightBackgroundColor,
-        body: SafeArea(
+    return RealtimeNotificationListener(
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          context.router.pushAndPopUntil(
+            const HomeRoute(),
+            predicate: (_) => false,
+          );
+        },
+        child: Scaffold(
+          backgroundColor: AppTheme.lightBackgroundColor,
+          body: SafeArea(
           child: Column(
-            children: [
-              // Header Section
+            children: [              // Header Section
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
@@ -81,6 +107,8 @@ class _AktivitasPageState extends State<AktivitasPage> {
                         color: AppTheme.lightTextColor,
                       ),
                     ),
+                    const Spacer(),
+                    const RealtimeStatusWidget(),
                   ],
                 ),
               ),
@@ -123,58 +151,68 @@ class _AktivitasPageState extends State<AktivitasPage> {
 
               const SizedBox(height: 20),              // Schedule List
               Expanded(
-                child: Consumer2<AktivitasService, TaskService>(
-                  builder: (context, aktivitasService, taskService, _) {
-                    // Show loading indicator if data is being fetched
-                    if (aktivitasService.aktivitasList.isEmpty && taskService.tasks.isEmpty) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    }
+                child: StreamBuilder<List<AktivitasModel>>(
+                  stream: Provider.of<AktivitasService>(context, listen: false).aktivitasStream,
+                  builder: (context, streamSnapshot) {
+                    return Consumer2<AktivitasService, TaskService>(
+                      builder: (context, aktivitasService, taskService, _) {
+                        // Show loading indicator if data is being fetched and no cached data
+                        if (aktivitasService.aktivitasList.isEmpty && taskService.tasks.isEmpty) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
 
-                    final aktivitasList = aktivitasService.aktivitasList.where((a) {
-                      final isSameDate = a.activityDate.year == selectedDate.year &&
-                          a.activityDate.month == selectedDate.month &&
-                          a.activityDate.day == selectedDate.day;
-                      final isCategory = selectedCategory == 'Semua' ||
-                          a.activityCategory.displayName == selectedCategory;
-                      return isSameDate && isCategory;
-                    }).toList();
+                        final aktivitasList = aktivitasService.aktivitasList.where((a) {
+                          final isSameDate = a.activityDate.year == selectedDate.year &&
+                              a.activityDate.month == selectedDate.month &&
+                              a.activityDate.day == selectedDate.day;
+                          final isCategory = selectedCategory == 'Semua' ||
+                              a.activityCategory.displayName == selectedCategory;
+                          return isSameDate && isCategory;
+                        }).toList();
 
-                    final tasksList = taskService.tasks.where((t) {
-                      final isSameDate = t.deadline.year == selectedDate.year &&
-                          t.deadline.month == selectedDate.month &&
-                          t.deadline.day == selectedDate.day;
-                      final isCategory = selectedCategory == 'Semua' ||
-                          t.category == selectedCategory;
-                      return isSameDate && isCategory;
-                    }).toList();                    return RefreshIndicator(
-                      onRefresh: _refreshData,
-                      child: InfiniteScheduleListWidget(
-                        tasks: tasksList,
-                        schedules: aktivitasList,
-                        selectedCategory: selectedCategory,
-                        selectedDate: selectedDate,
-                        onDateChanged: (date) {
-                          setState(() {
-                            selectedDate = date;
-                          });                        },
-                        onEditSchedule: (aktivitas) => _editActivity(aktivitas),
-                        onDeleteSchedule: (aktivitas) => _deleteActivity(aktivitas),
-                        onEditTask: (task) => _editTask(task),
-                        onDeleteTask: (task) => _deleteTask(task),
-                        onToggleTaskCompletion: (task) => _toggleTaskCompletion(task),
-                      ),
+                        final tasksList = taskService.tasks.where((t) {
+                          final isSameDate = t.deadline.year == selectedDate.year &&
+                              t.deadline.month == selectedDate.month &&
+                              t.deadline.day == selectedDate.day;
+                          final isCategory = selectedCategory == 'Semua' ||
+                              t.category == selectedCategory;
+                          return isSameDate && isCategory;
+                        }).toList();
+
+                        return RefreshIndicator(
+                          onRefresh: _refreshData,
+                          child: InfiniteScheduleListWidget(
+                            tasks: tasksList,
+                            schedules: aktivitasList,
+                            selectedCategory: selectedCategory,
+                            selectedDate: selectedDate,
+                            onDateChanged: (date) {
+                              setState(() {
+                                selectedDate = date;
+                              });
+                            },
+                            onEditSchedule: (aktivitas) => _editActivity(aktivitas),
+                            onDeleteSchedule: (aktivitas) => _deleteActivity(aktivitas),
+                            onEditTask: (task) => _editTask(task),
+                            onDeleteTask: (task) => _deleteTask(task),
+                            onToggleTaskCompletion: (task) => _toggleTaskCompletion(task),
+                          ),
+                        );
+                      },
                     );
                   },
                 ),
-              ),
-            ],
+              ),            ],
           ),
-        ),        bottomNavigationBar: const BottomNavbar(currentIndex: 1),
+        ),
+        bottomNavigationBar: const BottomNavbar(currentIndex: 1),
+      ),
       ),
     );
   }
+  
   void _editActivity(AktivitasModel aktivitas) {
     context.router.push(AddAktivitasRoute(existingAktivitas: aktivitas));
   }
@@ -272,8 +310,7 @@ class _AktivitasPageState extends State<AktivitasPage> {
                 isError: true,
               );
             }
-          }
-        },
+          }        },
       ),
     );
   }

@@ -18,23 +18,85 @@ class AktivitasService extends ChangeNotifier {
   List<AktivitasModel> _aktivitasList = [];
   final Map<String, List<AktivitasModel>> _cachedFilteredAktivitas = {};
   DateTime _lastFetchTime = DateTime(1970);
+  
+  // Realtime updates
+  final StreamController<List<AktivitasModel>> _aktivitasStreamController = 
+      StreamController<List<AktivitasModel>>.broadcast();
+  Timer? _periodicRefreshTimer;
+  bool _isAutoRefreshEnabled = true;
+  
+  Stream<List<AktivitasModel>> get aktivitasStream => _aktivitasStreamController.stream;
 
   List<AktivitasModel> get aktivitasList => _aktivitasList;
-  /// Fetch all aktivitas from the API
-  Future<void> fetchAktivitas() async {
+  
+  /// Initialize realtime updates
+  void initializeRealtimeUpdates() {
+    debugPrint('Initializing realtime updates for aktivitas');
+    _startPeriodicRefresh();
+  }
+  
+  /// Start periodic refresh every 30 seconds
+  void _startPeriodicRefresh() {
+    _periodicRefreshTimer?.cancel();
+    if (_isAutoRefreshEnabled) {
+      _periodicRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+        debugPrint('Periodic refresh triggered');
+        fetchAktivitas(forceRefresh: true);
+      });
+    }
+  }
+  
+  /// Stop realtime updates
+  void stopRealtimeUpdates() {
+    debugPrint('Stopping realtime updates for aktivitas');
+    _periodicRefreshTimer?.cancel();
+    _isAutoRefreshEnabled = false;
+  }
+  
+  /// Enable/disable auto refresh
+  void setAutoRefresh(bool enabled) {
+    _isAutoRefreshEnabled = enabled;
+    if (enabled) {
+      _startPeriodicRefresh();
+    } else {
+      _periodicRefreshTimer?.cancel();
+    }
+  }  /// Fetch all aktivitas from the API
+  Future<void> fetchAktivitas({bool forceRefresh = false}) async {
     final now = DateTime.now();
-    if (now.difference(_lastFetchTime).inSeconds < 2 && _aktivitasList.isNotEmpty) {
+    if (!forceRefresh && now.difference(_lastFetchTime).inSeconds < 2 && _aktivitasList.isNotEmpty) {
       debugPrint('Using cached aktivitas (fetched ${now.difference(_lastFetchTime).inSeconds}s ago)');
       return;
     }
 
     try {
+      debugPrint('Fetching aktivitas from API (forceRefresh: $forceRefresh)');
       final result = await activityService.getAllActivities();
+      
+      // Check if data has actually changed
+      bool dataChanged = _aktivitasList.length != result.length;
+      if (!dataChanged && _aktivitasList.isNotEmpty) {
+        for (int i = 0; i < _aktivitasList.length; i++) {
+          if (_aktivitasList[i].id != result[i].id ||
+              _aktivitasList[i].activityTitle != result[i].activityTitle ||
+              _aktivitasList[i].updatedAt != result[i].updatedAt) {
+            dataChanged = true;
+            break;
+          }
+        }
+      }
+      
       _aktivitasList = result;
       _lastFetchTime = now;
-
       _cachedFilteredAktivitas.clear();
-      notifyListeners();
+      
+      // Emit to stream
+      _aktivitasStreamController.add(_aktivitasList);
+      
+      if (dataChanged || forceRefresh) {
+        debugPrint('Data changed or force refresh - notifying listeners');
+        notifyListeners();
+      }
     } catch (e) {
       debugPrint('Error fetching activities: $e');
       // Keep the existing list if API call fails
@@ -176,12 +238,12 @@ class AktivitasService extends ChangeNotifier {
       createdAt: now,
       updatedAt: now,
     );
-    
-    try {
+      try {
       final createdActivity = await activityService.createActivity(aktivitasWithTimestamps);
       if (createdActivity != null) {
         debugPrint('DEBUG addAktivitas: Aktivitas berhasil disimpan dengan ID: ${createdActivity.id}, alarmId: $alarmId');
-        await fetchAktivitas(); // Refresh the list
+        // Auto-refresh data after successful creation
+        await fetchAktivitas(forceRefresh: true);
         return createdActivity.id ?? 0;
       } else {
         throw Exception('Failed to create activity');
@@ -190,20 +252,22 @@ class AktivitasService extends ChangeNotifier {
       debugPrint('DEBUG addAktivitas: Error creating activity: $e');
       rethrow;
     }
-  }
-  /// Update aktivitas using API
+  }  /// Update aktivitas using API
   Future<int> updateAktivitas(AktivitasModel aktivitas, DateTime? pickedAlarmDateTime) async {
     debugPrint('DEBUG updateAktivitas: Starting - ID: ${aktivitas.id}, pickedAlarmDateTime: $pickedAlarmDateTime');
     debugPrint('DEBUG updateAktivitas: Aktivitas title: ${aktivitas.activityTitle}');
-    
-    final slug = aktivitas.slug ?? 'aktivitas-' + aktivitas.activityTitle
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9 ]'), '')
-        .replaceAll(' ', '-');
+    debugPrint('DEBUG updateAktivitas: Existing slug: ${aktivitas.slug}');
     
     if (aktivitas.id == null) {
       throw Exception('ID aktivitas tidak boleh null untuk update');
     }
+    
+    if (aktivitas.slug == null || aktivitas.slug!.isEmpty) {
+      throw Exception('Slug tidak boleh kosong untuk update. Data mungkin rusak.');
+    }
+    
+    final slug = aktivitas.slug!; // Use existing slug from database
+    debugPrint('DEBUG updateAktivitas: Using original slug from database: $slug');
     
     if (!_isValidTiming(aktivitas)) {
       throw Exception('Waktu mulai harus sebelum waktu selesai');
@@ -305,12 +369,12 @@ class AktivitasService extends ChangeNotifier {
       slug: slug,
       updatedAt: DateTime.now(),
     );
-    
-    try {
+      try {
       final updatedActivity = await activityService.updateActivity(slug, aktivitasWithTimestamp);
       if (updatedActivity != null) {
         debugPrint('DEBUG updateAktivitas: ✅ Aktivitas berhasil diupdate dengan final alarmId: $alarmId');
-        await fetchAktivitas();
+        // Auto-refresh data after successful update
+        await fetchAktivitas(forceRefresh: true);
         return 1; // Success
       } else {
         throw Exception('Failed to update activity');
@@ -345,18 +409,13 @@ class AktivitasService extends ChangeNotifier {
         } catch (e) {
           debugPrint('Error menghapus alarm untuk aktivitas ID $id: $e');
         }
-      }
-
-      // Delete from API using slug
+      }      // Delete from API using slug
       if (aktivitas?.slug != null) {
         final success = await activityService.deleteActivity(aktivitas!.slug!);
         if (success) {
-          // Remove from local list
-          _aktivitasList.removeWhere((aktivitas) => aktivitas.id == id);
-          _cachedFilteredAktivitas.clear();
-          
-          notifyListeners();
           debugPrint('Aktivitas berhasil dihapus dengan ID: $id');
+          // Auto-refresh data after successful deletion
+          await fetchAktivitas(forceRefresh: true);
           return 1;
         } else {
           throw Exception('Failed to delete activity from API');
@@ -467,10 +526,17 @@ class AktivitasService extends ChangeNotifier {
     _cachedFilteredAktivitas.clear();
     _lastFetchTime = DateTime(1970);
   }
-
   /// Refresh aktivitas data
   Future<void> refreshAktivitas() async {
     clearCache();
-    await fetchAktivitas();
+    await fetchAktivitas(forceRefresh: true);
+  }
+  
+  @override
+  void dispose() {
+    debugPrint('Disposing AktivitasService - cleaning up streams and timers');
+    _periodicRefreshTimer?.cancel();
+    _aktivitasStreamController.close();
+    super.dispose();
   }
 }

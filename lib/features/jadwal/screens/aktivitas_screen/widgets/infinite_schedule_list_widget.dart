@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:aturin_app/features/task/model/task_model.dart';
-import 'package:aturin_app/features/home/widget/empty_task.dart';
 import 'activity_card.dart';
 import 'task_card.dart';
 import 'package:intl/intl.dart';
@@ -200,107 +199,105 @@ class _InfiniteScheduleListWidgetState
         ),
       ),
     );
-  }
-
-  @override
+  }  @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: PageView.builder(
-        controller: _pageController,
-        onPageChanged: (pageIndex) {
-          if (!_isPageChanging) {
-            _currentPageIndex = pageIndex;
-            final newDate = _getDateForPage(pageIndex);
-            widget.onDateChanged(newDate);
-          }
-        },
-        itemBuilder: (context, pageIndex) {
-          final date = _getDateForPage(pageIndex);
-          final isToday = _isToday(date);
-          final schedulesForDate = _getSchedulesForDate(date);
-          final tasksForDate = _getTasksForDate(date);
+    return PageView.builder(
+      controller: _pageController,
+      onPageChanged: (pageIndex) {
+        if (!_isPageChanging) {
+          _currentPageIndex = pageIndex;
+          final newDate = _getDateForPage(pageIndex);
+          widget.onDateChanged(newDate);
+        }
+      },
+      itemBuilder: (context, pageIndex) {
+        final date = _getDateForPage(pageIndex);
+        final isToday = _isToday(date);
+        final schedulesForDate = _getSchedulesForDate(date);
+        final tasksForDate = _getTasksForDate(date);
 
-          return RefreshIndicator(
-            onRefresh: () async => setState(() {}),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Date header
-                  if (isToday) ...[
-                    Text(
-                      'Hari ini',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                  ],
+        return RefreshIndicator(
+          onRefresh: () async => setState(() {}),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Date header
+                if (isToday) ...[
                   Text(
-                    _formatDateHeader(date),
+                    'Hari ini',
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF5263F3),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[600],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  
-                  // Schedule list and tasks or empty state
-                  if (schedulesForDate.isEmpty && tasksForDate.isEmpty)
-                    _buildEmptyState()
-                  else ...[
-                    // Display schedules first
-                    ...schedulesForDate.map((schedule) => ActivityCard(
-                      activity: schedule,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ActivityDetailListPage(
-                              activities: schedulesForDate,
-                              initialIndex: schedulesForDate.indexOf(schedule),
-                            ),
-                          ),
-                        );
-                      },
-                      onEdit: widget.onEditSchedule != null
-                          ? () => widget.onEditSchedule!(schedule)
-                          : null,
-                      onDelete: widget.onDeleteSchedule != null
-                          ? () => widget.onDeleteSchedule!(schedule)
-                          : null,
-                    )),                    // Then display tasks
-                    ...tasksForDate.map((task) => TaskCard(
-                      task: task,
-                      onToggleCompletion: widget.onToggleTaskCompletion != null
-                          ? () => widget.onToggleTaskCompletion!(task)
-                          : () {},
-                      onDelete: widget.onDeleteTask != null
-                          ? () => widget.onDeleteTask!(task)
-                          : () {},
-                      onViewDetails: () {
-                        // Handle view details if needed
-                      },
-                      onToggleAlarm: () {
-                        // Handle toggle alarm if needed
-                      },
-                      currentFilter: widget.selectedCategory,
-                      showCheckbox: false,
-                      showStatus: true,
-                      margin: EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 0),
-                    )),
-                  ],
-                  const SizedBox(height: 100),
+                  const SizedBox(height: 4),
                 ],
-              ),
+                Text(
+                  _formatDateHeader(date),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF5263F3),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Schedule list and tasks or empty state
+                if (schedulesForDate.isEmpty && tasksForDate.isEmpty)
+                  _buildEmptyState()
+                else ...[
+                  // Display schedules first
+                  ...schedulesForDate.map((schedule) => ActivityCard(
+                    activity: schedule,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ActivityDetailListPage(
+                            activities: schedulesForDate,
+                            initialIndex: schedulesForDate.indexOf(schedule),
+                          ),
+                        ),
+                      );
+                    },
+                    onEdit: widget.onEditSchedule != null
+                        ? () => widget.onEditSchedule!(schedule)
+                        : null,
+                    onDelete: widget.onDeleteSchedule != null
+                        ? () => widget.onDeleteSchedule!(schedule)
+                        : null,
+                  )),
+
+                  // Then display tasks
+                  ...tasksForDate.map((task) => TaskCard(
+                    task: task,
+                    onToggleCompletion: widget.onToggleTaskCompletion != null
+                        ? () => widget.onToggleTaskCompletion!(task)
+                        : () {},
+                    onDelete: widget.onDeleteTask != null
+                        ? () => widget.onDeleteTask!(task)
+                        : () {},
+                    onViewDetails: () {
+                      // Handle view details if needed
+                    },
+                    onToggleAlarm: () {
+                      // Handle toggle alarm if needed
+                    },
+                    currentFilter: widget.selectedCategory,
+                    showCheckbox: false,
+                    showStatus: true,
+                    margin: EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 0),
+                  )),
+                ],
+                const SizedBox(height: 100),
+              ],
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

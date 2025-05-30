@@ -18,13 +18,12 @@ class ActivityCard extends StatelessWidget {
     this.onEdit,
     this.onDelete,
   });
-
   String _getTypeLabel(AktivitasModel schedule) {
     if (schedule.slug != null) {
       final slugLower = schedule.slug!.toLowerCase();
       if (slugLower.contains('tugas')) {
         return 'Tugas';
-      } else if (slugLower.contains('aktivitas')) {
+      } else if (slugLower.contains('aktivitas') || slugLower.startsWith('activity')) {
         return 'Aktivitas';
       }
     }

@@ -14,6 +14,7 @@ import 'package:aturin_app/core/widgets/categories.dart';
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:aturin_app/features/jadwal/services/aktivitas_service.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 @RoutePage()
 class AddAktivitasPage extends StatefulWidget {
@@ -105,6 +106,16 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
     );
   }
 
+  // Get user ID from SharedPreferences
+  Future<int?> _getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userIdString = prefs.getString('userId');
+    if (userIdString != null) {
+      return int.tryParse(userIdString);
+    }
+    return null;
+  }
+
   void _validateAndSave() {
     final validator = ScheduleValidator();
     final validationResult = validator.validateSchedule(
@@ -122,6 +133,19 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
       _saveSchedule();
     }
   }  void _saveSchedule() async {
+    // Get user ID from SharedPreferences
+    final userId = await _getUserId();
+    if (userId == null) {
+      if (mounted) {
+        showCustomTopSnackbar(
+          context: context,
+          message: 'Error: User tidak teridentifikasi. Silakan login ulang.',
+          isError: true,
+        );
+      }
+      return;
+    }
+
     final startDateTime = DateTime(
       selectedDate.year,
       selectedDate.month,
@@ -149,19 +173,18 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
       print('DEBUG: Alarm enabled - pickedAlarmDateTime: $pickedAlarmDateTime');
     } else {
       print('DEBUG: Alarm disabled - isAlarmEnabled: $isAlarmEnabled, alarmDateTime: $alarmDateTime');
-    }
-
-    final schedule = AktivitasModel(
+    }    final schedule = AktivitasModel(
       id: widget.existingAktivitas?.id,
-      userId: 1, // TODO: Get from user session
+      userId: userId, // Use dynamic user ID from SharedPreferences
       activityTitle: activityTitle.trim(),
-      activityDate: selectedDate,
-      activityStartTime: startDateTime,
+      activityDate: selectedDate,activityStartTime: startDateTime,
       activityCompleteTime: adjustedEndDateTime, // Use adjusted end time
       activityCategory: _getCategoryEnum(selectedCategory!.name),
       alarmId: widget.existingAktivitas?.alarmId, // Keep existing alarmId for updates
-      slug: 'activity_${DateTime.now().millisecondsSinceEpoch}',
-    );    try {
+      slug: widget.existingAktivitas?.slug, // Preserve existing slug for updates
+    );
+
+    try {
       final aktivitasService = Provider.of<AktivitasService>(context, listen: false);
       
       print('DEBUG: About to save aktivitas - isEdit: ${widget.existingAktivitas != null}, pickedAlarmDateTime: $pickedAlarmDateTime');
@@ -176,9 +199,7 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
         print('DEBUG: Creating new aktivitas');
         final newId = await aktivitasService.addAktivitas(schedule, pickedAlarmDateTime);
         print('DEBUG: Successfully created aktivitas with ID: $newId');
-      }
-
-      if (mounted) {
+      }      if (mounted) {
         showCustomTopSnackbar(
           context: context,
           message: widget.existingAktivitas != null
@@ -187,11 +208,14 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
           isError: false,
         );
 
-        Future.delayed(const Duration(seconds: 1), () {
-          context.router.pushAndPopUntil(
-            const AktivitasRoute(),
-            predicate: (_) => false,
-          );
+        // Small delay to show the snackbar before navigation
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            context.router.pushAndPopUntil(
+              const AktivitasRoute(),
+              predicate: (_) => false,
+            );
+          }
         });
       }
     } catch (e) {

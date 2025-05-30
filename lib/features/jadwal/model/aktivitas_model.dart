@@ -102,21 +102,26 @@ class AktivitasModel {
       updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at']) : null,
       alarm: json['alarm'] != null ? AlarmModel.fromJson(json['alarm']) : null,
     );
-  }
-  // Helper method to parse datetime from date and time strings
+  }  // Helper method to parse datetime from date and time strings
   static DateTime _parseDateTime(String date, String time) {
     try {
       // Try to parse as full ISO8601 datetime first
       return DateTime.parse(time);
     } catch (e) {
-      // If that fails, assume it's H:i format and combine with date
+      // If that fails, assume it's H:i or H:i:s format and combine with date
       try {
         final timeParts = time.split(':');
-        final hour = int.parse(timeParts[0]);
-        final minute = int.parse(timeParts[1]);
-        final dateTime = DateTime.parse(date);
-        return DateTime(dateTime.year, dateTime.month, dateTime.day, hour, minute);
+        if (timeParts.length >= 2) {
+          final hour = int.parse(timeParts[0]);
+          final minute = int.parse(timeParts[1]);
+          // Ignore seconds if present (timeParts[2])
+          final dateTime = DateTime.parse(date);
+          return DateTime(dateTime.year, dateTime.month, dateTime.day, hour, minute);
+        } else {
+          throw FormatException('Invalid time format: $time');
+        }
       } catch (e2) {
+        print('DEBUG: Error parsing time "$time": $e2');
         throw FormatException('Invalid date format: $time');
       }
     }
