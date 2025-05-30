@@ -106,10 +106,11 @@ class AppRouter extends RootStackRouter {
       page: TaskDetailListRoute.page,
       transitionsBuilder: (_, __, ___, child) => child,
       duration: Duration.zero,
-    ),
-    AutoRoute(
+    ),    CustomRoute(
       path: '/no-internet',
       page: NoInternetRoute.page,
+      transitionsBuilder: (_, __, ___, child) => child,
+      duration: Duration.zero,
     ),
   ];
 }

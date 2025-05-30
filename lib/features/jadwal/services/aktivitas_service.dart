@@ -7,13 +7,14 @@ import '../../alarm/model/alarm.dart';
 // import '../../alarm/database/alarm_database.dart'; // DISABLED SQLite
 import '../../../core/services/api/activities/activity_api_service.dart';
 import '../../../core/services/api/alarms/alarm_api_service.dart';
+import '../../../core/services/connectivity/connectivity_service.dart';
 
-class AktivitasService extends ChangeNotifier {
-  // final aktivitasDatabase = AktivitasDatabase(); // DISABLED SQLite
-  final activityService = ActivityService(); // NEW API Service
+class AktivitasService extends ChangeNotifier {  // final aktivitasDatabase = AktivitasDatabase(); // DISABLED SQLite
+  final activityService = ActivityApiService(); // NEW API Service
   final alarmService = AlarmService();
   final alarmApiService = AlarmApiService(); // NEW Alarm API Service
   // final alarmDatabase = AlarmDatabase.instance; // DISABLED SQLite
+  final connectivityService = ConnectivityService(); // Add connectivity service
   
   List<AktivitasModel> _aktivitasList = [];
   final Map<String, List<AktivitasModel>> _cachedFilteredAktivitas = {};

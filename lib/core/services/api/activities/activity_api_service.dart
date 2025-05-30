@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 
-class ActivityService {
+class ActivityApiService {
   static const String baseUrl = 'https://aturin-app.com/api/v1/activities';
 
   // Get authorization token from SharedPreferences

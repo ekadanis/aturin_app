@@ -295,6 +295,22 @@ class LoginRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [NoInternetScreen]
+class NoInternetRoute extends PageRouteInfo<void> {
+  const NoInternetRoute({List<PageRouteInfo>? children})
+    : super(NoInternetRoute.name, initialChildren: children);
+
+  static const String name = 'NoInternetRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const NoInternetScreen();
+    },
+  );
+}
+
+/// generated route for
 /// [OnboardingScreen]
 class OnboardingRoute extends PageRouteInfo<void> {
   const OnboardingRoute({List<PageRouteInfo>? children})

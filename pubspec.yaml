@@ -59,6 +59,7 @@ flutter:
     - assets/activitycategory/iconcard/
     - assets/activitycategory/chipicon/
     - assets/activitycategory/
+    - assets/images/no_internet/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
