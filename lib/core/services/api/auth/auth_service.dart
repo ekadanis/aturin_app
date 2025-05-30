@@ -62,8 +62,6 @@ class AuthService extends ChangeNotifier {
         }),
       );
 
-      debugPrint('Registration response status: ${response.statusCode}');
-      debugPrint('Registration response body: ${response.body}');
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
