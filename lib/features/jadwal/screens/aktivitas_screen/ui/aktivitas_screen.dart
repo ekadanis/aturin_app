@@ -13,6 +13,8 @@ import 'package:provider/provider.dart';
 import 'package:aturin_app/features/jadwal/services/aktivitas_service.dart';
 import 'package:aturin_app/core/widgets/confirm_dialog.dart';
 import 'package:aturin_app/features/task/screens/widgets/snackbar.dart';
+import 'package:aturin_app/features/task/services/task_services.dart';
+import 'package:aturin_app/features/task/model/task_model.dart';
 
 @RoutePage()
 class AktivitasPage extends StatefulWidget {
@@ -27,17 +29,17 @@ class _AktivitasPageState extends State<AktivitasPage> {
   late DateTime selectedDate;
   late DateTime focusedDate;
   CalendarFormat calendarFormat = CalendarFormat.week;
-
   @override
   void initState() {
     super.initState();
     final now = DateTime.now();
     selectedDate = DateTime(now.year, now.month, now.day);
     focusedDate = DateTime(now.year, now.month, now.day);
-    // Tambahkan agar data aktivitas di-fetch ulang setelah hot reload
-    Future.microtask(() =>
-      Provider.of<AktivitasService>(context, listen: false).fetchAktivitas()
-    );
+    // Fetch both activities and tasks data after hot reload
+    Future.microtask(() {
+      Provider.of<AktivitasService>(context, listen: false).fetchAktivitas();
+      Provider.of<TaskService>(context, listen: false).fetchTasks();
+    });
   }
 
   @override
@@ -112,12 +114,10 @@ class _AktivitasPageState extends State<AktivitasPage> {
                 ),
               ),
 
-              const SizedBox(height: 20),
-
-              // Schedule List
+              const SizedBox(height: 20),              // Schedule List
               Expanded(
-                child: Consumer<AktivitasService>(
-                  builder: (context, aktivitasService, _) {
+                child: Consumer2<AktivitasService, TaskService>(
+                  builder: (context, aktivitasService, taskService, _) {
                     final aktivitasList = aktivitasService.aktivitasList.where((a) {
                       final isSameDate = a.activityDate.year == selectedDate.year &&
                           a.activityDate.month == selectedDate.month &&
@@ -125,8 +125,19 @@ class _AktivitasPageState extends State<AktivitasPage> {
                       final isCategory = selectedCategory == 'Semua' ||
                           a.activityCategory.displayName == selectedCategory;
                       return isSameDate && isCategory;
-                    }).toList();                    return InfiniteScheduleListWidget(
-                      tasks: [],
+                    }).toList();
+
+                    final tasksList = taskService.tasks.where((t) {
+                      final isSameDate = t.deadline.year == selectedDate.year &&
+                          t.deadline.month == selectedDate.month &&
+                          t.deadline.day == selectedDate.day;
+                      final isCategory = selectedCategory == 'Semua' ||
+                          t.category == selectedCategory;
+                      return isSameDate && isCategory;
+                    }).toList();
+
+                    return InfiniteScheduleListWidget(
+                      tasks: tasksList,
                       schedules: aktivitasList,
                       selectedCategory: selectedCategory,
                       selectedDate: selectedDate,
@@ -137,6 +148,9 @@ class _AktivitasPageState extends State<AktivitasPage> {
                       },
                       onEditSchedule: (aktivitas) => _editActivity(aktivitas),
                       onDeleteSchedule: (aktivitas) => _deleteActivity(aktivitas),
+                      onEditTask: (task) => _editTask(task),
+                      onDeleteTask: (task) => _deleteTask(task),
+                      onToggleTaskCompletion: (task) => _toggleTaskCompletion(task),
                     );
                   },
                 ),
@@ -147,10 +161,73 @@ class _AktivitasPageState extends State<AktivitasPage> {
       ),
     );
   }
-
   void _editActivity(AktivitasModel aktivitas) {
     context.router.push(AddAktivitasRoute(existingAktivitas: aktivitas));
   }
+
+  void _editTask(Task task) {
+    context.router.push(AddTaskRoute(existingTask: task));
+  }
+
+  void _deleteTask(Task task) {
+    showDialog(
+      context: context,
+      builder: (context) => ConfirmDialog(
+        iconPath: 'assets/activitycategory/trash-round-tipis.svg',
+        title: 'Hapus Tugas',
+        description: 'Yakin nih kamu mau hapus tugas ini?',
+        confirmText: 'Hapus',
+        cancelText: 'Batal',
+        isTask: true, // Set true untuk tugas
+        onConfirm: () async {
+          try {
+            final taskService = Provider.of<TaskService>(context, listen: false);
+            await taskService.deleteTask(task.id!);
+            
+            if (mounted) {
+              showCustomTopSnackbar(
+                context: context,
+                message: 'Tugas berhasil dihapus',
+                isError: false,
+              );
+            }
+          } catch (e) {
+            if (mounted) {
+              showCustomTopSnackbar(
+                context: context,
+                message: 'Gagal menghapus tugas: ${e.toString()}',
+                isError: true,
+              );
+            }
+          }
+        },
+      ),
+    );
+  }
+
+  void _toggleTaskCompletion(Task task) async {
+    try {
+      final taskService = Provider.of<TaskService>(context, listen: false);
+      await taskService.toggleTaskCompletion(task.id!);
+      
+      if (mounted) {
+        showCustomTopSnackbar(
+          context: context,
+          message: task.isCompleted ? 'Tugas ditandai belum selesai' : 'Tugas ditandai selesai',
+          isError: false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        showCustomTopSnackbar(
+          context: context,
+          message: 'Gagal mengubah status tugas: ${e.toString()}',
+          isError: true,
+        );
+      }
+    }
+  }
+
   void _deleteActivity(AktivitasModel aktivitas) {
     showDialog(
       context: context,

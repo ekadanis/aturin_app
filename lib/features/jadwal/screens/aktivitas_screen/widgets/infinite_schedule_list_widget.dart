@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:aturin_app/features/task/model/task_model.dart';
+import 'package:aturin_app/features/home/widget/empty_task.dart';
 import 'activity_card.dart';
 import 'task_card.dart';
 import 'package:intl/intl.dart';
+import 'package:aturin_app/features/jadwal/screens/detailactivity/ui/activity_detail_list.dart';
+import 'package:sizer/sizer.dart';
 
 class InfiniteScheduleListWidget extends StatefulWidget {
   final DateTime selectedDate;
@@ -165,60 +168,7 @@ class _InfiniteScheduleListWidgetState
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final targetDate = DateTime(date.year, date.month, date.day);
-    return targetDate.isAtSameMomentAs(today);
-  }
-
-  void _showDeleteConfirmation(BuildContext context, AktivitasModel schedule) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(
-            'Hapus Jadwal',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF131927),
-            ),
-          ),
-          content: Text(
-            'Apakah Anda yakin ingin menghapus "${schedule.activityTitle}"?',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 14,
-              color: const Color(0xFF131927),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Batal',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                widget.onDeleteSchedule?.call(schedule);
-              },
-              child: Text(
-                'Hapus',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.red,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
+    return targetDate.isAtSameMomentAs(today);  }
 
   Widget _buildEmptyState() {
     return Center(
@@ -306,15 +256,24 @@ class _InfiniteScheduleListWidgetState
                     // Display schedules first
                     ...schedulesForDate.map((schedule) => ActivityCard(
                       activity: schedule,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ActivityDetailListPage(
+                              activities: schedulesForDate,
+                              initialIndex: schedulesForDate.indexOf(schedule),
+                            ),
+                          ),
+                        );
+                      },
                       onEdit: widget.onEditSchedule != null
                           ? () => widget.onEditSchedule!(schedule)
                           : null,
                       onDelete: widget.onDeleteSchedule != null
                           ? () => widget.onDeleteSchedule!(schedule)
                           : null,
-                    )),
-                    
-                    // Then display tasks
+                    )),                    // Then display tasks
                     ...tasksForDate.map((task) => TaskCard(
                       task: task,
                       onToggleCompletion: widget.onToggleTaskCompletion != null
@@ -330,8 +289,9 @@ class _InfiniteScheduleListWidgetState
                         // Handle toggle alarm if needed
                       },
                       currentFilter: widget.selectedCategory,
-                      showCheckbox: true,
+                      showCheckbox: false,
                       showStatus: true,
+                      margin: EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 0),
                     )),
                   ],
                   const SizedBox(height: 100),

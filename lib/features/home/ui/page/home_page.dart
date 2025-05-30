@@ -6,6 +6,7 @@ import 'package:aturin_app/features/home/widget/activity_card.dart';
 import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:aturin_app/features/task/screens/ui/task_detail_screen.dart';
+import 'package:aturin_app/features/jadwal/screens/detailactivity/ui/activity_detail_list.dart';
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:aturin_app/core/widgets/bottom_navbar.dart';
@@ -108,37 +109,45 @@ class _HomePageState extends State<HomePage> {
                                         ),
                                       ),
                                     );
-                                  }                                  // Display tasks
+                                  } // Display tasks
                                   if (_selectedView == TaskViewType.tugas) {
                                     final task = items[index] as Task;
-                                    
+
                                     // Semua tugas menggunakan Timeline Widget
                                     bool previousIsFlagged = false;
                                     final isLast = index == items.length - 1;
 
                                     if (index > 0) {
-                                      final previousTask = items[index - 1] as Task;
+                                      final previousTask =
+                                          items[index - 1] as Task;
                                       previousIsFlagged =
                                           previousTask.isAlarmEnabled ||
-                                          previousTask.status == TaskStatus.late;
+                                          previousTask.status ==
+                                              TaskStatus.late;
                                     }
-                                    
+
                                     return TimelineWidget(
                                       task: task,
                                       index: index,
                                       isLast: isLast,
                                       previousIsFlagged: previousIsFlagged,
                                       onToggleCompletion:
-                                          () => homeService.toggleTaskCompletion(task.id!),
+                                          () => homeService
+                                              .toggleTaskCompletion(task.id!),
                                       onDelete:
-                                          () => homeService.deleteTask(task.id!),
+                                          () =>
+                                              homeService.deleteTask(task.id!),
                                       onToggleAlarm:
-                                          () => homeService.toggleAlarm(task.id!),
+                                          () =>
+                                              homeService.toggleAlarm(task.id!),
                                       onViewDetails: () {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (_) => TaskDetailScreen(task: task),
+                                            builder:
+                                                (_) => TaskDetailScreen(
+                                                  task: task,
+                                                ),
                                           ),
                                         );
                                       },
@@ -153,16 +162,22 @@ class _HomePageState extends State<HomePage> {
                                     return ActivityCard(
                                       activity: activity,
                                       onTap: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => ActivityDetailListPage(
-        activities: items.whereType<AktivitasModel>().toList(),
-        initialIndex: index,
-      ),
-    ),
-  );
-},
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (_) => ActivityDetailListPage(
+                                                  activities:
+                                                      items
+                                                          .whereType<
+                                                            AktivitasModel
+                                                          >()
+                                                          .toList(),
+                                                  initialIndex: index,
+                                                ),
+                                          ),
+                                        );
+                                      },
                                       onEdit: () {
                                         // TODO: Navigate to edit activity screen
                                       },

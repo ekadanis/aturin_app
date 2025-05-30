@@ -158,27 +158,30 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
   void _saveTask() {
     if (!_validateInputs()) return;
-
     _taskService.handleSaveForm(
       formKey: _formKey,
       task: Task(
         id: widget.existingTask?.id,
+        userId:
+            widget.existingTask?.userId ??
+            1, // Preserve existing userId or default to 1
         title: _titleController.text.trim(),
         description:
             _descriptionController.text.trim().isEmpty
                 ? null
                 : _descriptionController.text.trim(),
         deadline: _deadline!,
-        estimatedDuration: _estimatedDuration!,        category: _selectedCategory!.name,
-        alarm: _isAlarmEnabled && _alarmDateTime != null 
-            ? AlarmModel(
-                id: widget.existingTask?.alarm?.id,
-                alarmEnabled: _isAlarmEnabled,
-                alarmDateTime: _alarmDateTime!,
-                slug: 'task_${DateTime.now().millisecondsSinceEpoch}',
-              )
-            : null,
-
+        estimatedDuration: _estimatedDuration!,
+        category: _selectedCategory!.name,
+        alarm:
+            _isAlarmEnabled && _alarmDateTime != null
+                ? AlarmModel(
+                  id: widget.existingTask?.alarm?.id,
+                  alarmEnabled: _isAlarmEnabled,
+                  alarmDateTime: _alarmDateTime!,
+                  slug: 'task_${DateTime.now().millisecondsSinceEpoch}',
+                )
+                : null,
       ),
       isEdit: widget.existingTask != null,
       onSuccess: () {
@@ -211,7 +214,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         return deadline.subtract(const Duration(minutes: 15));
       case '30_minutes':
         return deadline.subtract(const Duration(minutes: 30));
-        case '45_minutes':
+      case '45_minutes':
         return deadline.subtract(const Duration(minutes: 45));
       case '1_hour':
         return deadline.subtract(const Duration(hours: 1));
@@ -240,7 +243,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       default:
         return 'Pilih waktu notifikasi';
     }
-  }  @override
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDeadlineValid = _taskService.isDeadlineValid(_deadline);
 
@@ -341,9 +346,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   final selected = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => CategoryPickerScreen(
-                        selectedCategory: _selectedCategory?.name ?? '',
-                      ),
+                      builder:
+                          (_) => CategoryPickerScreen(
+                            selectedCategory: _selectedCategory?.name ?? '',
+                          ),
                     ),
                   );
                   if (selected != null) {
@@ -412,9 +418,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     const SizedBox(height: 16),
                     FieldTile(
                       title: 'Atur Alarm',
-                      value: _selectedAlarmOption == 'custom' && _customAlarmDateTime != null
-                          ? DateFormat('EEEE, d MMM yyyy, HH:mm', 'id_ID').format(_customAlarmDateTime!)
-                          : _selectedAlarmOption != null
+                      value:
+                          _selectedAlarmOption == 'custom' &&
+                                  _customAlarmDateTime != null
+                              ? DateFormat(
+                                'EEEE, d MMM yyyy, HH:mm',
+                                'id_ID',
+                              ).format(_customAlarmDateTime!)
+                              : _selectedAlarmOption != null
                               ? _getAlarmOptionText(_selectedAlarmOption)
                               : 'Kustom',
                       onTap: () async {
@@ -431,16 +442,18 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => AlarmPickerScreen(
-                              selectedOption: _selectedAlarmOption,
-                            ),
+                            builder:
+                                (_) => AlarmPickerScreen(
+                                  selectedOption: _selectedAlarmOption,
+                                ),
                           ),
                         );
 
                         // Handle the result from AlarmPickerScreen
                         if (result != null) {
                           setState(() {
-                            if (result is String && result.startsWith('custom:')) {
+                            if (result is String &&
+                                result.startsWith('custom:')) {
                               final dateStr = result.substring(7);
                               _selectedAlarmOption = 'custom';
                               _customAlarmDateTime = DateTime.tryParse(dateStr);
@@ -505,7 +518,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             color: Colors.black87,
           ),
         ),
-        const SizedBox(height: 8),        TextFormField(
+        const SizedBox(height: 8),
+        TextFormField(
           controller: _descriptionController,
           maxLines: 4,
           maxLength: 200,

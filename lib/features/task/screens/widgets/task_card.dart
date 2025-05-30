@@ -155,11 +155,10 @@ class _TaskCardState extends State<TaskCard> {
                                     widget.task.category,
                                   ),
                                 ),
-                                SizedBox(width: 1.5.w),
-                                // badge tugas / aktivitas
+                                SizedBox(width: 1.5.w),                                // badge tugas / aktivitas
                                 _buildBadge(
                                   icon: SvgPicture.asset(
-                                    widget.task.category == 'Akademik'
+                                    _isTaskBasedOnSlug()
                                         ? 'assets/icons/tugas.svg'
                                         : 'assets/icons/activity.svg',
                                     width: 3.w,
@@ -169,10 +168,7 @@ class _TaskCardState extends State<TaskCard> {
                                       BlendMode.srcIn,
                                     ),
                                   ),
-                                  label:
-                                      widget.task.category == 'Akademik'
-                                          ? 'Tugas'
-                                          : 'Aktivitas',
+                                  label: _isTaskBasedOnSlug() ? 'Tugas' : 'Aktivitas',
                                   bgColor: const Color(0xFFDFEAFF),
                                   textColor: AppTheme.primaryColor,
                                 ),
@@ -593,5 +589,10 @@ class _TaskCardState extends State<TaskCard> {
       case TaskStatus.upcoming:
         return const Color(0xFFE89B00);
     }
+  }
+
+  // Check if task is based on slug containing "tugas"
+  bool _isTaskBasedOnSlug() {
+    return widget.task.slug?.contains('tugas') ?? false;
   }
 }

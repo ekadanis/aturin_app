@@ -8,6 +8,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/utils/debouncer.dart';
 import 'package:sizer/sizer.dart';
+import 'package:aturin_app/core/widgets/categories.dart';
 
 class TaskCard extends StatefulWidget {
   final Task task;
@@ -18,6 +19,7 @@ class TaskCard extends StatefulWidget {
   final String currentFilter;
   final bool showCheckbox;
   final bool showStatus;
+  final EdgeInsetsGeometry? margin;
 
   const TaskCard({
     Key? key,
@@ -29,6 +31,7 @@ class TaskCard extends StatefulWidget {
     required this.currentFilter,
     this.showCheckbox = false, // default aktif
     this.showStatus = true, // default aktif
+    this.margin,
   }) : super(key: key);
 
   @override
@@ -48,14 +51,16 @@ class _TaskCardState extends State<TaskCard> {
   void dispose() {
     _actionThrottle.dispose();
     super.dispose();
-  }
-  @override
+  }  @override
   Widget build(BuildContext context) {
-    // Tentukan apakah card memiliki indikator terlambat atau alarm
-    final bool hasLateIndicator =
-        widget.task.isCompleted &&
-        widget.task.status == TaskStatus.late;
+    // Tentukan apakah card memiliki alarm indicator
     final bool hasAlarmIndicator = widget.task.isAlarmActive;
+    
+    // Cari kategori dari categories.dart berdasarkan task category
+    final category = categories.firstWhere(
+      (c) => c.name.toLowerCase() == widget.task.category.toLowerCase(),
+      orElse: () => categories.first,
+    );
 
     return GestureDetector(
       onTap: () {
@@ -65,16 +70,14 @@ class _TaskCardState extends State<TaskCard> {
             builder: (_) => TaskDetailScreen(task: widget.task),
           ),
         );
-      },
-      child: Container(
+      },      child: Container(
         key: ValueKey(widget.task.id),
-        // Memastikan overflow konten dipotong sesuai border
-        margin: EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 4.w),
+        margin: widget.margin ?? EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 4.w),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(
             12,
-          ), // Selalu menggunakan radius 12
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
@@ -137,16 +140,30 @@ class _TaskCardState extends State<TaskCard> {
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              spacing: 0,
+                          children: [                            Row(
                               children: [
-                                // badge tugas / aktivitas
+                                // badge kategori
                                 _buildBadge(
                                   icon: SvgPicture.asset(
-                                    widget.task.category == 'Akademik'
-                                        ? 'assets/icons/tugas.svg'
-                                        : 'assets/icons/activity.svg',
+                                    category.iconPath,
+                                    width: 3.w,
+                                    height: 3.w,
+                                    colorFilter: ColorFilter.mode(
+                                      category.textColor,
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
+                                  label: category.name,
+                                  bgColor: category.backgroundColor,
+                                  textColor: category.textColor,
+                                ),
+
+                                SizedBox(width: 1.5.w),
+
+                                // badge tugas / aktivitas  
+                                _buildBadge(
+                                  icon: SvgPicture.asset(
+                                    'assets/icons/tugas.svg',
                                     width: 3.w,
                                     height: 3.w,
                                     colorFilter: const ColorFilter.mode(
@@ -154,15 +171,13 @@ class _TaskCardState extends State<TaskCard> {
                                       BlendMode.srcIn,
                                     ),
                                   ),
-                                  label:
-                                      widget.task.category == 'Akademik'
-                                          ? 'Tugas'
-                                          : 'Aktivitas',
+                                  label: 'Tugas',
                                   bgColor: const Color(0xFFDFEAFF),
                                   textColor: AppTheme.primaryColor,
                                 ),
 
                                 SizedBox(width: 1.5.w),
+
                                 // badge alarm
                                 if (hasAlarmIndicator)
                                   _buildBadge(
@@ -211,51 +226,13 @@ class _TaskCardState extends State<TaskCard> {
                             ),
                           ],
                         ),
-                      ),
-                    ),
+                      ),                    ),
                     Padding(
                       padding: EdgeInsets.only(top: 3.5.h),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          if (widget.showStatus)
-                            // badge status
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 3.w,
-                                vertical: 0.7.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color:
-                                    widget.task.isCompleted
-                                        ? const Color(
-                                          0xFFC5E9CD,
-                                        ) // Hijau untuk selesai
-                                        : _getStatusColor(widget.task.status),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                widget.task.isCompleted
-                                    ? 'Selesai'
-                                    : _getStatusName(
-                                      widget.task.status,
-                                      task: widget.task,
-                                    ),
-                                style: TextStyle(
-                                  color:
-                                      widget.task.isCompleted
-                                          ? const Color(
-                                            0xFF3DA755,
-                                          ) // Teks hijau
-                                          : _getStatusTextColor(
-                                            widget.task.status,
-                                          ),
-                                  fontSize: 13.sp,
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.2,
-                                ),
-                              ),
-                            ),
+                          // Status dihilangkan sesuai permintaan
                         ],
                       ),
                     ),
@@ -349,38 +326,11 @@ class _TaskCardState extends State<TaskCard> {
                                 ],
                               ),
                             ),
-                          ],
-                      icon: Icon(Icons.more_vert, size: 5.w),
+                          ],                      icon: Icon(Icons.more_vert, size: 5.w),
                     ),
                   ],
                 ),
-                if (hasLateIndicator)
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 4.w,
-                      vertical: 0.5.h,
-                    ),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFDECEC),
-                      borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(12),
-                        bottomRight: Radius.circular(12),
-                      ),
-                    ),
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        'Diselesaikan terlambat',
-                        style: TextStyle(
-                          color: Color(0xFFD93E39),
-                          fontSize: 12.5.sp,
-                          fontWeight: FontWeight.w500,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ),
+                // Indikator "diselesaikan terlambat" dihilangkan sesuai permintaan
               ],
             ),
             Positioned(
@@ -432,63 +382,8 @@ class _TaskCardState extends State<TaskCard> {
             ),
           ],
         ],
-      ),
-    );
+      ),    );
   }
 
-  String _getStatusName(TaskStatus status, {Task? task}) {
-    switch (status) {
-      case TaskStatus.completed:
-        return 'Selesai';
-      case TaskStatus.late:
-        return 'Terlambat';
-      case TaskStatus.today:
-        return 'Hari Ini';
-      case TaskStatus.tomorrow:
-        return 'Besok';
-      case TaskStatus.upcoming:
-        if (task != null) {
-          final now = DateTime.now();
-          final today = DateTime(now.year, now.month, now.day);
-          final deadlineDay = DateTime(
-            task.deadline.year,
-            task.deadline.month,
-            task.deadline.day,
-          );
-          final daysRemaining = deadlineDay.difference(today).inDays;
-          return '$daysRemaining hari lagi';
-        }
-        return 'Mendatang';
-    }
-  }
 
-  Color _getStatusColor(TaskStatus status) {
-    switch (status) {
-      case TaskStatus.completed:
-        return const Color(0xFFE3F2E9);
-      case TaskStatus.late:
-        return const Color(0xFFE4E4E7);
-      case TaskStatus.today:
-        return const Color(0xFFE6F4FF);
-      case TaskStatus.tomorrow:
-        return const Color(0xFFFFE5B0);
-      case TaskStatus.upcoming:
-        return const Color(0xFFFFE5B0);
-    }
-  }
-
-  Color _getStatusTextColor(TaskStatus status) {
-    switch (status) {
-      case TaskStatus.completed:
-        return const Color(0xFF4CAF50);
-      case TaskStatus.late:
-        return const Color(0xFF999999);
-      case TaskStatus.today:
-        return const Color(0xFF0077CC);
-      case TaskStatus.tomorrow:
-        return const Color(0xFFE89B00);
-      case TaskStatus.upcoming:
-        return const Color(0xFFE89B00);
-    }
-  }
 }

@@ -5,17 +5,16 @@ import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:aturin_app/core/widgets/confirm_dialog.dart';
 import 'package:sizer/sizer.dart';
+import 'package:provider/provider.dart';
+import 'package:aturin_app/features/jadwal/services/aktivitas_service.dart';
+import 'package:aturin_app/routers/app_router.dart';
 
 @RoutePage()
 class ActivityDetailListPage extends StatefulWidget {
   final List<AktivitasModel>? activities;
   final int? initialIndex;
-  
-  const ActivityDetailListPage({
-    super.key,
-    this.activities,
-    this.initialIndex,
-  });
+
+  const ActivityDetailListPage({super.key, this.activities, this.initialIndex});
 
   @override
   State<ActivityDetailListPage> createState() => _ActivityDetailListPageState();
@@ -29,8 +28,22 @@ class _ActivityDetailListPageState extends State<ActivityDetailListPage> {
   @override
   void initState() {
     super.initState();
-    displayActivities = widget.activities ?? _getDummyActivities();
-    _currentPageIndex = widget.initialIndex ?? 0;
+    // Filter hanya aktivitas di tanggal yang sama dengan initialIndex
+    if ((widget.activities?.isNotEmpty ?? false) && widget.initialIndex != null) {
+      final initial = widget.activities![widget.initialIndex!];
+      final sameDate = initial.activityDate;
+      displayActivities = widget.activities!
+          .where((a) => a.activityDate.year == sameDate.year &&
+                      a.activityDate.month == sameDate.month &&
+                      a.activityDate.day == sameDate.day)
+          .toList();
+      // Cari index baru dari initial di list terfilter
+      _currentPageIndex = displayActivities.indexWhere((a) => a.id == initial.id);
+      if (_currentPageIndex == -1) _currentPageIndex = 0;
+    } else {
+      displayActivities = widget.activities ?? [];
+      _currentPageIndex = widget.initialIndex ?? 0;
+    }
     _pageController = PageController(
       viewportFraction: 0.85,
       initialPage: _currentPageIndex,
@@ -46,34 +59,20 @@ class _ActivityDetailListPageState extends State<ActivityDetailListPage> {
     });
   }
 
-  List<AktivitasModel> _getDummyActivities() {
-    return [
-      AktivitasModel(
-        id: 1,
-        activityTitle: 'Nonton DBL Hari ini a',
-        activityDate: DateTime(2025, 5, 20),
-        activityStartTime: DateTime(2025, 5, 20, 8, 0),
-        activityCompleteTime: DateTime(2025, 5, 20, 12, 0),
-        activityCategory: ActivityCategory.hiburan,
-        alarmId: null,
-      ),
-      AktivitasModel(
-        id: 2,
-        activityTitle: 'Meeting Klien',
-        activityDate: DateTime(2025, 5, 21),
-        activityStartTime: DateTime(2025, 5, 21, 9, 0),
-        activityCompleteTime: DateTime(2025, 5, 21, 11, 0),
-        activityCategory: ActivityCategory.pekerjaan,
-        alarmId: 123,
-      ),
-      // Tambahkan dummy data lain jika perlu
-    ];
-  }
-
   String _formatDate(DateTime date) {
     const months = [
-      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
@@ -142,7 +141,9 @@ class _ActivityDetailListPageState extends State<ActivityDetailListPage> {
                             title: activity.activityTitle,
                             date: _formatDate(activity.activityDate),
                             startTime: _formatTime(activity.activityStartTime),
-                            completeTime: _formatTime(activity.activityCompleteTime),
+                            completeTime: _formatTime(
+                              activity.activityCompleteTime,
+                            ),
                             category: activity.activityCategory.displayName,
                             alarmId: activity.alarmId?.toString(),
                             isSelected: isSelected,
@@ -164,7 +165,13 @@ class _ActivityDetailListPageState extends State<ActivityDetailListPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 GestureDetector(
-                  onTap: () {},
+                  onTap: () async {
+                    // Routing ke edit aktivitas
+                    final currentActivity = displayActivities[_currentPageIndex];
+                    await context.router.push(
+                      AddAktivitasRoute(existingAktivitas: currentActivity),
+                    );
+                  },
                   child: Container(
                     width: 12.w,
                     height: 12.w,
@@ -191,7 +198,9 @@ class _ActivityDetailListPageState extends State<ActivityDetailListPage> {
                 SizedBox(width: 16.w),
                 GestureDetector(
                   onTap: () {
-                    showDeleteDialog(context);
+                    // Routing ke hapus aktivitas
+                    final currentActivity = displayActivities[_currentPageIndex];
+                    showDeleteDialog(context, currentActivity);
                   },
                   child: Container(
                     width: 12.w,
@@ -223,21 +232,87 @@ class _ActivityDetailListPageState extends State<ActivityDetailListPage> {
       ),
     );
   }
+
+  void _removeActivityAndSlide(AktivitasModel aktivitas) {
+    final idx = displayActivities.indexWhere((a) => a.id == aktivitas.id);
+    if (idx != -1) {
+      setState(() {
+        displayActivities.removeAt(idx);
+        if (displayActivities.isEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              Navigator.of(context).maybePop();
+            }
+          });
+        } else {
+          if (_currentPageIndex >= displayActivities.length) {
+            _currentPageIndex = displayActivities.length - 1;
+          }
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && _pageController.hasClients) {
+              _pageController.animateToPage(
+                _currentPageIndex,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            }
+          });
+        }
+      });
+    }
+  }
 }
 
-void showDeleteDialog(BuildContext context) {
+void showDeleteDialog(BuildContext context, AktivitasModel aktivitas) {
   showDialog(
     context: context,
-    builder:
-        (_) => ConfirmDialog(
-          iconPath: 'assets/activitycategory/trash-round-tipis.svg',
-          title: 'Hapus Aktivitas',
-          description: 'Yakin nih kamu mau hapus aktivitas?',
-          confirmText: 'Hapus',
-          cancelText: 'Batal',
-          onConfirm: () {
-            print('Aktivitas dihapus!');
-          },
-        ),
+    builder: (_) => ConfirmDialog(
+      iconPath: 'assets/activitycategory/trash-round-tipis.svg',
+      title: 'Hapus Aktivitas',
+      description: 'Yakin nih kamu mau hapus aktivitas?',
+      confirmText: 'Hapus',
+      cancelText: 'Batal',
+      onConfirm: () async {
+        Navigator.of(context).pop(); // Tutup dialog dulu
+        
+        // Get state reference
+        final state = context.findAncestorStateOfType<_ActivityDetailListPageState>();
+        if (state == null) return;
+        
+        try {
+          // Delete from database using silent method first
+          final aktivitasService = Provider.of<AktivitasService>(context, listen: false);
+          await aktivitasService.deleteAktivitasSilent(aktivitas.id!);
+          
+          // Update local state after successful database deletion
+          state._removeActivityAndSlide(aktivitas);
+          
+          // Show success message
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Aktivitas berhasil dihapus'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+          
+          // Manually notify listeners after local state is stable
+          aktivitasService.notifyListenersManually();
+          
+        } catch (e) {
+          // If deletion fails, show error message
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Gagal menghapus aktivitas: ${e.toString()}'),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      },
+    ),
   );
 }

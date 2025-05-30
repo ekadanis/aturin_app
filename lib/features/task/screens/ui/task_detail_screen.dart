@@ -34,12 +34,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.lightBackgroundColor,
-      appBar: AppBar(
+      backgroundColor: AppTheme.lightBackgroundColor,      appBar: AppBar(
         backgroundColor: AppTheme.lightBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppTheme.lightTextColor),
+          icon: const Icon(Icons.arrow_back, color: AppTheme.lightTextColor),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -49,14 +48,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        centerTitle: true,
+        centerTitle: false,
         actions: [
           IconButton(
             icon: SvgPicture.asset(
               'assets/icons/edit.svg', // Ganti dengan path asset yang kamu siapkan
               width: 20, // Sesuaikan ukuran ikon
               height: 20,
-              color: Colors.black, 
+              color: Colors.black,
             ),
             onPressed: () async {
               final result = await Navigator.push(
@@ -87,30 +86,36 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           children: [
             _buildDetailField('Nama Tugas', _task.title),
             const SizedBox(height: 16),
-            _buildDetailField('Deskripsi', (_task.description != null && _task.description!.isNotEmpty)
-                ? _task.description!
-                : 'Tidak ada deskripsi'),
+            _buildDetailField(
+              'Deskripsi',
+              (_task.description != null && _task.description!.isNotEmpty)
+                  ? _task.description!
+                  : 'Tidak ada deskripsi',
+            ),
             const SizedBox(height: 16),
             _buildDetailField(
               'Kategori Tugas',
               _getCategoryName(_task.category),
             ),
             const SizedBox(height: 16),
-              _buildDetailField(
-                'Estimasi Pengerjaan(Jam)',
-                _formatDurationToHourDotMinute(_task.estimatedDuration),
-              ),
+            _buildDetailField(
+              'Estimasi Pengerjaan(Jam)',
+              _formatDurationToHourDotMinute(_task.estimatedDuration),
+            ),
             const SizedBox(height: 16),
             _buildDetailField('Deadline', _formatDateTime(_task.deadline)),
-            const SizedBox(height: 16),            _buildDetailField(
+            const SizedBox(height: 16),
+            _buildDetailField(
               'Pengingat',
               _task.alarm != null
                   ? _formatDateTime(_task.alarm!.alarmDateTime)
                   : 'Tidak diatur',
             ),
-            const SizedBox(height: 16),            _buildDetailField(
+            const SizedBox(height: 16),
+            _buildDetailField(
               'Diselesaikan pada',
-              _task.taskStatus == TaskDatabaseStatus.selesai && _task.completedAt != null
+              _task.taskStatus == TaskDatabaseStatus.selesai &&
+                      _task.completedAt != null
                   ? _formatDateTime(_task.completedAt!)
                   : 'Belum diselesaikan',
             ),
@@ -186,13 +191,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
   }
 
-
   String _formatDurationToHourDotMinute(Duration duration) {
-  final hours = duration.inHours;
-  final minutes = duration.inMinutes % 60;
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes % 60;
 
-  final minutesStr = minutes.toString().padLeft(2, '0');
-  return '$hours.$minutesStr';
-}
-
+    final minutesStr = minutes.toString().padLeft(2, '0');
+    return '$hours.$minutesStr';
+  }
 }

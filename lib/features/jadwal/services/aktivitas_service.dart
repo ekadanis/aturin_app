@@ -90,7 +90,9 @@ class AktivitasService extends ChangeNotifier {
       return AktivitasModel.fromMap(row);
     }
     return null;
-  }  /// Add a new aktivitas dengan alarm yang benar-benar tersimpan di database
+  }
+
+  /// Add a new aktivitas dengan alarm yang benar-benar tersimpan di database
   Future<int> addAktivitas(AktivitasModel aktivitas, DateTime? pickedAlarmDateTime) async {
     final slug = 'aktivitas-' + aktivitas.activityTitle
         .toLowerCase()
@@ -99,7 +101,8 @@ class AktivitasService extends ChangeNotifier {
 
     if (!_isValidTiming(aktivitas)) {
       throw Exception('Waktu mulai harus sebelum waktu selesai');
-    }    debugPrint('DEBUG addAktivitas: Starting - pickedAlarmDateTime: $pickedAlarmDateTime');
+    }
+    debugPrint('DEBUG addAktivitas: Starting - pickedAlarmDateTime: $pickedAlarmDateTime');
     debugPrint('DEBUG addAktivitas: Aktivitas title: ${aktivitas.activityTitle}');
     
     int? alarmId;
@@ -151,7 +154,9 @@ class AktivitasService extends ChangeNotifier {
 
     await fetchAktivitas();
     return id;
-  }  /// Update aktivitas dan alarm di database
+  }
+
+  /// Update aktivitas dan alarm di database
   Future<int> updateAktivitas(AktivitasModel aktivitas, DateTime? pickedAlarmDateTime) async {
     debugPrint('DEBUG updateAktivitas: Starting - ID: ${aktivitas.id}, pickedAlarmDateTime: $pickedAlarmDateTime');
     debugPrint('DEBUG updateAktivitas: Aktivitas title: ${aktivitas.activityTitle}');
@@ -210,7 +215,8 @@ class AktivitasService extends ChangeNotifier {
           alarmDateTime: pickedAlarmDateTime,
           alarmEnabled: true,
           slug: '$slug-alarm',
-        );        final createdAlarm = await alarmDatabase.createAlarm(alarm);
+        );        
+        final createdAlarm = await alarmDatabase.createAlarm(alarm);
         if (createdAlarm != null) {
           alarmId = createdAlarm.id;
           debugPrint('DEBUG updateAktivitas: ✅ New alarm berhasil dibuat di database dengan ID: $alarmId');
@@ -251,7 +257,7 @@ class AktivitasService extends ChangeNotifier {
         debugPrint('DEBUG updateAktivitas: No existing alarm to remove');
       }
     }
-      final aktivitasWithTimestamp = aktivitas.copyWith(
+    final aktivitasWithTimestamp = aktivitas.copyWith(
       alarmId: alarmId,
       slug: slug,
       updatedAt: DateTime.now(),
@@ -262,6 +268,7 @@ class AktivitasService extends ChangeNotifier {
     await fetchAktivitas();
     return result;
   }
+
   /// Delete an aktivitas dengan penghapusan alarm yang benar
   Future<int> deleteAktivitas(int? id) async {
     if (id == null) {
@@ -301,6 +308,50 @@ class AktivitasService extends ChangeNotifier {
     }
   }
 
+  /// Delete an aktivitas without triggering notifyListeners (for local state management)
+  Future<int> deleteAktivitasSilent(int? id) async {
+    if (id == null) {
+      debugPrint('Gagal menghapus: ID aktivitas adalah null');
+      return 0;
+    }
+
+    try {
+      // Get aktivitas to check for alarm
+      final aktivitas = await getAktivitasById(id);
+      
+      // Cancel and delete alarm if exists
+      if (aktivitas?.alarmId != null) {
+        try {
+          // Cancel system alarm first
+          await alarmService.cancelAlarm(aktivitas!.alarmId!);
+          // Delete from alarm database
+          await alarmDatabase.deleteAlarm(aktivitas.alarmId!);
+          debugPrint('Alarm berhasil dihapus untuk aktivitas ID: $id');
+        } catch (e) {
+          debugPrint('Error menghapus alarm untuk aktivitas ID $id: $e');
+        }
+      }
+
+      final result = await aktivitasDatabase.delete(id);
+      
+      // Remove from local list
+      _aktivitasList.removeWhere((aktivitas) => aktivitas.id == id);
+      _cachedFilteredAktivitas.clear();
+      
+      // NOTE: notifyListeners() is NOT called here - caller should handle UI updates
+      debugPrint('Aktivitas berhasil dihapus dengan ID: $id (silent mode)');
+      return result;
+    } catch (e) {
+      debugPrint('Error menghapus aktivitas: $e');
+      rethrow;
+    }
+  }
+
+  /// Manually trigger notifyListeners (for use after silent operations)
+  void notifyListenersManually() {
+    notifyListeners();
+  }
+
   /// Delete all aktivitas
   Future<void> deleteAllAktivitas() async {
     await aktivitasDatabase.deleteAll();
@@ -318,6 +369,7 @@ class AktivitasService extends ChangeNotifier {
   Future<int> getCountByUserId(int userId) async {
     return await aktivitasDatabase.getCountByUserId(userId);
   }
+
   /// Validate aktivitas timing
   bool _isValidTiming(AktivitasModel aktivitas) {
     // Allow activities that span across midnight
@@ -332,36 +384,8 @@ class AktivitasService extends ChangeNotifier {
     // If end time is earlier, it means activity spans to next day - this is valid
     // If start and end are the same, it's invalid (0 duration)
     return startMinutes != endMinutes;
-  }  /// Get aktivitas statistics for a user
-  Future<Map<String, dynamic>> getAktivitasStats(int userId) async {
-    final allAktivitas = await getAktivitasByUserId(userId);
-    final todayAktivitas = await getTodayAktivitas(userId);
-    
-    // Count by category
-    final categoryCount = <ActivityCategory, int>{};
-    for (final category in ActivityCategory.values) {
-      categoryCount[category] = allAktivitas
-          .where((aktivitas) => aktivitas.activityCategory == category)
-          .length;
-    }
-
-    // Calculate total duration
-    final totalDuration = allAktivitas.fold<Duration>(
-      Duration.zero,
-      (sum, aktivitas) => sum + aktivitas.estimatedDuration,
-    );
-
-    return {
-      'totalAktivitas': allAktivitas.length,
-      'todayAktivitas': todayAktivitas.length,
-      'categoryCount': categoryCount,
-      'totalDuration': totalDuration,
-      'averageDuration': allAktivitas.isNotEmpty 
-          ? Duration(milliseconds: totalDuration.inMilliseconds ~/ allAktivitas.length)
-          : Duration.zero,
-    };
   }
-
+  
   /// Clear cache
   void clearCache() {
     _cachedFilteredAktivitas.clear();

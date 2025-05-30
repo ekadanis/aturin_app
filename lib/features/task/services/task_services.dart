@@ -94,9 +94,8 @@ class TaskService extends ChangeNotifier {
     final index = _tasks.indexWhere((task) => task.id == id);
     if (index != -1) {
       final task = _tasks[index];
-      final now = DateTime.now();
-
-      final updatedTask = task.copyWith(
+      final now = DateTime.now();      final updatedTask = task.copyWith(
+        userId: task.userId, // Preserve userId
         taskStatus:
             task.isCompleted
                 ? TaskDatabaseStatus.belumSelesai
@@ -119,11 +118,10 @@ class TaskService extends ChangeNotifier {
 
     final index = _tasks.indexWhere((task) => task.id == id);
     if (index != -1) {
-      final task = _tasks[index];
-
-      // If task has alarm, toggle it off by removing alarm relationship
+      final task = _tasks[index];      // If task has alarm, toggle it off by removing alarm relationship
       // If task has no alarm, would need to create one (requires AlarmService integration)
       final updatedTask = task.copyWith(
+        userId: task.userId, // Preserve userId
         alarmId:
             task.alarmId != null
                 ? null
@@ -153,52 +151,141 @@ class TaskService extends ChangeNotifier {
     }
     return null;
   }
-
   // Add a new task
   Future<int> addTask(Task task) async {
-    final id = await taskDatabase.insert(task.toMap());
+    try {
+      // Generate slug from title
+      final slug = _generateSlug(task.title);
+      
+      // Set default userId (assuming user with ID 1 exists from seeder)
+      final userId = task.userId ?? 1;
+      
+      // Set timestamps
+      final now = DateTime.now();
+      
+      int? alarmId;
+      
+      // Handle alarm creation if enabled
+      if (task.alarm != null && task.alarm!.alarmEnabled) {
+        // Insert alarm first to get alarm ID
+        final alarmData = task.alarm!.copyWith(
+          slug: 'task-alarm-${DateTime.now().millisecondsSinceEpoch}',
+          createdAt: now,
+          updatedAt: now,
+        );
+        
+        final db = await taskDatabase.databaseHelper.database;
+        alarmId = await db.insert('alarms', alarmData.toMap());
+        debugPrint('Alarm created with ID: $alarmId');
+      }
+      
+      // Create updated task with all required fields
+      final updatedTask = task.copyWith(
+        userId: userId,
+        slug: slug,
+        alarmId: alarmId,
+        createdAt: now,
+        updatedAt: now,
+      );
+      
+      // Insert task to database
+      final id = await taskDatabase.insert(updatedTask.toMap());
+      debugPrint('Task created with ID: $id');
+      final finalTask = updatedTask.copyWith(id: id);
+      if (finalTask.isAlarmEnabled && finalTask.alarmDateTime != null) {
+        await alarmService.setAlarm(
+          id,
+          finalTask.alarmDateTime!,
+          'Tugas: ${finalTask.title}',
+          'Deadline: ${finalTask.deadline.toString()}',
+        );
+      }
 
-    final updatedTask = task.copyWith(id: id);
-    // Set alarm if enabled
-    if (updatedTask.isAlarmEnabled && updatedTask.alarmDateTime != null) {
-      await alarmService.setAlarmForTask(updatedTask);
+      await fetchTasks();
+      return id;
+    } catch (e) {
+      debugPrint('Error adding task: $e');
+      rethrow;
     }
-
-    await fetchTasks();
-    return id;
   }
-
-  // Update an existing task
+  
+  // Generate slug from title
+  String _generateSlug(String title) {
+    return 'tugas-' + title
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9 ]'), '')
+        .replaceAll(' ', '-')
+        .replaceAll(RegExp(r'-+'), '-') // Replace multiple dashes with single dash
+        .replaceAll(RegExp(r'^-|-$'), ''); // Remove leading/trailing dashes
+  }  // Update an existing task
   Future<int> updateTask(Task task) async {
-    // Validasi alarm sebelum update
-    Task updatedTask = task;
+    try {
+      debugPrint('DEBUG: updateTask called with task.userId = ${task.userId}');
+      
+      // Validasi alarm sebelum update
+      Task updatedTask = task;
 
-    // Jika task memiliki alarm, validasi deadline dan waktu alarm
-    if (task.alarm != null && task.alarm!.alarmEnabled) {
-      // Cek apakah deadline valid (minimal 1 jam dari sekarang)
-      if (!isDeadlineValid(task.deadline)) {
-        // Jika tidak valid, nonaktifkan alarm dengan menghapus relasi alarm
-        updatedTask = task.copyWith(alarmId: null, alarm: null);
-        debugPrint('Alarm dinonaktifkan karena deadline terlalu dekat');
+      // Generate slug if title changed or slug is missing
+      final slug = task.slug ?? _generateSlug(task.title);
+      
+      // Set timestamps
+      final now = DateTime.now();// Jika task memiliki alarm, validasi deadline dan waktu alarm
+      if (task.alarm != null && task.alarm!.alarmEnabled) {
+        // Cek apakah deadline valid (minimal 1 jam dari sekarang)
+        if (!isDeadlineValid(task.deadline)) {
+          // Jika tidak valid, nonaktifkan alarm dengan menghapus relasi alarm
+          updatedTask = task.copyWith(
+            userId: task.userId, // Preserve userId
+            alarmId: null, 
+            alarm: null,
+          );
+          debugPrint('Alarm dinonaktifkan karena deadline terlalu dekat');
+        }
+        // Cek apakah alarm setidaknya 1 jam sebelum deadline
+        else if (task.alarm!.alarmDateTime.isAfter(
+          task.deadline.subtract(Duration(hours: 1)),
+        )) {
+          // Jika alarm terlalu dekat dengan deadline, sesuaikan waktunya
+          final safeAlarmTime = task.deadline.subtract(Duration(hours: 1));
+          final updatedAlarm = task.alarm!.copyWith(alarmDateTime: safeAlarmTime);
+          updatedTask = task.copyWith(
+            userId: task.userId, // Preserve userId
+            alarm: updatedAlarm,
+          );
+          debugPrint('Alarm disesuaikan ke 1 jam sebelum deadline');
+        }
+      }      // Update task with slug and timestamp
+      updatedTask = updatedTask.copyWith(
+        userId: task.userId, // Preserve userId
+        slug: slug,
+        updatedAt: now,
+      );
+      
+      debugPrint('DEBUG: Before database update, updatedTask.userId = ${updatedTask.userId}');
+      debugPrint('DEBUG: updatedTask.toMap() = ${updatedTask.toMap()}');
+        final result = await taskDatabase.update(updatedTask.toMap());
+      
+      // Use the original task for alarm management since it has the same ID
+      final hasExistingAlarm = await alarmService.hasAlarm(task.id!);      if (hasExistingAlarm) {
+        await alarmService.cancelAlarm(task.id!);
       }
-      // Cek apakah alarm setidaknya 1 jam sebelum deadline
-      else if (task.alarm!.alarmDateTime.isAfter(
-        task.deadline.subtract(Duration(hours: 1)),
-      )) {
-        // Jika alarm terlalu dekat dengan deadline, sesuaikan waktunya
-        final safeAlarmTime = task.deadline.subtract(Duration(hours: 1));
-        final updatedAlarm = task.alarm!.copyWith(alarmDateTime: safeAlarmTime);
-        updatedTask = task.copyWith(alarm: updatedAlarm);
-        debugPrint('Alarm disesuaikan ke 1 jam sebelum deadline');
+
+      // Set new alarm if enabled
+      if (updatedTask.isAlarmEnabled && updatedTask.alarmDateTime != null) {
+        await alarmService.setAlarm(
+          updatedTask.id!,
+          updatedTask.alarmDateTime!,
+          'Tugas: ${updatedTask.title}',
+          'Deadline: ${updatedTask.deadline.toString()}',
+        );
       }
+
+      await fetchTasks(); // Refresh the task list
+      return result;
+    } catch (e) {
+      debugPrint('Error updating task: $e');
+      rethrow;
     }
-
-    final result = await taskDatabase.update(updatedTask.toMap());
-    // Update alarm status
-    await alarmService.updateAlarmStatus(updatedTask);
-
-    await fetchTasks(); // Refresh the task list
-    return result;
   }
 
   // Delete a task
@@ -208,10 +295,9 @@ class TaskService extends ChangeNotifier {
       return 0;
     }
 
-    try {
-      // Coba hapus alarm terlebih dahulu dengan penanganan error
+    try {      // Coba hapus alarm terlebih dahulu dengan penanganan error
       try {
-        await alarmService.removeAlarmForTask(id);
+        await alarmService.cancelAlarm(id);
         debugPrint('Alarm untuk task $id berhasil dihapus');
       } catch (e) {
         // Jika gagal menghapus alarm, tetap lanjutkan proses penghapusan task
@@ -354,10 +440,10 @@ class TaskService extends ChangeNotifier {
       final task = _tasks[i];
 
       // Check if task is overdue and not completed
-      if (!task.isCompleted && task.deadline.isBefore(DateTime.now())) {
-        // Mark as late if not already
+      if (!task.isCompleted && task.deadline.isBefore(DateTime.now())) {        // Mark as late if not already
         if (task.taskStatus != TaskDatabaseStatus.terlambat) {
           final updatedTask = task.copyWith(
+            userId: task.userId, // Preserve userId
             taskStatus: TaskDatabaseStatus.terlambat,
           );
           await taskDatabase.update(updatedTask.toMap());
@@ -374,10 +460,8 @@ class TaskService extends ChangeNotifier {
   Future<void> disableAllAlarms() async {
     try {
       final activeAlarms = await alarmService.getActiveAlarms();
-      bool changes = false;
-
-      for (var alarm in activeAlarms) {
-        await alarmService.removeAlarmForTask(alarm.id);
+      bool changes = false;      for (var alarm in activeAlarms) {
+        await alarmService.cancelAlarm(alarm.id);
         changes = true;
       }
 
@@ -400,13 +484,16 @@ class TaskService extends ChangeNotifier {
       final tasks = result.map((row) => Task.fromMap(row)).toList();
 
       int count = 0;
-      bool changes = false;
-
-      for (var task in tasks) {
+      bool changes = false;      for (var task in tasks) {
         if (task.isAlarmEnabled &&
             task.alarmDateTime != null &&
             task.alarmDateTime!.isAfter(DateTime.now())) {
-          await alarmService.setAlarmForTask(task);
+          await alarmService.setAlarm(
+            task.id!,
+            task.alarmDateTime!,
+            'Tugas: ${task.title}',
+            'Deadline: ${task.deadline.toString()}',
+          );
           count++;
           changes = true;
         }
