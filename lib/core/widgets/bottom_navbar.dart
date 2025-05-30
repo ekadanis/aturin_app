@@ -218,7 +218,7 @@ class _BottomNavbarState extends State<BottomNavbar>
                       backgroundColor: AppTheme.primaryColor,
                       shape: const CircleBorder(),
                       child: _buildSvgIcon(
-                        'assets/icons/activity.svg',
+                        'assets/activitycategory/chipicon/aktivitas.svg',
                         AppTheme.buttonBackgroundColor,
                       ),
                     ),

@@ -70,15 +70,15 @@ class _TaskCardState extends State<TaskCard> {
       child: Container(
         key: ValueKey(widget.task.id),
         // Memastikan overflow konten dipotong sesuai border
-        margin: EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 4.w),
+        margin: EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 3.w),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.grey.withOpacity(0.35), // Ubah di sini
               blurRadius: 8,
-              offset: Offset(0, 0.4.h),
+              offset: Offset(0, 0),
             ),
           ],
         ),
@@ -92,12 +92,12 @@ class _TaskCardState extends State<TaskCard> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(width: 4.w),
+                    SizedBox(width: 6.w),
 
                     // checbox
                     if (widget.showCheckbox)
                       Padding(
-                        padding: EdgeInsets.only(top: 3.5.h),
+                        padding: EdgeInsets.only(top: 4.h, bottom: 4.h),
                         child: GestureDetector(
                           onTap: _handleToggleCompletion,
                           child: Container(
@@ -131,7 +131,7 @@ class _TaskCardState extends State<TaskCard> {
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.symmetric(
-                          horizontal: 2.w,
+                          horizontal: 4.w,
                           vertical: 1.5.h,
                         ),
                         child: Column(
@@ -172,13 +172,12 @@ class _TaskCardState extends State<TaskCard> {
                                   bgColor: const Color(0xFFDFEAFF),
                                   textColor: AppTheme.primaryColor,
                                 ),
-
                                 SizedBox(width: 1.5.w),
                                 // badge alarm
                                 if (hasAlarmIndicator)
                                   _buildBadge(
                                     icon: SvgPicture.asset(
-                                      'assets/icons/alarm.svg',
+                                      'assets/activitycategory/chipicon/alarm2.svg',
                                       width: 3.w,
                                       height: 3.w,
                                       colorFilter: const ColorFilter.mode(
@@ -225,7 +224,7 @@ class _TaskCardState extends State<TaskCard> {
                       ),
                     ),
                     Padding(
-                      padding: EdgeInsets.only(top: 3.5.h),
+                      padding: EdgeInsets.only(top: 4.h),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -234,7 +233,7 @@ class _TaskCardState extends State<TaskCard> {
                             Container(
                               padding: EdgeInsets.symmetric(
                                 horizontal: 3.w,
-                                vertical: 0.7.h,
+                                vertical: 1.h,
                               ),
                               decoration: BoxDecoration(
                                 color:
@@ -277,11 +276,11 @@ class _TaskCardState extends State<TaskCard> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                         side: const BorderSide(
-                          color: Color(0xFFFFCE73),
-                          width: 1,
+                          color: Color(0xFF5263F3),
+                          width: 1.5,
                         ),
                       ),
-                      color: const Color(0xFFFFF9F0),
+                      color: const Color.fromARGB(255, 249, 251, 255),
                       onSelected: (value) async {
                         if (value == 'edit') {
                           final result = await Navigator.push(
@@ -326,7 +325,7 @@ class _TaskCardState extends State<TaskCard> {
                                 children: [
                                   Icon(
                                     Icons.edit,
-                                    color: Colors.black,
+                                    color: AppTheme.primaryColor,
                                     size: 5.w,
                                   ),
                                   SizedBox(width: 2.w),
@@ -401,7 +400,7 @@ class _TaskCardState extends State<TaskCard> {
               top: 0,
               bottom: 0,
               child: Container(
-                width: 2.w,
+                width: 3.w,
                 decoration: const BoxDecoration(
                   color: Color(0xFF5263F3),
                   borderRadius: BorderRadius.only(

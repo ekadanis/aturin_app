@@ -44,7 +44,6 @@ class _HomePageState extends State<HomePage> {
     return PopScope(
       canPop: true,
       child: Scaffold(
-        backgroundColor: AppTheme.lightBackgroundColor,
         appBar: GreetingHeader(),
         // Mengaktifkan extendBody agar body dapat memperluas hingga di bawah bottom navigation bar
         extendBody: true,
@@ -74,7 +73,7 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         _buildSwitcherButton(
                           TaskViewType.aktivitas,
-                          'Aktifitas',
+                          'Aktivitas',
                         ),
                         const SizedBox(width: 8),
                         _buildSwitcherButton(TaskViewType.tugas, 'Tugas'),
@@ -86,7 +85,7 @@ class _HomePageState extends State<HomePage> {
                           items.isEmpty
                               ? const Center(child: EmptyTask())
                               : ListView.builder(
-                                padding: EdgeInsets.zero,
+                                padding: EdgeInsets.all(6),
                                 itemCount: items.length + 1,
                                 itemBuilder: (context, index) {
                                   if (index == items.length) {
@@ -205,7 +204,8 @@ class _HomePageState extends State<HomePage> {
     return GestureDetector(
       onTap: () => setState(() => _selectedView = type),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+        height: 50,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: isSelected ? AppTheme.primaryColor : Color(0xFFDCE8F5),
           borderRadius: BorderRadius.circular(10),

@@ -69,7 +69,7 @@ class _AktivitasPageState extends State<AktivitasPage> {
                     Text(
                       'Aktivitas',
                       style: GoogleFonts.plusJakartaSans(
-                        fontSize: 28,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: AppTheme.lightTextColor,
                       ),
