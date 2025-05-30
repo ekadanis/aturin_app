@@ -28,8 +28,7 @@ class _AktivitasPageState extends State<AktivitasPage> {
   String selectedCategory = 'Semua';
   late DateTime selectedDate;
   late DateTime focusedDate;
-  CalendarFormat calendarFormat = CalendarFormat.week;
-  @override
+  CalendarFormat calendarFormat = CalendarFormat.week;  @override
   void initState() {
     super.initState();
     final now = DateTime.now();
@@ -37,9 +36,17 @@ class _AktivitasPageState extends State<AktivitasPage> {
     focusedDate = DateTime(now.year, now.month, now.day);
     // Fetch both activities and tasks data after hot reload
     Future.microtask(() {
-      Provider.of<AktivitasService>(context, listen: false).fetchAktivitas();
-      Provider.of<TaskService>(context, listen: false).fetchTasks();
+      _refreshData();
     });
+  }
+
+  Future<void> _refreshData() async {
+    try {
+      await Provider.of<AktivitasService>(context, listen: false).fetchAktivitas();
+      await Provider.of<TaskService>(context, listen: false).fetchTasks();
+    } catch (e) {
+      debugPrint('Error refreshing data: $e');
+    }
   }
 
   @override
@@ -118,6 +125,13 @@ class _AktivitasPageState extends State<AktivitasPage> {
               Expanded(
                 child: Consumer2<AktivitasService, TaskService>(
                   builder: (context, aktivitasService, taskService, _) {
+                    // Show loading indicator if data is being fetched
+                    if (aktivitasService.aktivitasList.isEmpty && taskService.tasks.isEmpty) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+
                     final aktivitasList = aktivitasService.aktivitasList.where((a) {
                       final isSameDate = a.activityDate.year == selectedDate.year &&
                           a.activityDate.month == selectedDate.month &&
@@ -134,23 +148,23 @@ class _AktivitasPageState extends State<AktivitasPage> {
                       final isCategory = selectedCategory == 'Semua' ||
                           t.category == selectedCategory;
                       return isSameDate && isCategory;
-                    }).toList();
-
-                    return InfiniteScheduleListWidget(
-                      tasks: tasksList,
-                      schedules: aktivitasList,
-                      selectedCategory: selectedCategory,
-                      selectedDate: selectedDate,
-                      onDateChanged: (date) {
-                        setState(() {
-                          selectedDate = date;
-                        });
-                      },
-                      onEditSchedule: (aktivitas) => _editActivity(aktivitas),
-                      onDeleteSchedule: (aktivitas) => _deleteActivity(aktivitas),
-                      onEditTask: (task) => _editTask(task),
-                      onDeleteTask: (task) => _deleteTask(task),
-                      onToggleTaskCompletion: (task) => _toggleTaskCompletion(task),
+                    }).toList();                    return RefreshIndicator(
+                      onRefresh: _refreshData,
+                      child: InfiniteScheduleListWidget(
+                        tasks: tasksList,
+                        schedules: aktivitasList,
+                        selectedCategory: selectedCategory,
+                        selectedDate: selectedDate,
+                        onDateChanged: (date) {
+                          setState(() {
+                            selectedDate = date;
+                          });                        },
+                        onEditSchedule: (aktivitas) => _editActivity(aktivitas),
+                        onDeleteSchedule: (aktivitas) => _deleteActivity(aktivitas),
+                        onEditTask: (task) => _editTask(task),
+                        onDeleteTask: (task) => _deleteTask(task),
+                        onToggleTaskCompletion: (task) => _toggleTaskCompletion(task),
+                      ),
                     );
                   },
                 ),

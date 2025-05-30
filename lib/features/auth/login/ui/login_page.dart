@@ -1,16 +1,16 @@
 import 'package:aturin_app/core/theme/app_theme.dart';
-import 'package:aturin_app/core/services/api/auth/auth_service.dart';
 import 'package:aturin_app/features/auth/login/widgets/login_divider_widget.dart';
 import 'package:aturin_app/features/auth/login/widgets/login_form_widget.dart';
 import 'package:aturin_app/features/auth/login/widgets/login_header_widget.dart';
 import 'package:aturin_app/features/auth/login/widgets/register_link_widget.dart';
+import 'package:aturin_app/routers/app_router.dart';
+import 'package:aturin_app/core/services/api/auth/auth_service.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:sizer/sizer.dart';
-import 'package:aturin_app/routers/app_router.dart';
 
 @RoutePage()
 class LoginPage extends StatefulWidget {
@@ -30,6 +30,7 @@ class _LoginPageState extends State<LoginPage> {
     passwordController.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,16 +51,11 @@ class _LoginPageState extends State<LoginPage> {
                 
                 SizedBox(height: 5.h),
                 
-                // Login form with loading state from AuthService
-                Consumer<AuthService>(
-                  builder: (context, authService, child) {
-                    return LoginFormWidget(
-                      emailController: emailController,
-                      passwordController: passwordController,
-                      onLogin: _handleLogin,
-                      isLoading: authService.isLoading,
-                    );
-                  },
+                // Login form
+                LoginFormWidget(
+                  emailController: emailController,
+                  passwordController: passwordController,
+                  onLogin: _handleLogin,
                 ),
                 
                 SizedBox(height: 3.h),
@@ -88,41 +84,37 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
-  }
-  Future<void> _handleLogin() async {
-    if (!_validateInputs()) return;
-    
+  }  Future<void> _handleLogin() async {
+    if (!_validateInputs()) {
+      return;
+    }
+
     final authService = Provider.of<AuthService>(context, listen: false);
     
-    final result = await authService.login(
-      email: emailController.text.trim(),
-      password: passwordController.text.trim(),
-    );
-    
-    if (mounted) {
-      if (result.isSuccess) {        // Save user data to SharedPreferences
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isLoggedIn', true);
-        await prefs.setInt('userId', result.user!.id ?? 0);
-        await prefs.setString('userName', result.user!.name);
-        await prefs.setString('userEmail', result.user!.email);
-        if (result.token != null) {
-          await prefs.setString('userToken', result.token!);
-        }
-        await prefs.setString('loginTime', DateTime.now().toIso8601String());
+    try {
+      // Call the API login service
+      final result = await authService.login(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      if (result.isSuccess && mounted) {
+        // Save login data
+        await _saveLoginData(result);
         
-        // Navigate to home using router
-        context.router.pushAndPopUntil(
-          const HomeRoute(),
-          predicate: (_) => false,
-        );
+        // Navigate to home page using AutoRouter
+        context.router.replaceAll([const HomeRoute()]);
+        
+        // Show success message
+        _showSnackBar(result.message, isSuccess: true);
       } else {
+        // Show error message
         _showSnackBar(result.message);
       }
+    } catch (e) {
+      _showSnackBar('Terjadi kesalahan: $e');
     }
-  }
-
-  void _navigateToRegister() {
+  }  void _navigateToRegister() {
     context.router.push(const RegisterRoute());
   }
   bool _validateInputs() {
@@ -153,7 +145,7 @@ class _LoginPageState extends State<LoginPage> {
 
     return true;
   }
-  void _showSnackBar(String message) {
+  void _showSnackBar(String message, {bool isSuccess = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -163,12 +155,24 @@ class _LoginPageState extends State<LoginPage> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: AppTheme.lightErrorColor,
+        backgroundColor: isSuccess ? Colors.green : AppTheme.lightErrorColor,
         behavior: SnackBarBehavior.floating,
         margin: EdgeInsets.all(4.w),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         duration: const Duration(seconds: 3),
       ),
     );
+  }  Future<void> _saveLoginData(AuthResult result) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', true);
+    if (result.user != null) {
+      await prefs.setString('userEmail', result.user!.email);
+      await prefs.setString('userName', result.user!.name);
+      await prefs.setString('userId', result.user!.id.toString());
+    }
+    if (result.token != null) {
+      await prefs.setString('token', result.token!);
+    }
+    await prefs.setString('loginTime', DateTime.now().toIso8601String());
   }
 }

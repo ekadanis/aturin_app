@@ -22,7 +22,8 @@ enum ActivityCategory {
       case ActivityCategory.olahraga:
         return 'Olahraga';
       case ActivityCategory.sosial:
-        return 'Sosial';      case ActivityCategory.spiritual:
+        return 'Sosial';
+      case ActivityCategory.spiritual:
         return 'Spiritual';
       case ActivityCategory.pribadi:
         return 'Pribadi';
@@ -30,10 +31,27 @@ enum ActivityCategory {
         return 'Istirahat';
     }
   }
-}
-
-extension ActivityCategoryExtension on ActivityCategory {
-  String get name => displayName;
+    // For API compatibility - returns lowercase enum name
+  String get apiName {
+    switch (this) {
+      case ActivityCategory.akademik:
+        return 'akademik';
+      case ActivityCategory.hiburan:
+        return 'hiburan';
+      case ActivityCategory.pekerjaan:
+        return 'pekerjaan';
+      case ActivityCategory.olahraga:
+        return 'olahraga';
+      case ActivityCategory.sosial:
+        return 'sosial';
+      case ActivityCategory.spiritual:
+        return 'spiritual';
+      case ActivityCategory.pribadi:
+        return 'pribadi';
+      case ActivityCategory.istirahat:
+        return 'istirahat';
+    }
+  }
 }
 
 class AktivitasModel {
@@ -66,53 +84,93 @@ class AktivitasModel {
     this.updatedAt,
     this.user,
     this.alarm,
-  });
-
-  factory AktivitasModel.fromJson(Map<String, dynamic> json) {
+  });  factory AktivitasModel.fromJson(Map<String, dynamic> json) {
+    // Debug logging
+    print('DEBUG: Parsing JSON data: $json');
+    
     return AktivitasModel(
-      id: json['id'],
-      userId: json['user_id'],
-      activityTitle: json['activity_title'],
+      id: json['id'] is String ? int.tryParse(json['id']) : json['id'],
+      userId: json['user_id'] is String ? int.tryParse(json['user_id']) : json['user_id'],
+      activityTitle: json['activity_title'] ?? '',
       activityDate: DateTime.parse(json['activity_date']),
-      activityStartTime: DateTime.parse(json['activity_start_time']),
-      activityCompleteTime: DateTime.parse(json['activity_complete_time']),
-      activityCategory: ActivityCategory.values.firstWhere(
-        (category) => category.displayName == json['activity_category'],
-      ),
-      alarmId: json['alarm_id'],
+      activityStartTime: _parseDateTime(json['activity_date'], json['activity_start_time']),
+      activityCompleteTime: _parseDateTime(json['activity_date'], json['activity_complete_time']),
+      activityCategory: _parseActivityCategory(json['activity_category']),
+      alarmId: json['alarm_id'] is String ? int.tryParse(json['alarm_id']) : json['alarm_id'],
       slug: json['slug'],
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
       updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at']) : null,
       alarm: json['alarm'] != null ? AlarmModel.fromJson(json['alarm']) : null,
     );
   }
+  // Helper method to parse datetime from date and time strings
+  static DateTime _parseDateTime(String date, String time) {
+    try {
+      // Try to parse as full ISO8601 datetime first
+      return DateTime.parse(time);
+    } catch (e) {
+      // If that fails, assume it's H:i format and combine with date
+      try {
+        final timeParts = time.split(':');
+        final hour = int.parse(timeParts[0]);
+        final minute = int.parse(timeParts[1]);
+        final dateTime = DateTime.parse(date);
+        return DateTime(dateTime.year, dateTime.month, dateTime.day, hour, minute);
+      } catch (e2) {
+        throw FormatException('Invalid date format: $time');
+      }
+    }
+  }
 
-  Map<String, dynamic> toJson() {
+  // Helper method to parse activity category safely
+  static ActivityCategory _parseActivityCategory(dynamic categoryValue) {
+    if (categoryValue == null) return ActivityCategory.akademik;
+    
+    final categoryString = categoryValue.toString().toLowerCase();
+    print('DEBUG: Parsing category: "$categoryString"');
+    
+    // Try to match by apiName first (lowercase enum name)
+    for (final category in ActivityCategory.values) {
+      if (category.apiName == categoryString) {
+        print('DEBUG: Found category by apiName: ${category.apiName}');
+        return category;
+      }
+    }
+    
+    // Try to match by displayName
+    for (final category in ActivityCategory.values) {
+      if (category.displayName.toLowerCase() == categoryString) {
+        print('DEBUG: Found category by displayName: ${category.displayName}');
+        return category;
+      }
+    }
+    
+    print('DEBUG: Category not found, using default: akademik');
+    return ActivityCategory.akademik;
+  }Map<String, dynamic> toJson() {
     return {
       'id': id,
       'user_id': userId,
       'activity_title': activityTitle,
       'activity_date': activityDate.toIso8601String().split('T')[0],
-      'activity_start_time': activityStartTime.toIso8601String(),
-      'activity_complete_time': activityCompleteTime.toIso8601String(),
-      'activity_category': activityCategory.displayName,
+      'activity_start_time': '${activityStartTime.hour.toString().padLeft(2, '0')}:${activityStartTime.minute.toString().padLeft(2, '0')}',
+      'activity_complete_time': '${activityCompleteTime.hour.toString().padLeft(2, '0')}:${activityCompleteTime.minute.toString().padLeft(2, '0')}',
+      'activity_category': activityCategory.apiName,
       'alarm_id': alarmId,
       'slug': slug,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
       'alarm': alarm?.toJson(),
     };
-  }
-
-  Map<String, dynamic> toMap() {
+  }  Map<String, dynamic> toMap() {
     return {
       'id': id,
       'user_id': userId,
       'activity_title': activityTitle,
       'activity_date': activityDate.toIso8601String().split('T')[0],
-      'activity_start_time': activityStartTime.toIso8601String(),
-      'activity_complete_time': activityCompleteTime.toIso8601String(),
-      'activity_category': activityCategory.displayName,
+      'activity_start_time': '${activityStartTime.hour.toString().padLeft(2, '0')}:${activityStartTime.minute.toString().padLeft(2, '0')}',
+      'activity_complete_time': '${activityCompleteTime.hour.toString().padLeft(2, '0')}:${activityCompleteTime.minute.toString().padLeft(2, '0')}',
+      'activity_category': activityCategory.apiName,
       'alarm_id': alarmId,
       'slug': slug,
       'created_at': createdAt?.toIso8601String(),
@@ -131,14 +189,13 @@ class AktivitasModel {
         createdAt: map['alarm_created_at'] != null ? DateTime.tryParse(map['alarm_created_at']) : null,
         updatedAt: map['alarm_updated_at'] != null ? DateTime.tryParse(map['alarm_updated_at']) : null,
       );
-    }
-    return AktivitasModel(
+    }    return AktivitasModel(
       id: map['id'],
       userId: map['user_id'],
       activityTitle: map['activity_title'] ?? '',
       activityDate: DateTime.parse(map['activity_date']),
-      activityStartTime: DateTime.parse(map['activity_start_time']),
-      activityCompleteTime: DateTime.parse(map['activity_complete_time']),
+      activityStartTime: _parseDateTime(map['activity_date'], map['activity_start_time']),
+      activityCompleteTime: _parseDateTime(map['activity_date'], map['activity_complete_time']),
       activityCategory: ActivityCategory.values.firstWhere(
         (category) => category.displayName == map['activity_category'],
         orElse: () => ActivityCategory.akademik,

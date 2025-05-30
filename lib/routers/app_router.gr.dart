@@ -12,18 +12,72 @@ part of 'app_router.dart';
 
 /// generated route for
 /// [ActivityDetailListPage]
-class ActivityDetailListRoute extends PageRouteInfo<void> {
-  const ActivityDetailListRoute({List<PageRouteInfo>? children})
-    : super(ActivityDetailListRoute.name, initialChildren: children);
+class ActivityDetailListRoute
+    extends PageRouteInfo<ActivityDetailListRouteArgs> {
+  ActivityDetailListRoute({
+    Key? key,
+    List<AktivitasModel>? activities,
+    int? initialIndex,
+    List<PageRouteInfo>? children,
+  }) : super(
+         ActivityDetailListRoute.name,
+         args: ActivityDetailListRouteArgs(
+           key: key,
+           activities: activities,
+           initialIndex: initialIndex,
+         ),
+         initialChildren: children,
+       );
 
   static const String name = 'ActivityDetailListRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const ActivityDetailListPage();
+      final args = data.argsAs<ActivityDetailListRouteArgs>(
+        orElse: () => const ActivityDetailListRouteArgs(),
+      );
+      return ActivityDetailListPage(
+        key: args.key,
+        activities: args.activities,
+        initialIndex: args.initialIndex,
+      );
     },
   );
+}
+
+class ActivityDetailListRouteArgs {
+  const ActivityDetailListRouteArgs({
+    this.key,
+    this.activities,
+    this.initialIndex,
+  });
+
+  final Key? key;
+
+  final List<AktivitasModel>? activities;
+
+  final int? initialIndex;
+
+  @override
+  String toString() {
+    return 'ActivityDetailListRouteArgs{key: $key, activities: $activities, initialIndex: $initialIndex}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! ActivityDetailListRouteArgs) return false;
+    return key == other.key &&
+        const ListEquality().equals(activities, other.activities) &&
+        initialIndex == other.initialIndex;
+  }
+
+  @override
+  int get hashCode =>
+      key.hashCode ^
+      const ListEquality().hash(activities) ^
+      initialIndex.hashCode;
 }
 
 /// generated route for
@@ -331,22 +385,6 @@ class RegisterRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return const RegisterPage();
-    },
-  );
-}
-
-/// generated route for
-/// [SchedulePage]
-class ScheduleRoute extends PageRouteInfo<void> {
-  const ScheduleRoute({List<PageRouteInfo>? children})
-    : super(ScheduleRoute.name, initialChildren: children);
-
-  static const String name = 'ScheduleRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const SchedulePage();
     },
   );
 }

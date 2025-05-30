@@ -4,10 +4,7 @@ class ValidationResult {
   final bool isValid;
   final Map<String, String?> errors;
 
-  ValidationResult({
-    required this.isValid,
-    required this.errors,
-  });
+  ValidationResult({required this.isValid, required this.errors});
 }
 
 class ScheduleValidator {
@@ -53,23 +50,20 @@ class ScheduleValidator {
       errors['category'] = categoryError;
     }
 
-    return ValidationResult(
-      isValid: errors.isEmpty,
-      errors: errors,
-    );
+    return ValidationResult(isValid: errors.isEmpty, errors: errors);
   }
 
   String? _validateTitle(String title) {
     final trimmedTitle = title.trim();
-    
+
     if (trimmedTitle.isEmpty) {
       return 'Nama aktivitas harus diisi';
     }
-    
+
     if (trimmedTitle.length > maxTitleLength) {
       return 'Nama aktivitas maksimal $maxTitleLength karakter';
     }
-    
+
     return null;
   }
 
@@ -86,16 +80,17 @@ class ScheduleValidator {
     }
     return null;
   }
+
   String? _validateTimeSequence(TimeOfDay startTime, TimeOfDay endTime) {
     final startMinutes = startTime.hour * 60 + startTime.minute;
     final endMinutes = endTime.hour * 60 + endTime.minute;
-    
+
     // Allow activities that span across midnight (e.g., 23:00 to 01:00)
     // Only invalid if both times are exactly the same
     if (startMinutes == endMinutes) {
       return 'Waktu mulai dan selesai tidak boleh sama';
     }
-    
+
     return null;
   }
 
@@ -105,6 +100,7 @@ class ScheduleValidator {
     }
     return null;
   }
+
   // Additional validation methods for specific use cases
   bool isValidTimeRange(TimeOfDay startTime, TimeOfDay endTime) {
     final startMinutes = startTime.hour * 60 + startTime.minute;

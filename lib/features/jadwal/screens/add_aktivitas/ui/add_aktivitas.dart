@@ -64,9 +64,7 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
         // Jika kategori tidak ditemukan, biarkan selectedCategory null
         selectedCategory = null;
         print('DEBUG: Category not found, set to null');
-      }
-
-      // Load alarm data from database if alarmId exists
+      }      // Load alarm data via API if alarmId exists
       if (aktivitas.alarmId != null) {
         isAlarmEnabled = true;
         await _loadAlarmData(aktivitas.alarmId!);
@@ -80,20 +78,20 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
       print('DEBUG: New activity, selectedCategory set to default: ${selectedCategory?.name}');
     }
   }
-
   Future<void> _loadAlarmData(int alarmId) async {
     try {
       final aktivitasService = Provider.of<AktivitasService>(context, listen: false);
-      final alarmData = await aktivitasService.alarmDatabase.getAlarmById(alarmId);
+      // Use API service instead of direct database access
+      final alarmData = await aktivitasService.alarmApiService.getAlarmById(alarmId);
       
       if (alarmData != null && mounted) {
         setState(() {
           alarmDateTime = alarmData.alarmDateTime;
         });
-        print('DEBUG: Loaded alarm data - alarmDateTime: ${alarmData.alarmDateTime}');
+        print('DEBUG: Loaded alarm data via API - alarmDateTime: ${alarmData.alarmDateTime}');
       }
     } catch (e) {
-      print('DEBUG: Error loading alarm data: $e');
+      print('DEBUG: Error loading alarm data via API: $e');
     }
   }
   String _getCategoryName(ActivityCategory category) {

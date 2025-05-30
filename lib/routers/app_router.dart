@@ -1,6 +1,7 @@
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:collection/collection.dart';
 import 'package:aturin_app/features/home/ui/page/home_page.dart';
 import 'package:aturin_app/features/profile/ui/profile_page.dart';
 import 'package:aturin_app/features/profile/ui/profile_edit_page.dart';
@@ -20,7 +21,7 @@ import 'package:aturin_app/features/jadwal/screens/add_aktivitas/ui/add_aktivita
 import 'package:aturin_app/features/jadwal/screens/detailactivity/ui/activity_detail_list.dart';
 import 'package:aturin_app/features/auth/login/ui/login_page.dart';
 import 'package:aturin_app/features/auth/register/ui/register_page.dart';
-import 'package:aturin_app/features/schedule/schedule.dart';
+
 
 part 'app_router.gr.dart';
 
@@ -99,8 +100,9 @@ class AppRouter extends RootStackRouter {
       page: ActivityDetailListRoute.page,
       transitionsBuilder: (_, __, ___, child) => child,
       duration: Duration.zero,
-    ),     CustomRoute(
-      path: '/schedule/task-detail',
+    ),     
+    CustomRoute(
+      path: '/aktivitas/task-detail',
       page: TaskDetailListRoute.page,
       transitionsBuilder: (_, __, ___, child) => child,
       duration: Duration.zero,
