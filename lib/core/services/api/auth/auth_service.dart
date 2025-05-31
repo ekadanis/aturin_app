@@ -332,11 +332,10 @@ class AuthService extends ChangeNotifier {
       return AuthResult.failure(errorMessage);
     }
   }
-
   Future<AuthResult> logout() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('userToken');
+      final token = prefs.getString('token');
 
       if (token == null) {
         return AuthResult.failure('Token tidak ditemukan.');
@@ -348,10 +347,8 @@ class AuthService extends ChangeNotifier {
           'Accept': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      );
-
-      if (response.statusCode == 200) {
-        await prefs.remove('userToken');
+      );      if (response.statusCode == 200) {
+        await prefs.remove('token');
         return AuthResult.success(
           user: null,
           token: null,

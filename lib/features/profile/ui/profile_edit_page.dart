@@ -142,41 +142,41 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   }
   Future<void> _saveChanges({bool shouldPop = true}) async {
     if (_usernameController.text.isNotEmpty) {
-      try {
-        final updatedUser = await _profileService.editProfile(
-          _usernameController.text,
-          _selectedAvatar,
-        );
+    try {
+      final updatedUser = await _profileService.editProfile(
+        _usernameController.text,
+        _selectedAvatar,
+      );
 
-        if (updatedUser != null) {
-          showCustomTopSnackbar(
-            context: context,
-            message: 'Berhasil Mengedit Profile',
-          );
-
-          if (shouldPop) {
-            Navigator.pop(context, true);
-          }
-        } else {
-          showCustomTopSnackbar(
-            context: context,
-            message: 'Gagal memperbarui profil',
-            isError: true,
-          );
-        }
-      } catch (e) {
+      if (updatedUser != null) {
         showCustomTopSnackbar(
           context: context,
-          message: 'Error: $e',
+          message: 'Berhasil Mengedit Profile',
+        );
+
+        if (shouldPop) {
+          Navigator.pop(context, true);
+        }
+      } else {
+        showCustomTopSnackbar(
+          context: context,
+          message: 'Gagal memperbarui profil',
           isError: true,
         );
       }
-    } else {
+    } catch (e) {
       showCustomTopSnackbar(
         context: context,
-        message: 'Nama tidak boleh kosong',
+        message: 'Error: $e',
         isError: true,
       );
     }
+  } else {
+    showCustomTopSnackbar(
+      context: context,
+      message: 'Nama tidak boleh kosong',
+      isError: true,
+    );
+  }
   }
 }

@@ -24,13 +24,12 @@ class ProfileService extends ChangeNotifier {
     _errorMessage = error;
     notifyListeners();
   }
-
   Future<User?> me() async {
     try {
       _setLoading(true);
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(
-        'userToken',
+        'token',
       ); // Ambil token yang disimpan saat login
 
       if (token == null) {
@@ -92,13 +91,12 @@ class ProfileService extends ChangeNotifier {
       _setLoading(false);
     }
   }
-
   Future<User?> editProfile(String name, String avatar) async {
     try {
       _setLoading(true);
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(
-        'userToken',
+        'token',
       ); // Ambil token yang disimpan saat login
 
       if (token == null) {
@@ -156,22 +154,23 @@ class ProfileService extends ChangeNotifier {
     } finally {
       _setLoading(false);
     }
-  }
-
-  Future<User?> getBannerProfile() async {
+  }  Future<User?> getBannerProfile() async {
     try {
       _setLoading(true);
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(
-        'userToken',
+        'token',
       ); // Ambil token yang disimpan saat login
 
+      debugPrint('getBannerProfile: Checking token...');
       if (token == null) {
+        debugPrint('getBannerProfile: Token tidak ditemukan.');
         _setError("Token tidak ditemukan.");
         _setLoading(false);
         return null;
       }
 
+      debugPrint('getBannerProfile: Token found, making API call...');
       final response = await http.get(
         Uri.parse('$baseUrl/profile/banner'),
         headers: {
@@ -181,8 +180,8 @@ class ProfileService extends ChangeNotifier {
         },
       );
 
-      debugPrint('Profile response status: ${response.statusCode}');
-      debugPrint('Profile response body: ${response.body}');
+      debugPrint('getBannerProfile response status: ${response.statusCode}');
+      debugPrint('getBannerProfile response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -190,6 +189,7 @@ class ProfileService extends ChangeNotifier {
         if (responseData == null ||
             responseData['data'] == null ||
             responseData['data']['user'] == null) {
+          debugPrint('getBannerProfile: Data profil tidak valid dari server');
           _setError('Data profil tidak valid dari server');
           _setLoading(false);
           return null;
@@ -210,14 +210,17 @@ class ProfileService extends ChangeNotifier {
           todayTasks: data['today_tasks'],
         );
 
+        debugPrint('getBannerProfile: User berhasil dibuat: ${user.name}');
         _currentUser = user;
         notifyListeners();
         return user;
       } else {
+        debugPrint('getBannerProfile: Error status ${response.statusCode}');
         _setError("Gagal mengambil profil (Status: ${response.statusCode})");
         return null;
       }
     } catch (e) {
+      debugPrint('getBannerProfile: Exception caught: $e');
       _setError("Terjadi kesalahan: $e");
       return null;
     } finally {

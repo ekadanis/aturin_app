@@ -1,12 +1,9 @@
 import 'package:aturin_app/core/services/api/profile/profile_service.dart';
-import 'package:aturin_app/features/home/services/home_service.dart' as home;
-import 'package:aturin_app/features/profile/database/profile_database.dart';
 import 'package:aturin_app/features/profile/models/user.dart';
 import 'package:aturin_app/features/profile/ui/profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
-import 'package:provider/provider.dart';
 // import 'package:shared_preferences/shared_preferences.dart';
 
 class GreetingHeader extends StatelessWidget implements PreferredSizeWidget {
@@ -36,13 +33,10 @@ class GreetingHeader extends StatelessWidget implements PreferredSizeWidget {
   //     _userFuture = profileService.me();
   //   });
   // }
-
   @override
   Widget build(BuildContext context) {
-    final ProfileDatabase profileDb = ProfileDatabase();
-
     return FutureBuilder<User?>(
-      future: profileDb.getUserById(1),
+      future: _getLoggedInUser(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return PreferredSize(

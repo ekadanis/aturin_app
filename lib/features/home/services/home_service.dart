@@ -204,7 +204,6 @@ class HomeService extends ChangeNotifier {
 
       notifyListeners();
     }
-
   }
 
   Future<void> toggleAlarm(int? id) async {
