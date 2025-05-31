@@ -13,6 +13,7 @@ import 'core/initialization/app_initializer.dart';
 import 'core/database/database_helper.dart';
 import 'routers/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/services/api/task/task_service.dart';
 
 // Membuat instance AppRouter di level global
 final appRouter = AppRouter();
@@ -49,7 +50,7 @@ Future<void> _initializeApp() async {
     final appInitializer = AppInitializer(appRouter);
     await appInitializer.initialize();
 
-     // Tambahkan logika redirect berdasarkan status login
+    // Tambahkan logika redirect berdasarkan status login
     final prefs = await SharedPreferences.getInstance();
     final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
 
@@ -58,11 +59,9 @@ Future<void> _initializeApp() async {
     } else {
       appRouter.replaceAll([const LoginRoute()]);
     }
-    
+
     // Setup alarm manager
     appInitializer.alarmManager.setAppCreator(() => const MyApp());
-
-
   } catch (e) {
     debugPrint('Failed to initialize app: $e');
     throw Exception('App initialization failed: $e');
@@ -81,22 +80,17 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => TaskService()),
         // Provider untuk HomeService (unified service for home page)
-        ChangeNotifierProvider<HomeService>(
-          create: (_) => HomeService(),
-        ),
+        ChangeNotifierProvider<HomeService>(create: (_) => HomeService()),
         // Provider untuk AktivitasService
         ChangeNotifierProvider<AktivitasService>(
           create: (_) => AktivitasService(),
         ),
         // Provider untuk ProfileService
-        ChangeNotifierProvider<ProfileService>(
-          create: (_) => ProfileService(),
-        ),
+        ChangeNotifierProvider<ProfileService>(create: (_) => ProfileService()),
         // Provider untuk AuthService
-        ChangeNotifierProvider<AuthService>(
-          create: (_) => AuthService(),
-        ),
+        ChangeNotifierProvider<AuthService>(create: (_) => AuthService()),
       ],
       child: Sizer(
         builder: (context, orientation, deviceType) {
@@ -146,7 +140,10 @@ class ErrorApp extends StatelessWidget {
                     Text(
                       'Terjadi kesalahan saat memulai aplikasi',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     SizedBox(height: 1.5.h),
                     Text(

@@ -6,6 +6,7 @@ import '../../model/task_model.dart';
 import 'task_card.dart';
 import 'snackbar.dart';
 import 'task_animator.dart';
+import 'package:provider/provider.dart';
 
 class TaskListView extends StatefulWidget {
   final void Function(String)? onShowSuccess;
@@ -25,7 +26,8 @@ class TaskListView extends StatefulWidget {
   State<TaskListView> createState() => _TaskListViewState();
 }
 
-class _TaskListViewState extends State<TaskListView> with TickerProviderStateMixin {
+class _TaskListViewState extends State<TaskListView>
+    with TickerProviderStateMixin {
   late TaskAnimator _animator;
   int? _animatingTaskId;
   bool _isAnimating = false;
@@ -50,9 +52,43 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
       _error = null;
     });
     try {
-      final tasks = await TaskService().getAllTasks();
+      final taskService = Provider.of<TaskService>(context, listen: false);
+      List<Task> filteredTasks = [];
+
+      if (widget.currentFilter == 'Hari Ini') {
+        filteredTasks = await taskService.getTasksToday();
+      } else if (widget.currentFilter == 'Terlambat') {
+        final data = await taskService.getTasksByStatus('terlambat');
+        filteredTasks = data != null && data['tasks'] != null
+            ? List<Task>.from(data['tasks'].map((e) => Task.fromMap(e)))
+            : [];
+      } else if (widget.currentFilter == 'Belum Selesai') {
+        final data = await taskService.getTasksByStatus('belum_selesai');
+        filteredTasks = data != null && data['tasks'] != null
+            ? List<Task>.from(data['tasks'].map((e) => Task.fromMap(e)))
+            : [];
+      } else if (widget.currentFilter == 'Selesai') {
+        final data = await taskService.getTasksByStatus('selesai');
+        filteredTasks = data != null && data['tasks'] != null
+            ? List<Task>.from(data['tasks'].map((e) => Task.fromMap(e)))
+            : [];
+      } else {
+        // Semua
+        await taskService.fetchTasks();
+        filteredTasks = taskService.tasks;
+      }
+
+      // Setelah dapat filteredTasks, urutkan berdasarkan deadline
+      filteredTasks.sort((a, b) {
+        final pa = _taskPriority(a);
+        final pb = _taskPriority(b);
+        if (pa != pb) return pa.compareTo(pb);
+        // Jika prioritas sama, urutkan berdasarkan jam deadline
+        return a.deadline.compareTo(b.deadline);
+      });
+
       setState(() {
-        _tasks = tasks;
+        _tasks = filteredTasks;
         _isLoading = false;
       });
     } catch (e) {
@@ -63,9 +99,24 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
     }
   }
 
+  int _taskPriority(Task t) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final deadline = DateTime(t.deadline.year, t.deadline.month, t.deadline.day);
+
+    if (t.taskStatus == TaskDatabaseStatus.selesai) return 1000; // Paling bawah
+    if (deadline.isBefore(today)) return 900; // Terlambat, setelah semua yang akan datang
+
+    final diff = deadline.difference(today).inDays;
+    return diff; // 0: hari ini, 1: besok, 2: lusa, dst
+  }
+
   @override
-  void didUpdateWidget(TaskListView oldWidget) {
+  void didUpdateWidget(covariant TaskListView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.currentFilter != oldWidget.currentFilter) {
+      _fetchTasks();
+    }
     if (widget.animationStyle != oldWidget.animationStyle) {
       _animator.updateAnimationStyle(widget.animationStyle);
     }
@@ -143,18 +194,38 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
               _animatingTaskId = task.id;
               _isAnimating = true;
             });
-            _animator.prepareTaskAnimation(task, !task.isCompleted);
+            _animator.prepareTaskAnimation(task, task.taskStatus != TaskDatabaseStatus.selesai);
             try {
-              // Toggle completion using updateTask
-              final newStatus = task.isCompleted ? 'belum_selesai' : 'selesai';
-              await TaskService().updateTask(
+              final taskService = Provider.of<TaskService>(context, listen: false);
+              final newStatus = task.taskStatus == TaskDatabaseStatus.selesai
+                  ? 'belum_selesai'
+                  : 'selesai';
+              await taskService.updateTask(
                 slug: task.slug!,
                 status: newStatus,
               );
-              await _fetchTasks();
+              setState(() {
+                final idx = _tasks.indexWhere((t) => t.id == task.id);
+                if (idx != -1) {
+                  _tasks[idx] = _tasks[idx].copyWith(
+                    taskStatus: newStatus == 'selesai'
+                        ? TaskDatabaseStatus.selesai
+                        : TaskDatabaseStatus.belumSelesai,
+                  );
+                }
+                // Urutkan ulang berdasarkan prioritas
+                _tasks.sort((a, b) {
+                  final pa = _taskPriority(a);
+                  final pb = _taskPriority(b);
+                  if (pa != pb) return pa.compareTo(pb);
+                  return a.deadline.compareTo(b.deadline);
+                });
+                _isAnimating = false;
+                _animatingTaskId = null;
+              });
               showCustomTopSnackbar(
                 context: context,
-                message: !task.isCompleted
+                message: task.taskStatus != TaskDatabaseStatus.selesai
                     ? 'Berhasil Menyelesaikan Tugas'
                     : 'Tugas kembali ke status awal',
               );
@@ -172,6 +243,7 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
             });
             final taskSlug = task.slug;
             try {
+              final taskService = Provider.of<TaskService>(context, listen: false);
               _animator.prepareTaskDeletion(task, () async {
                 // Hapus alarm jika ada
                 if (task.alarmId != null) {
@@ -183,7 +255,9 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
                   }
                   try {
                     // Ambil data alarm dari server lalu hapus berdasarkan slug
-                    final alarm = await AlarmApiService().getAlarmById(task.alarmId!);
+                    final alarm = await AlarmApiService().getAlarmById(
+                      task.alarmId!,
+                    );
                     if (alarm != null && alarm.slug.isNotEmpty) {
                       await AlarmApiService().deleteAlarm(alarm.slug);
                     }
@@ -192,7 +266,7 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
                   }
                 }
                 if (taskSlug != null) {
-                  await TaskService().deleteTask(taskSlug);
+                  await taskService.deleteTask(taskSlug);
                   await _fetchTasks();
                   showCustomTopSnackbar(
                     context: context,
@@ -227,9 +301,10 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
           },
           onToggleAlarm: () async {
             try {
+              final taskService = Provider.of<TaskService>(context, listen: false);
               // Toggle alarm using updateTask (e.g., set alarmId to null or to a value)
               final newAlarmId = task.isAlarmEnabled ? null : task.alarmId;
-              await TaskService().updateTask(
+              await taskService.updateTask(
                 slug: task.slug!,
                 alarmId: newAlarmId,
               );
