@@ -128,8 +128,7 @@ class ActivityApiService {
       final startTimeFormatted =
           '${activity.activityStartTime.hour.toString().padLeft(2, '0')}:${activity.activityStartTime.minute.toString().padLeft(2, '0')}';
       final endTimeFormatted =
-          '${activity.activityCompleteTime.hour.toString().padLeft(2, '0')}:${activity.activityCompleteTime.minute.toString().padLeft(2, '0')}';
-      final activityData = {
+          '${activity.activityCompleteTime.hour.toString().padLeft(2, '0')}:${activity.activityCompleteTime.minute.toString().padLeft(2, '0')}';      final activityData = {
         'user_id': userId,
         'activity_title': activity.activityTitle,
         'activity_date': activity.activityDate.toIso8601String().split('T')[0],
@@ -139,24 +138,55 @@ class ActivityApiService {
         'alarm_id': activity.alarmId,
       };
 
-      // Debug: Print the data being sent
-      print('Sending activity data: ${json.encode(activityData)}');
-
-      final response = await http.post(
+      // Enhanced debug: Print individual values and types
+      print('=== CREATE ACTIVITY DEBUG ===');
+      print('activity.alarmId value: ${activity.alarmId}');
+      print('activity.alarmId type: ${activity.alarmId.runtimeType}');
+      print('activity.alarmId is null: ${activity.alarmId == null}');
+      print('Full activity data: ${json.encode(activityData)}');      final response = await http.post(
         Uri.parse(baseUrl),
         headers: headers,
         body: json.encode(activityData),
       );
 
+      print('=== API RESPONSE ANALYSIS ===');
+      print('Response status: ${response.statusCode}');
+      print('Response headers: ${response.headers}');
+      print('Response body (raw): ${response.body}');
+
       if (response.statusCode == 201 || response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = json.decode(response.body);
+        
+        // Debug: Print the full response to see what we get back
+        print('=== SERVER RESPONSE STRUCTURE ===');
+        print('Full JSON response: ${json.encode(jsonResponse)}');
+        print('Response status field: ${jsonResponse['status']}');
+        print('Response data field exists: ${jsonResponse['data'] != null}');
 
         if (jsonResponse['status'] == 'success' &&
             jsonResponse['data'] != null) {
           // Handle nested data structure
           final activityJson =
               jsonResponse['data']['data'] ?? jsonResponse['data'];
-          return AktivitasModel.fromJson(activityJson);
+          
+          // Debug: Print the activity data we're parsing
+          print('=== ACTIVITY DATA COMPARISON ===');
+          print('SENT to server: ${json.encode(activityData)}');
+          print('RECEIVED from server: ${json.encode(activityJson)}');
+          print('Server alarm_id field: ${activityJson['alarm_id']}');
+          print('Server alarm_id type: ${activityJson['alarm_id'].runtimeType}');
+          print('Server alarm_id is null: ${activityJson['alarm_id'] == null}');
+          
+          final result = AktivitasModel.fromJson(activityJson);
+          
+          // Debug: Print the parsed result
+          print('=== FINAL PARSED RESULT ===');
+          print('Parsed activity ID: ${result.id}');
+          print('Parsed alarmId: ${result.alarmId}');
+          print('Parsed alarmId type: ${result.alarmId.runtimeType}');
+          print('Expected vs Actual alarmId: ${activityData['alarm_id']} vs ${result.alarmId}');
+          
+          return result;
         }
       } else {
         throw Exception(

@@ -22,14 +22,13 @@ class AlarmApiService {
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }
-
   /// Create a new alarm
   Future<AlarmModel?> createAlarm(AlarmModel alarm) async {
     try {
       final headers = await _getHeaders();
       final body = json.encode({
         'alarm_date_time': alarm.alarmDateTime.toIso8601String(),
-        'alarm_enabled': alarm.alarmEnabled,
+        'is_alarm_enabled': alarm.alarmEnabled,
         'slug': alarm.slug,
       });
 
@@ -41,11 +40,17 @@ class AlarmApiService {
         body: body,
       );
 
-      debugPrint('Create alarm response: ${response.statusCode} - ${response.body}');
-
-      if (response.statusCode == 201) {
+      debugPrint('Create alarm response: ${response.statusCode} - ${response.body}');      if (response.statusCode == 201) {
         final data = json.decode(response.body);
-        return AlarmModel.fromJson(data['data']);
+        final result = AlarmModel.fromJson(data['data']);
+        
+        // Enhanced debug logging
+        print('=== ALARM CREATION SUCCESS ===');
+        print('Created alarm ID: ${result.id}');
+        print('Created alarm data: ${json.encode(data['data'])}');
+        print('AlarmModel object: ${result.toString()}');
+        
+        return result;
       }
       return null;
     } catch (e) {
@@ -127,14 +132,13 @@ class AlarmApiService {
       return [];
     }
   }
-
   /// Update an existing alarm
   Future<AlarmModel?> updateAlarm(String slug, AlarmModel alarm) async {
     try {
       final headers = await _getHeaders();
       final body = json.encode({
         'alarm_date_time': alarm.alarmDateTime.toIso8601String(),
-        'alarm_enabled': alarm.alarmEnabled,
+        'is_alarm_enabled': alarm.alarmEnabled,
         'slug': alarm.slug,
       });
 
@@ -170,13 +174,12 @@ class AlarmApiService {
       return false;
     }
   }
-
   /// Toggle alarm enabled status
   Future<bool> toggleAlarmEnabled(String slug, bool enabled) async {
     try {
       final headers = await _getHeaders();
       final body = json.encode({
-        'alarm_enabled': enabled,
+        'is_alarm_enabled': enabled,
       });
 
       final response = await http.patch(

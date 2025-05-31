@@ -14,7 +14,7 @@ import 'core/database/database_helper.dart';
 import 'routers/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/connectivity/connectivity_service.dart';
-import 'core/widgets/connectivity_wrapper.dart';
+import 'core/services/api/auth/auth_service.dart';
 
 // Membuat instance AppRouter dan ConnectivityService di level global
 final appRouter = AppRouter();
@@ -94,10 +94,11 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // Provider untuk ConnectivityService (singleton instance)
         ChangeNotifierProvider<ConnectivityService>.value(
           value: connectivityService,
         ),
+        // Provider untuk AuthService
+        ChangeNotifierProvider<AuthService>(create: (_) => AuthService()),
         // Provider untuk TaskService dari features/task (untuk backward compatibility)
         ChangeNotifierProvider<task.TaskService>(
           create: (_) => task.TaskService(),
@@ -107,18 +108,17 @@ class _MyAppState extends State<MyApp> {
         // Provider untuk AktivitasService
         ChangeNotifierProvider<AktivitasService>(
           create: (_) => AktivitasService(),
-        ), // Provider untuk ProfileService
+        ),
+        // Provider untuk ProfileService
         ChangeNotifierProvider<ProfileService>(create: (_) => ProfileService()),
       ],
       child: Sizer(
         builder: (context, orientation, deviceType) {
-          return ConnectivityWrapper(
-            child: MaterialApp.router(
-              title: 'Aturin',
-              theme: AppTheme.lightTheme,
-              debugShowCheckedModeBanner: false,
-              routerConfig: appRouter.config(),
-            ),
+          return MaterialApp.router(
+            title: 'Aturin',
+            theme: AppTheme.lightTheme,
+            debugShowCheckedModeBanner: false,
+            routerConfig: appRouter.config(),
           );
         },
       ),

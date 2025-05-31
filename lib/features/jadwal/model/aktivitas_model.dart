@@ -85,8 +85,20 @@ class AktivitasModel {
     this.user,
     this.alarm,
   });  factory AktivitasModel.fromJson(Map<String, dynamic> json) {
-    // Debug logging
-    print('DEBUG: Parsing JSON data: $json');
+    // Debug logging for alarm_id parsing
+    print('=== PARSING JSON IN AktivitasModel.fromJson ===');
+    print('Raw alarm_id value: ${json['alarm_id']}');
+    print('Raw alarm_id type: ${json['alarm_id'].runtimeType}');
+    print('Raw alarm_id is null: ${json['alarm_id'] == null}');
+    
+    int? parsedAlarmId;
+    if (json['alarm_id'] is String) {
+      parsedAlarmId = int.tryParse(json['alarm_id']);
+      print('Parsed from string: "${json['alarm_id']}" -> $parsedAlarmId');
+    } else {
+      parsedAlarmId = json['alarm_id'];
+      print('Used as-is: ${json['alarm_id']} -> $parsedAlarmId');
+    }
     
     return AktivitasModel(
       id: json['id'] is String ? int.tryParse(json['id']) : json['id'],
@@ -96,13 +108,13 @@ class AktivitasModel {
       activityStartTime: _parseDateTime(json['activity_date'], json['activity_start_time']),
       activityCompleteTime: _parseDateTime(json['activity_date'], json['activity_complete_time']),
       activityCategory: _parseActivityCategory(json['activity_category']),
-      alarmId: json['alarm_id'] is String ? int.tryParse(json['alarm_id']) : json['alarm_id'],
+      alarmId: parsedAlarmId,
       slug: json['slug'],
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
       updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at']) : null,
       alarm: json['alarm'] != null ? AlarmModel.fromJson(json['alarm']) : null,
     );
-  }  // Helper method to parse datetime from date and time strings
+  }// Helper method to parse datetime from date and time strings
   static DateTime _parseDateTime(String date, String time) {
     try {
       // Try to parse as full ISO8601 datetime first

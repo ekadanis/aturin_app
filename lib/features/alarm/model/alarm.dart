@@ -12,13 +12,16 @@ class AlarmModel {
     required this.slug,
     this.createdAt,
     this.updatedAt,
-  });
-
-  factory AlarmModel.fromJson(Map<String, dynamic> json) {
+  });  factory AlarmModel.fromJson(Map<String, dynamic> json) {
+    print('=== PARSING ALARM JSON ===');
+    print('Raw alarm json: $json');
+    print('Alarm ID: ${json['id']} (${json['id'].runtimeType})');
+    
     return AlarmModel(
       id: json['id'],
       alarmDateTime: DateTime.parse(json['alarm_date_time']),
-      alarmEnabled: json['alarm_enabled'] == 1 || json['alarm_enabled'] == true,
+      alarmEnabled: json['is_alarm_enabled'] == 1 || json['is_alarm_enabled'] == true ||
+                   json['alarm_enabled'] == 1 || json['alarm_enabled'] == true,
       slug: json['slug'] ?? '',
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
       updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at']) : null,
