@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:aturin_app/features/task/model/task_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TaskService extends ChangeNotifier {
   static const String baseUrl = 'https://aturin-app.com/api/v1';
@@ -16,8 +17,8 @@ class TaskService extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _setError(String? error) {
-    _errorMessage = error;
+  void _setError(String? message) {
+    _errorMessage = message;
     notifyListeners();
   }
 
@@ -25,8 +26,32 @@ class TaskService extends ChangeNotifier {
     _setError(null);
   }
 
+  Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token');
+  }
+
+  Future<Map<String, String>> _getHeaders() async {
+    final token = await _getToken();
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
+  Future<int?> _getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userIdString = prefs.getString('userId');
+    if (userIdString != null) {
+      return int.tryParse(userIdString);
+    }
+    return null;
+  }
+
+  // CRUD
+
   Future<TaskResult> createTask({
-    required String token,
     required String title,
     String? description,
     required DateTime deadline,
@@ -37,37 +62,43 @@ class TaskService extends ChangeNotifier {
   }) async {
     try {
       _setLoading(true);
-      _setError(null);
-
+      final headers = await _getHeaders();
+      final userId = await _getUserId();
+      if (userId == null) {
+        return TaskResult.failure('User ID tidak ditemukan. Silakan login ulang.');
+      }
       final response = await http.post(
         Uri.parse('$baseUrl/tasks'),
-        headers: _headers(token),
+        headers: headers,
         body: jsonEncode({
+          'user_id': userId,
           'task_title': title,
           'task_description': description,
           'task_deadline': deadline.toIso8601String(),
           'estimated_task_duration': estimatedDuration,
           'task_category': category,
-          'task_status': status,
+          'task_status': status ?? 'belum_selesai',
           'alarm_id': alarmId,
         }),
       );
-
       final data = jsonDecode(response.body);
       if (response.statusCode == 201 || response.statusCode == 200) {
-        final task = Task.fromMap(data['data']);
-        _setLoading(false);
-        return TaskResult.success(task: task, message: data['message']);
+        return TaskResult.success(
+          task: Task.fromMap(data['data']),
+          message: data['message'],
+        );
       } else {
+        debugPrint('TaskService.createTask failed: status=${response.statusCode}, body=${response.body}');
         return _handleErrorResponse(response);
       }
     } catch (e) {
       return _handleException(e);
+    } finally {
+      _setLoading(false);
     }
   }
 
   Future<TaskResult> updateTask({
-    required String token,
     required String slug,
     String? title,
     String? description,
@@ -79,9 +110,8 @@ class TaskService extends ChangeNotifier {
   }) async {
     try {
       _setLoading(true);
-      _setError(null);
-
-      final body = <String, dynamic>{
+      final headers = await _getHeaders();
+      final body = {
         if (title != null) 'task_title': title,
         if (description != null) 'task_description': description,
         if (deadline != null) 'task_deadline': deadline.toIso8601String(),
@@ -91,202 +121,168 @@ class TaskService extends ChangeNotifier {
         if (category != null) 'task_category': category,
         if (alarmId != null) 'alarm_id': alarmId,
       };
-
       final response = await http.patch(
         Uri.parse('$baseUrl/tasks/$slug'),
-        headers: _headers(token),
+        headers: headers,
         body: jsonEncode(body),
       );
-
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        final task = Task.fromMap(data['data']);
-        _setLoading(false);
-        return TaskResult.success(task: task, message: data['message']);
+        return TaskResult.success(
+          task: Task.fromMap(data['data']),
+          message: data['message'],
+        );
       } else {
         return _handleErrorResponse(response);
       }
     } catch (e) {
       return _handleException(e);
+    } finally {
+      _setLoading(false);
     }
   }
 
-  Future<TaskResult> deleteTask({
-    required String token,
-    required String slug,
-  }) async {
+  Future<TaskResult> deleteTask(String slug) async {
     try {
       _setLoading(true);
-      _setError(null);
-
+      final headers = await _getHeaders();
       final response = await http.delete(
         Uri.parse('$baseUrl/tasks/$slug'),
-        headers: _headers(token, acceptJsonOnly: true),
+        headers: headers,
       );
-
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        _setLoading(false);
         return TaskResult.success(message: data['message']);
       } else {
         return _handleErrorResponse(response);
       }
     } catch (e) {
       return _handleException(e);
+    } finally {
+      _setLoading(false);
     }
   }
 
-  Future<List<Task>> getAllTasks(String token) async {
+  // FETCH
+
+  Future<List<Task>> getAllTasks() async {
     try {
+      final headers = await _getHeaders();
       final response = await http.get(
         Uri.parse('$baseUrl/tasks'),
-        headers: _headers(token),
+        headers: headers,
       );
-
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        return List<Task>.from(data['data'].map((t) => Task.fromMap(t)));
-      } else {
-        _handleErrorResponse(response);
-        return [];
+        return List<Task>.from(data['data'].map((e) => Task.fromMap(e)));
       }
     } catch (e) {
       _handleException(e);
-      return [];
     }
+    return [];
   }
 
-  Future<List<Task>> getTasksToday(String token) async {
+  Future<List<Task>> getTasksToday() async {
     try {
+      final headers = await _getHeaders();
       final response = await http.get(
         Uri.parse('$baseUrl/tasks/today'),
-        headers: _headers(token),
+        headers: headers,
       );
-
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        return List<Task>.from(data['data'].map((t) => Task.fromMap(t)));
-      } else {
-        _handleErrorResponse(response);
-        return [];
+        return List<Task>.from(data['data'].map((e) => Task.fromMap(e)));
       }
     } catch (e) {
       _handleException(e);
-      return [];
     }
+    return [];
   }
 
-  Future<Task?> getTaskBySlug(String token, String slug) async {
+  Future<Task?> getTaskBySlug(String slug) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.get(
         Uri.parse('$baseUrl/tasks/$slug'),
-        headers: _headers(token),
+        headers: headers,
       );
-
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
         return Task.fromMap(data['data']);
-      } else {
-        _handleErrorResponse(response);
-        return null;
       }
     } catch (e) {
       _handleException(e);
-      return null;
     }
+    return null;
   }
 
-  Future<Map<String, dynamic>?> getDashboardSummary(String token) async {
+  Future<Map<String, dynamic>?> getDashboardSummary() async {
     try {
+      final headers = await _getHeaders();
       final response = await http.get(
         Uri.parse('$baseUrl/tasks/dashboard/summary'),
-        headers: _headers(token),
+        headers: headers,
       );
-
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
         return data['data'];
-      } else {
-        _handleErrorResponse(response);
-        return null;
       }
     } catch (e) {
       _handleException(e);
-      return null;
     }
+    return null;
   }
 
-  Future<Map<String, dynamic>?> countLateTasks(String token) async {
+  Future<Map<String, dynamic>?> countLateTasks() async {
     try {
+      final headers = await _getHeaders();
       final response = await http.get(
         Uri.parse('$baseUrl/tasks/dashboard/late-count'),
-        headers: _headers(token),
+        headers: headers,
       );
-
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
         return data['data'];
-      } else {
-        _handleErrorResponse(response);
-        return null;
       }
     } catch (e) {
       _handleException(e);
-      return null;
     }
+    return null;
   }
 
-  Future<Map<String, dynamic>?> getTasksByStatus(
-    String token,
-    String status,
-  ) async {
+  Future<Map<String, dynamic>?> getTasksByStatus(String status) async {
     try {
+      final headers = await _getHeaders();
       final uri = Uri.parse(
         '$baseUrl/tasks/dashboard/by-status',
       ).replace(queryParameters: {'status': status});
-
-      final response = await http.get(uri, headers: _headers(token));
-
+      final response = await http.get(uri, headers: headers);
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
         return data['data'];
-      } else {
-        _handleErrorResponse(response);
-        return null;
       }
     } catch (e) {
       _handleException(e);
-      return null;
     }
+    return null;
   }
 
-  Map<String, String> _headers(String token, {bool acceptJsonOnly = false}) {
-    return {
-      if (!acceptJsonOnly) 'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
-  }
+  // HANDLERS
 
   TaskResult _handleErrorResponse(http.Response response) {
     try {
-      final errorData = jsonDecode(response.body);
-      String message = errorData['message'] ?? 'Permintaan gagal';
-
-      if (errorData['errors'] != null) {
-        final errors = errorData['errors'] as Map<String, dynamic>;
-        final messages = errors.values.expand((e) => e as List).join('\n');
-        message = messages;
+      final data = jsonDecode(response.body);
+      String message = data['message'] ?? 'Permintaan gagal';
+      if (data['errors'] != null) {
+        final errors = data['errors'] as Map<String, dynamic>;
+        message = errors.values.expand((e) => e as List).join('\n');
       }
-
       _setError(message);
-      _setLoading(false);
       return TaskResult.failure(message);
     } catch (_) {
-      final msg = 'Gagal memproses error (Status: ${response.statusCode})';
-      _setError(msg);
-      _setLoading(false);
-      return TaskResult.failure(msg);
+      const message = 'Gagal memproses error response.';
+      _setError(message);
+      return TaskResult.failure(message);
     }
   }
 
@@ -297,10 +293,7 @@ class TaskService extends ChangeNotifier {
     } else if (e.toString().contains('TimeoutException')) {
       message = 'Koneksi timeout. Coba lagi.';
     }
-
-    debugPrint('Task error: $e');
     _setError(message);
-    _setLoading(false);
     return TaskResult.failure(message);
   }
 }

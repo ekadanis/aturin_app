@@ -39,6 +39,7 @@ class AlarmService {
     DateTime dateTime,
     String title,
     String body,
+    {bool enabled = true} // Tambahkan parameter opsional untuk status enable/disable
   ) async {
     await ensureInitialized();
     final now = DateTime.now();
@@ -78,10 +79,11 @@ class AlarmService {
         icon: 'mipmap/ic_launcher',
         iconColor: const Color.fromARGB(255, 255, 255, 255),
       ),
+      // enabled: enabled, // Hapus baris ini karena tidak didukung oleh package alarm
     );
 
     await Alarm.set(alarmSettings: alarmSettings);
-    debugPrint('Alarm berhasil diatur untuk aktivitas: $title pada $dateTime');
+    debugPrint('Alarm berhasil diatur untuk aktivitas: $title pada $dateTime (enabled: $enabled)');
   }
 
   // Menghapus alarm berdasarkan ID (untuk aktivitas dan task)

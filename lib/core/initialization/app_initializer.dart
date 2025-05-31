@@ -14,7 +14,7 @@ class AppInitializer {
     _alarmManager = AlarmManager(appRouter);
   }
 
-  /// Initialize all required components for the app
+
   Future<void> initialize() async {
     try {
       // Set up UI elements first

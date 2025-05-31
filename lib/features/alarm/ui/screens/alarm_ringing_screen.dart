@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:alarm/alarm.dart';
 import 'package:intl/intl.dart';
-import 'package:aturin_app/features/task/services/task_services.dart';
 import 'package:aturin_app/features/task/model/task_model.dart';
 import '../widgets/alarm_clock_image.dart';
 import '../widgets/alarm_time_display.dart';
@@ -11,6 +9,7 @@ import '../widgets/category_tag.dart';
 import '../widgets/cancel_slider_button.dart';
 import 'package:auto_route/auto_route.dart';
 import '../../services/alarm_service.dart';
+import 'package:aturin_app/core/services/api/task/task_service.dart';
 
 @RoutePage()
 class AlarmRingingScreen extends StatefulWidget {
@@ -29,8 +28,6 @@ class AlarmRingingScreen extends StatefulWidget {
 
 class _AlarmRingingScreenState extends State<AlarmRingingScreen> {
   Task? _task;
-  bool _loading = true;
-  bool _error = false;
   final timeFormat = DateFormat('HH:mm');
   final dateFormat = DateFormat('EEEE, d MMMM yyyy', 'id_ID');
   final AlarmService _alarmService = AlarmService();
@@ -43,26 +40,17 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen> {
 
   Future<void> _loadTask() async {
     try {
-      setState(() => _loading = true);
-
-      final taskService = Provider.of<TaskService>(context, listen: false);
-      final task = await taskService.getTaskById(widget.alarmSettings.id);
-
+      final taskService = TaskService();
+      // Fetch all tasks and find the one with alarmId matching the alarmSettings.id
+      final allTasks = await taskService.getAllTasks();
+      final task = allTasks.where((t) => t.alarmId == widget.alarmSettings.id).cast<Task?>().firstWhere((_) => true, orElse: () => null);
       if (mounted) {
         setState(() {
           _task = task;
-          _loading = false;
-          _error = task == null;
         });
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = true;
-          _loading = false;
-        });
-        debugPrint('Error loading task: $e');
-      }
+      debugPrint('Error loading task: $e');
     }
   }
 

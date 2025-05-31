@@ -1,4 +1,5 @@
 import 'package:aturin_app/core/theme/app_theme.dart';
+import 'package:aturin_app/features/auth/login/ui/login_page.dart';
 import 'package:aturin_app/features/auth/register/widgets/login_link_widget.dart';
 import 'package:aturin_app/features/auth/register/widgets/register_app_bar_widget.dart';
 import 'package:aturin_app/features/auth/register/widgets/register_form_widget.dart';
@@ -9,7 +10,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:provider/provider.dart';
-import 'package:aturin_app/routers/app_router.dart';
 
 @RoutePage()
 class RegisterPage extends StatefulWidget {
@@ -51,7 +51,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     children: [
                       // Custom App Bar
                       RegisterAppBarWidget(
-                        onBackPressed: () => context.router.pop(),
+                        onBackPressed: () => Navigator.pop(context),
                       ),
 
                       // Scrollable Content
@@ -84,6 +84,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                               SizedBox(height: 3.h),
 
+                              // Login link
                               LoginLinkWidget(onLoginTap: _navigateToLogin),
 
                               SizedBox(height: 4.h),
@@ -118,11 +119,13 @@ class _RegisterPageState extends State<RegisterPage> {
         email: emailController.text.trim(),
         password: passwordController.text,
       );
+
       if (result.isSuccess) {
+        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Pendaftaran berhasil! Anda akan diarahkan ke halaman login.',
+              result.message,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 13.sp,
                 color: Colors.white,
@@ -138,12 +141,14 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         );
 
+        // Navigate to login page after a delay
         Future.delayed(const Duration(seconds: 1), () {
           if (mounted) {
             _navigateToLogin();
           }
         });
       } else {
+        // Show error message
         _showSnackBar(result.message);
       }
     } catch (e) {
@@ -152,7 +157,10 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _navigateToLogin() {
-    context.router.pushAndPopUntil(const LoginRoute(), predicate: (_) => false);
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+    );
   }
 
   void _showSnackBar(String message) {

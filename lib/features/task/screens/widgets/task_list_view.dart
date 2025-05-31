@@ -1,33 +1,91 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:aturin_app/core/services/api/task/task_service.dart';
+import 'package:aturin_app/core/services/api/alarm/alarm_api_service.dart';
+import 'package:alarm/alarm.dart';
 import '../../model/task_model.dart';
-import '../../services/task_services.dart';
 import 'task_card.dart';
 import 'snackbar.dart';
-import 'package:sizer/sizer.dart';
+import 'task_animator.dart';
 
 class TaskListView extends StatefulWidget {
-  final List<Task> tasks;
   final void Function(String)? onShowSuccess;
   final void Function(Task)? onTapTask;
   final String currentFilter;
+  final String animationStyle;
 
   const TaskListView({
     Key? key,
-    required this.tasks,
     this.onShowSuccess,
     this.onTapTask,
     required this.currentFilter,
+    this.animationStyle = "slide",
   }) : super(key: key);
 
   @override
   State<TaskListView> createState() => _TaskListViewState();
 }
 
-class _TaskListViewState extends State<TaskListView> {
+class _TaskListViewState extends State<TaskListView> with TickerProviderStateMixin {
+  late TaskAnimator _animator;
+  int? _animatingTaskId;
+  bool _isAnimating = false;
+
+  List<Task> _tasks = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _animator = TaskAnimator(
+      vsync: this,
+      animationStyle: widget.animationStyle,
+    );
+    _fetchTasks();
+  }
+
+  Future<void> _fetchTasks() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final tasks = await TaskService().getAllTasks();
+      setState(() {
+        _tasks = tasks;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Gagal memuat tugas';
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(TaskListView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.animationStyle != oldWidget.animationStyle) {
+      _animator.updateAnimationStyle(widget.animationStyle);
+    }
+  }
+
+  @override
+  void dispose() {
+    _animator.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (widget.tasks.isEmpty) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(child: Text(_error!));
+    }
+    if (_tasks.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -42,71 +100,150 @@ class _TaskListViewState extends State<TaskListView> {
         ),
       );
     }
-
+    if (_isAnimating && !_tasks.any((t) => t.id == _animatingTaskId)) {
+      _isAnimating = false;
+      _animatingTaskId = null;
+    }
     return ListView.builder(
-      padding: const EdgeInsets.only(top: 0, bottom: 0),
-      itemCount: widget.tasks.length,
+      padding: const EdgeInsets.only(top: 0, bottom: 80),
+      itemCount: _tasks.length,
       itemBuilder: (context, index) {
-        final task = widget.tasks[index];
-        return _buildTaskCard(task);
+        final task = _tasks[index];
+        final isAnimating = _animatingTaskId == task.id && _isAnimating;
+        if (isAnimating) {
+          return _animator.buildAnimatedTask(
+            task,
+            _buildTaskCard(task),
+            onAnimationComplete: () {
+              setState(() {
+                if (_animatingTaskId == task.id) {
+                  _isAnimating = false;
+                  _animatingTaskId = null;
+                }
+              });
+            },
+          );
+        } else {
+          return _buildTaskCard(task);
+        }
       },
     );
   }
 
   Widget _buildTaskCard(Task task) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0.75.h),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Hero(
         tag: 'task-${task.id}',
         child: TaskCard(
           task: task,
           currentFilter: widget.currentFilter,
-          onToggleCompletion: () {
-            final taskService = Provider.of<TaskService>(
-              context,
-              listen: false,
-            );
-            taskService.toggleTaskCompletion(task.id);
-
-            if (!task.isCompleted) {
-              showCustomTopSnackbar(
-                context: context,
-                message: 'Berhasil Menyelesaikan Tugas',
+          onToggleCompletion: () async {
+            setState(() {
+              _animatingTaskId = task.id;
+              _isAnimating = true;
+            });
+            _animator.prepareTaskAnimation(task, !task.isCompleted);
+            try {
+              // Toggle completion using updateTask
+              final newStatus = task.isCompleted ? 'belum_selesai' : 'selesai';
+              await TaskService().updateTask(
+                slug: task.slug!,
+                status: newStatus,
               );
-            } else {
+              await _fetchTasks();
               showCustomTopSnackbar(
                 context: context,
-                message: 'Tugas kembali ke status awal',
+                message: !task.isCompleted
+                    ? 'Berhasil Menyelesaikan Tugas'
+                    : 'Tugas kembali ke status awal',
+              );
+            } catch (e) {
+              showCustomTopSnackbar(
+                context: context,
+                message: 'Gagal mengubah status tugas',
               );
             }
           },
           onDelete: () async {
+            setState(() {
+              _animatingTaskId = task.id;
+              _isAnimating = true;
+            });
+            final taskSlug = task.slug;
             try {
-              await Provider.of<TaskService>(
-                context,
-                listen: false,
-              ).deleteTask(task.id);
-
-              showCustomTopSnackbar(
-                context: context,
-                message: 'Berhasil menghapus tugas',
-              );
+              _animator.prepareTaskDeletion(task, () async {
+                // Hapus alarm jika ada
+                if (task.alarmId != null) {
+                  try {
+                    // Hapus alarm lokal
+                    await Alarm.stop(task.alarmId!);
+                  } catch (e) {
+                    debugPrint('Gagal menghapus alarm lokal: $e');
+                  }
+                  try {
+                    // Ambil data alarm dari server lalu hapus berdasarkan slug
+                    final alarm = await AlarmApiService().getAlarmById(task.alarmId!);
+                    if (alarm != null && alarm.slug.isNotEmpty) {
+                      await AlarmApiService().deleteAlarm(alarm.slug);
+                    }
+                  } catch (e) {
+                    debugPrint('Gagal menghapus alarm di backend: $e');
+                  }
+                }
+                if (taskSlug != null) {
+                  await TaskService().deleteTask(taskSlug);
+                  await _fetchTasks();
+                  showCustomTopSnackbar(
+                    context: context,
+                    message: 'Berhasil menghapus tugas',
+                  );
+                }
+                if (mounted) {
+                  setState(() {
+                    if (_animatingTaskId == task.id) {
+                      _isAnimating = false;
+                      _animatingTaskId = null;
+                    }
+                  });
+                }
+              });
             } catch (e) {
               debugPrint('Error menghapus task: $e');
-              showCustomTopSnackbar(
-                context: context,
-                message: 'Gagal menghapus tugas, coba lagi',
-              );
+              if (mounted) {
+                setState(() {
+                  _isAnimating = false;
+                  _animatingTaskId = null;
+                });
+                showCustomTopSnackbar(
+                  context: context,
+                  message: 'Gagal menghapus tugas, coba lagi',
+                );
+              }
             }
           },
           onViewDetails: () {
             widget.onTapTask?.call(task);
           },
-          onToggleAlarm: () {
-            Provider.of<TaskService>(
-              context,
-              listen: false,
-            ).toggleAlarm(task.id);
+          onToggleAlarm: () async {
+            try {
+              // Toggle alarm using updateTask (e.g., set alarmId to null or to a value)
+              final newAlarmId = task.isAlarmEnabled ? null : task.alarmId;
+              await TaskService().updateTask(
+                slug: task.slug!,
+                alarmId: newAlarmId,
+              );
+              await _fetchTasks();
+              showCustomTopSnackbar(
+                context: context,
+                message: 'Alarm tugas diperbarui',
+              );
+            } catch (e) {
+              showCustomTopSnackbar(
+                context: context,
+                message: 'Gagal memperbarui alarm',
+              );
+            }
           },
         ),
       ),

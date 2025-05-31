@@ -13,9 +13,10 @@ import '../../../jadwal/screens/add_aktivitas/ui/alarm_picker_screen.dart';
 import '../../../../../../routers/app_router.dart';
 import 'package:aturin_app/core/widgets/field_tile.dart';
 import 'package:aturin_app/features/task/screens/widgets/snackbar.dart';
-import 'package:aturin_app/core/services/api/alarm/alarm_service.dart';
 import 'package:aturin_app/core/services/api/task/task_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:aturin_app/core/services/api/alarm/alarm_api_service.dart';
+import 'package:aturin_app/features/alarm/model/alarm.dart';
+import 'package:aturin_app/features/alarm/services/alarm_service.dart';
 
 @RoutePage()
 class AddTaskScreen extends StatefulWidget {
@@ -50,26 +51,38 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   DateTime? _customAlarmDateTime;
 
   final TaskService _taskService = TaskService();
-  final AlarmService _alarmService = AlarmService();
+  final AlarmApiService _alarmApiService = AlarmApiService();
+  final AlarmService _localAlarmService = AlarmService();
+
+  bool _alarmLoading = false;
 
   @override
   void initState() {
     super.initState();
     final task = widget.existingTask;
     if (task != null) {
-      // Jika mengedit task
       _titleController.text = task.title;
       _descriptionController.text = task.description ?? '';
       _deadline = task.deadline;
       _estimatedDuration = task.estimatedDuration;
-      _selectedCategory = categories.firstWhere((c) => c.name == task.category);
-      _isAlarmEnabled = task.isAlarmEnabled;
-      _alarmDateTime = task.alarmDateTime;
+      // Normalisasi pencarian kategori (case-insensitive, trim)
+      final foundCategory = categories.where((c) => c.name.toLowerCase().trim() == task.category.toLowerCase().trim());
+      _selectedCategory = foundCategory.isNotEmpty ? foundCategory.first : null;
+      if (task.alarmId != null) {
+        _isAlarmEnabled = true;
+        _alarmLoading = true;
+        _fetchAlarmAndSet(task.alarmId!).then((_) {
+          setState(() {
+            _alarmLoading = false;
+          });
+        });
+      } else {
+        _isAlarmEnabled = false;
+        _alarmDateTime = null;
+      }
     } else {
-      // Kalau tambah task baru, set default kategori ke "Akademik"
-      _selectedCategory = categories.firstWhere((c) => c.name == 'Akademik');
-
-      // Try to determine the alarm option based on the time difference
+      final foundCategory = categories.where((c) => c.name.toLowerCase().trim() == 'akademik');
+      _selectedCategory = foundCategory.isNotEmpty ? foundCategory.first : (categories.isNotEmpty ? categories.first : null);
       if (_deadline != null && _alarmDateTime != null) {
         _selectedAlarmOption = _determineAlarmOption(
           _deadline!,
@@ -81,6 +94,64 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     _updateDescriptionWordCount();
     _titleController.addListener(_updateWordCount);
     _descriptionController.addListener(_updateDescriptionWordCount);
+  }
+
+  Future<void> _fetchAlarmAndSet(int alarmId) async {
+    try {
+      final alarm = await _alarmApiService.getAlarmById(alarmId);
+      if (alarm != null) {
+        setState(() {
+          _alarmDateTime = alarm.alarmDateTime;
+          _selectedAlarmOption = _determineAlarmOption(_deadline ?? alarm.alarmDateTime, alarm.alarmDateTime);
+          _customAlarmDateTime = alarm.alarmDateTime;
+        });
+        // Sinkron ke alarm lokal
+        await _localAlarmService.setAlarm(
+          alarm.id!,
+          alarm.alarmDateTime,
+          _titleController.text.trim(),
+          'Tugas: ${_titleController.text.trim()} sudah waktunya!'
+        );
+      }
+    } catch (e) {
+      debugPrint('Gagal mengambil alarm: $e');
+    }
+  }
+
+  Future<void> _updateAlarmBackendAndLocal(int alarmId, DateTime newDateTime) async {
+    try {
+      final alarm = await _alarmApiService.getAlarmById(alarmId);
+      if (alarm != null) {
+        final updatedAlarm = AlarmModel(
+          id: alarm.id,
+          alarmDateTime: newDateTime,
+          alarmEnabled: true,
+          slug: alarm.slug,
+        );
+        final backendAlarm = await _alarmApiService.updateAlarm(alarm.slug, updatedAlarm);
+        if (backendAlarm != null) {
+          await _localAlarmService.setAlarm(
+            backendAlarm.id!,
+            backendAlarm.alarmDateTime,
+            _titleController.text.trim(),
+            'Tugas: ${_titleController.text.trim()} sudah waktunya!'
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Gagal update alarm: $e');
+    }
+  }
+
+  Future<void> _deleteAlarmBackendAndLocal(int alarmId, String? slug) async {
+    try {
+      if (slug != null) {
+        await _alarmApiService.deleteAlarm(slug);
+      }
+      await _localAlarmService.cancelAlarm(alarmId);
+    } catch (e) {
+      debugPrint('Gagal hapus alarm: $e');
+    }
   }
 
   // Determine which alarm option was used based on the time difference
@@ -169,44 +240,65 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   // Ganti _saveTask agar menggunakan API service
   void _saveTask() async {
     if (!_validateInputs()) return;
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('userToken');
-    if (token == null) {
-      showCustomTopSnackbar(
-        context: context,
-        message: 'Token tidak ditemukan, silakan login ulang.',
-        isError: true,
-      );
-      return;
-    }
     try {
       int? alarmId;
-      // Jika alarm diaktifkan, buat alarm terlebih dahulu
-      if (_isAlarmEnabled && _alarmDateTime != null) {
-        final alarmResult = await _alarmService.createAlarm(
-          token: token,
+      DateTime? alarmDateTimeToSet;
+      // Selalu buat alarm (atau update jika sudah ada), enabled mengikuti toggle
+      if (_alarmDateTime != null) {
+        final alarmModel = AlarmModel(
           alarmDateTime: _alarmDateTime!,
-          isAlarmEnabled: true,
+          alarmEnabled: _isAlarmEnabled, // sesuai toggle
+          slug: widget.existingTask?.alarmId != null ? (await _alarmApiService.getAlarmById(widget.existingTask!.alarmId!))?.slug ?? '' : '',
         );
-        if (alarmResult.isSuccess && alarmResult.alarm != null) {
-          alarmId = alarmResult.alarm!.id;
+        if (widget.existingTask?.alarmId != null) {
+          // Update alarm jika sudah ada
+          final updatedAlarm = await _alarmApiService.updateAlarm(alarmModel.slug, alarmModel);
+          if (updatedAlarm != null && updatedAlarm.id != null) {
+            alarmId = updatedAlarm.id;
+            alarmDateTimeToSet = updatedAlarm.alarmDateTime;
+          }
+        } else {
+          // Create alarm jika belum ada
+          final createdAlarm = await _alarmApiService.createAlarm(alarmModel);
+          if (createdAlarm != null && createdAlarm.id != null) {
+            alarmId = createdAlarm.id;
+            alarmDateTimeToSet = createdAlarm.alarmDateTime;
+          } else {
+            // fallback jika backend gagal, tetap set alarm lokal
+            alarmId = DateTime.now().millisecondsSinceEpoch;
+            alarmDateTimeToSet = _alarmDateTime;
+          }
+        }
+        // Set/update alarm lokal
+        if (alarmId != null && alarmDateTimeToSet != null) {
+          if (_isAlarmEnabled) {
+            await _localAlarmService.setAlarm(
+              alarmId,
+              alarmDateTimeToSet,
+              _titleController.text.trim(),
+              'Tugas: ${_titleController.text.trim()} sudah waktunya!'
+            );
+          } else {
+            // Nonaktifkan alarm lokal (tanpa hapus)
+            await _localAlarmService.cancelAlarm(alarmId);
+          }
         }
       }
-      // Estimasi durasi ke string (misal: '1:30' untuk 1 jam 30 menit)
+      // Estimasi durasi ke string (format H:i, misal: 01:05, 00:45, 12:00)
       final estDurationStr = _estimatedDuration != null
-        ? '${_estimatedDuration!.inHours}:${_estimatedDuration!.inMinutes % 60}'
-        : '0:0';
+        ? '${_estimatedDuration!.inHours.toString().padLeft(2, '0')}:${(_estimatedDuration!.inMinutes % 60).toString().padLeft(2, '0')}'
+        : '00:00';
       if (widget.existingTask == null) {
         // Tambah task baru
         final result = await _taskService.createTask(
-          token: token,
           title: _titleController.text.trim(),
           description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
           deadline: _deadline!,
           estimatedDuration: estDurationStr,
-          category: _selectedCategory!.name,
+          category: _selectedCategory!.name.toLowerCase(),
           alarmId: alarmId,
         );
+        debugPrint('TaskService.createTask result: isSuccess=[33m${result.isSuccess}[0m, message=[31m${result.message}[0m, task=${result.task}');
         if (result.isSuccess) {
           showCustomTopSnackbar(
             context: context,
@@ -226,13 +318,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       } else {
         // Edit task
         final result = await _taskService.updateTask(
-          token: token,
           slug: widget.existingTask!.slug!,
           title: _titleController.text.trim(),
           description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
           deadline: _deadline!,
           estimatedDuration: estDurationStr,
-          category: _selectedCategory!.name,
+          category: _selectedCategory!.name.toLowerCase(),
           alarmId: alarmId,
         );
         if (result.isSuccess) {
@@ -393,22 +484,20 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               const SizedBox(height: 32),
               FieldTile(
                 title: 'Kategori',
-                value: _selectedCategory?.name ?? 'Akademik ',
+                value: _selectedCategory?.name ?? (categories.isNotEmpty ? categories.first.name : ''),
                 onTap: () async {
                   final selected = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder:
-                          (_) => CategoryPickerScreen(
-                            selectedCategory: _selectedCategory?.name ?? '',
-                          ),
+                      builder: (_) => CategoryPickerScreen(
+                        selectedCategory: _selectedCategory?.name ?? '',
+                      ),
                     ),
                   );
                   if (selected != null) {
                     setState(() {
-                      _selectedCategory = categories.firstWhere(
-                        (c) => c.name == selected,
-                      );
+                      final foundCategory = categories.where((c) => c.name == selected);
+                      _selectedCategory = foundCategory.isNotEmpty ? foundCategory.first : null;
                       _categoryError = null;
                     });
                   }
@@ -438,17 +527,53 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                   ? const Color(0xFF5263F3)
                                   : Colors.grey.shade300,
                         ),
-                        onChanged:
-                            (value) {
-                              setState(() {
-                                _isAlarmEnabled = value;
-                                if (!value) {
-                                  _alarmDateTime = null;
-                                  _selectedAlarmOption = null;
-                                }
-                                _alarmToggleError = null;
-                              });
-                            },
+                        onChanged: (value) async {
+                          setState(() {
+                            _isAlarmEnabled = value;
+                            _alarmToggleError = null;
+                          });
+                          if (value) {
+                            // Toggle ON: Selalu create alarm baru dengan waktu dari user
+                            if (_alarmDateTime != null) {
+                              final alarmModel = AlarmModel(
+                                alarmDateTime: _alarmDateTime!,
+                                alarmEnabled: true,
+                                slug: '',
+                              );
+                              final createdAlarm = await _alarmApiService.createAlarm(alarmModel);
+                              if (createdAlarm != null && createdAlarm.id != null) {
+                                await _localAlarmService.setAlarm(
+                                  createdAlarm.id!,
+                                  createdAlarm.alarmDateTime,
+                                  _titleController.text.trim(),
+                                  'Tugas: ${_titleController.text.trim()} sudah waktunya!'
+                                );
+                              }
+                            }
+                          } else {
+                            // Toggle OFF: update alarm terakhir (jika ada) is_alarm_enabled=false, alarm_date_time=deadline
+                            if (widget.existingTask?.alarmId != null && _deadline != null) {
+                              final alarm = await _alarmApiService.getAlarmById(widget.existingTask!.alarmId!);
+                              if (alarm != null) {
+                                final updatedAlarm = AlarmModel(
+                                  id: alarm.id,
+                                  alarmDateTime: _deadline!,
+                                  alarmEnabled: false,
+                                  slug: alarm.slug,
+                                );
+                                await _alarmApiService.updateAlarm(alarm.slug, updatedAlarm);
+                                // Update alarm lokal (bukan hapus): set alarm pada deadline, disabled
+                                await _localAlarmService.setAlarm(
+                                  alarm.id!,
+                                  _deadline!,
+                                  _titleController.text.trim(),
+                                  'Tugas: ${_titleController.text.trim()} sudah waktunya!'
+                                );
+                                // Jika AlarmService mendukung flag enable/disable, tambahkan parameter enable: false
+                              }
+                            }
+                          }
+                        },
                         thumbColor: const WidgetStatePropertyAll(Colors.white),
                         overlayColor: const WidgetStatePropertyAll(
                           Colors.transparent,
@@ -463,58 +588,87 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     const SizedBox(height: 16),
                     FieldTile(
                       title: 'Atur Alarm',
-                      value:
-                          _selectedAlarmOption == 'custom' &&
-                                  _customAlarmDateTime != null
-                              ? DateFormat(
-                                'EEEE, d MMM yyyy, HH:mm',
-                                'id_ID',
-                              ).format(_customAlarmDateTime!)
-                              : _selectedAlarmOption != null
-                              ? _getAlarmOptionText(_selectedAlarmOption)
-                              : 'Kustom',
-                      onTap: () async {
-                        if (_deadline == null) {
-                          showCustomTopSnackbar(
-                            context: context,
-                            message: 'Silakan pilih deadline terlebih dahulu',
-                            isError: true,
-                          );
-                          return;
-                        }
-
-                        // Navigate to AlarmPickerScreen
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (_) => AlarmPickerScreen(
-                                  selectedOption: _selectedAlarmOption,
-                                ),
-                          ),
-                        );
-
-                        // Handle the result from AlarmPickerScreen
-                        if (result != null) {
-                          setState(() {
-                            if (result is String &&
-                                result.startsWith('custom:')) {
-                              final dateStr = result.substring(7);
-                              _selectedAlarmOption = 'custom';
-                              _customAlarmDateTime = DateTime.tryParse(dateStr);
-                              _alarmDateTime = _customAlarmDateTime;
-                              _alarmDateTimeError = null;
-                            } else if (result is String) {
-                              _selectedAlarmOption = result;
-                              _alarmDateTime = _calculateAlarmTime(
-                                result,
-                                _deadline!,
-                              );
-                              _alarmDateTimeError = null;
-                            }
-                          });
-                        }
-                      },
+                      value: _alarmLoading
+                          ? 'Memuat alarm...'
+                          : (_isAlarmEnabled && (_alarmDateTime != null || _customAlarmDateTime != null))
+                              ? DateFormat('EEEE, d MMM yyyy, HH:mm', 'id_ID').format(_alarmDateTime ?? _customAlarmDateTime!)
+                              : (_selectedAlarmOption == 'custom' && _customAlarmDateTime == null)
+                                ? 'Kustom'
+                                : _selectedAlarmOption != null
+                                  ? _getAlarmOptionText(_selectedAlarmOption)
+                                  : (widget.existingTask?.alarmId != null ? 'Memuat alarm...' : 'Belum diatur'),
+                      onTap: _alarmLoading
+                          ? null
+                          : (_isAlarmEnabled && widget.existingTask?.alarmId != null)
+                            ? () async {
+                                // Ubah waktu alarm jika sudah ada alarmId
+                                final result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => AlarmPickerScreen(
+                                      selectedOption: _selectedAlarmOption,
+                                    ),
+                                  ),
+                                );
+                                if (result != null) {
+                                  setState(() {
+                                    if (result is String && result.startsWith('custom:')) {
+                                      final dateStr = result.substring(7);
+                                      _selectedAlarmOption = 'custom';
+                                      _customAlarmDateTime = DateTime.tryParse(dateStr);
+                                      _alarmDateTime = _customAlarmDateTime;
+                                      _alarmDateTimeError = null;
+                                    } else if (result is String) {
+                                      _selectedAlarmOption = result;
+                                      _alarmDateTime = _calculateAlarmTime(
+                                        result,
+                                        _deadline!,
+                                      );
+                                      _alarmDateTimeError = null;
+                                    }
+                                  });
+                                  // Update alarm backend & lokal
+                                  if (_alarmDateTime != null && widget.existingTask?.alarmId != null) {
+                                    await _updateAlarmBackendAndLocal(widget.existingTask!.alarmId!, _alarmDateTime!);
+                                  }
+                                }
+                              }
+                            : (_isAlarmEnabled ? () async {
+                                if (_deadline == null) {
+                                  showCustomTopSnackbar(
+                                    context: context,
+                                    message: 'Silakan pilih deadline terlebih dahulu',
+                                    isError: true,
+                                  );
+                                  return;
+                                }
+                                final result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => AlarmPickerScreen(
+                                      selectedOption: _selectedAlarmOption,
+                                    ),
+                                  ),
+                                );
+                                if (result != null) {
+                                  setState(() {
+                                    if (result is String && result.startsWith('custom:')) {
+                                      final dateStr = result.substring(7);
+                                      _selectedAlarmOption = 'custom';
+                                      _customAlarmDateTime = DateTime.tryParse(dateStr);
+                                      _alarmDateTime = _customAlarmDateTime;
+                                      _alarmDateTimeError = null;
+                                    } else if (result is String) {
+                                      _selectedAlarmOption = result;
+                                      _alarmDateTime = _calculateAlarmTime(
+                                        result,
+                                        _deadline!,
+                                      );
+                                      _alarmDateTimeError = null;
+                                    }
+                                  });
+                                }
+                              } : null),
                       error: _alarmDateTimeError,
                     ),
                   ],
@@ -522,7 +676,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     Padding(
                       padding: const EdgeInsets.only(top: 8.0),
                       child: Text(
-                        'Alarm akan berbunyi pada:  A${DateFormat('EEEE, d MMM yyyy, HH:mm', 'id_ID').format(_alarmDateTime!)}',
+                        'Alarm akan berbunyi pada: ${DateFormat('EEEE, d MMM yyyy, HH:mm', 'id_ID').format(_alarmDateTime!)}',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 12,
                           color: Colors.grey[600],

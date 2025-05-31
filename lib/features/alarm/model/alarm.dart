@@ -17,8 +17,8 @@ class AlarmModel {
   factory AlarmModel.fromJson(Map<String, dynamic> json) {
     return AlarmModel(
       id: json['id'],
-      alarmDateTime: DateTime.parse(json['alarm_date_time']),
-      alarmEnabled: json['alarm_enabled'] == 1 || json['alarm_enabled'] == true,
+      alarmDateTime: json['alarm_date_time'] != null ? DateTime.parse(json['alarm_date_time']) : DateTime.now(),
+      alarmEnabled: json['is_alarm_enabled'] == 1 || json['is_alarm_enabled'] == true || json['alarm_enabled'] == 1 || json['alarm_enabled'] == true,
       slug: json['slug'] ?? '',
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
       updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at']) : null,

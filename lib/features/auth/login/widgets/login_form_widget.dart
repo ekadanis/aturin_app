@@ -9,14 +9,12 @@ class LoginFormWidget extends StatefulWidget {
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final VoidCallback onLogin;
-  final bool isLoading;
 
   const LoginFormWidget({
     super.key,
     required this.emailController,
     required this.passwordController,
     required this.onLogin,
-    this.isLoading = false,
   });
 
   @override
@@ -74,7 +72,9 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
           ),
         ),
 
-        SizedBox(height: 4.h),        // Login Button
+        SizedBox(height: 4.h),
+
+        // Login Button
         SizedBox(
           width: 100.w,
           height: 6.h,
@@ -87,24 +87,15 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
               elevation: 4,
               shadowColor: AppTheme.primaryColor.withOpacity(0.4),
             ),
-            onPressed: widget.isLoading ? null : widget.onLogin,
-            child: widget.isLoading 
-              ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-              : Text(
-                  'Masuk',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
+            onPressed: widget.onLogin,
+            child: Text(
+              'Masuk',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
           ),
         ),
       ],
