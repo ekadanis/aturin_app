@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aturin_app/features/profile/models/user.dart';
-import 'package:aturin_app/features/profile/services/profile_service.dart';
+// import 'package:aturin_app/features/profile/services/profile_service.dart';
+import 'package:aturin_app/core/services/api/profile/profile_service.dart';
 import 'package:aturin_app/features/profile/widgets/profile_avatar_edit.dart';
 import 'package:aturin_app/features/profile/widgets/profile_text_field.dart';
 import 'package:aturin_app/features/profile/ui/avatar_selection.dart';
@@ -144,36 +145,41 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     );
   }  Future<void> _saveChanges({bool shouldPop = true}) async {
     if (_usernameController.text.isNotEmpty) {
-      try {
-        if (_usernameController.text != widget.user.name) {
-          await _profileService.changeUsername(widget.user.id!, _usernameController.text);
-        }
+    try {
+      final updatedUser = await _profileService.editProfile(
+        _usernameController.text,
+        _selectedAvatar,
+      );
 
-        if (_selectedAvatar != widget.user.avatar) {
-          await _profileService.changeAvatar(widget.user.id!, _selectedAvatar);
-        }
-
+      if (updatedUser != null) {
         showCustomTopSnackbar(
           context: context,
           message: 'Berhasil Mengedit Profile',
         );
 
         if (shouldPop) {
-          Navigator.pop(context, true); // hanya pop kalau flag true
+          Navigator.pop(context, true);
         }
-      } catch (e) {
+      } else {
         showCustomTopSnackbar(
           context: context,
-          message: 'Error: $e',
+          message: 'Gagal memperbarui profil',
           isError: true,
         );
       }
-    } else {
+    } catch (e) {
       showCustomTopSnackbar(
         context: context,
-        message: 'Nama tidak boleh kosong',
+        message: 'Error: $e',
         isError: true,
       );
     }
+  } else {
+    showCustomTopSnackbar(
+      context: context,
+      message: 'Nama tidak boleh kosong',
+      isError: true,
+    );
+  }
   }
 }

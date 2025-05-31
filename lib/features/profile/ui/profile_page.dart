@@ -1,6 +1,7 @@
+import 'package:aturin_app/core/services/api/auth/auth_service.dart';
+import 'package:aturin_app/core/services/api/profile/profile_service.dart';
 import 'package:flutter/material.dart';
 import 'package:aturin_app/features/profile/models/user.dart';
-import 'package:aturin_app/features/profile/services/profile_service.dart';
 import 'package:aturin_app/features/profile/widgets/profile_card.dart';
 import 'package:aturin_app/features/profile/ui/profile_edit_page.dart';
 import 'package:aturin_app/features/profile/widgets/pengaturan_card.dart';
@@ -11,6 +12,8 @@ import 'package:aturin_app/routers/app_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:aturin_app/features/profile/widgets/confirm_exit_dialog.dart';
+import 'package:provider/provider.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
 
 @RoutePage()
 class ProfilePage extends StatefulWidget {
@@ -21,19 +24,26 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  late Future<User?> _userFuture;
-  final ProfileService _profileService = ProfileService();
+  Future<User?>? _userFuture;
+  // final prefs = await SharedPreferences.getInstance();
+  //     final token = prefs.getString('token');
 
   @override
   void initState() {
     super.initState();
-    _loadUser();
+
+    // Jalankan me() setelah build pertama selesai
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUser();
+    });
   }
 
   void _loadUser() {
-    // Langsung muat user tanpa debugging database
+    final profileService = Provider.of<ProfileService>(context, listen: false);
+
+    final newUserFuture = profileService.me();
     setState(() {
-      _userFuture = _profileService.getUser();
+      _userFuture = newUserFuture;
     });
   }
 
@@ -88,7 +98,7 @@ class _ProfilePageState extends State<ProfilePage> {
             } else if (!snapshot.hasData || snapshot.data == null) {
               return Center(
                 child: Text(
-                  'No user data found',
+                  'Tidak ada data pengguna yang ditemukan',
                   style: GoogleFonts.plusJakartaSans(
                     color: AppTheme.lightTextColor,
                   ),
@@ -141,7 +151,23 @@ class _ProfilePageState extends State<ProfilePage> {
                       );
 
                       if (confirm == true) {
-                        Navigator.pop(context);
+                        final authService =
+                            AuthService(); // atau pakai provider jika ada
+                        final result = await authService.logout();
+
+                        if (result.isSuccess) {
+                          if (context.mounted) {
+                            context.router.replaceAll([const LoginRoute()]);
+                          }
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(result.message ?? 'Logout gagal'),
+                              ),
+                            );
+                          }
+                        }
                       }
                     },
                   ),

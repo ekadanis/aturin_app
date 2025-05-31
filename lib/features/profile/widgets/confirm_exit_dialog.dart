@@ -71,7 +71,7 @@ class ConfirmExitDialog extends StatelessWidget {
                   SizedBox(width: 4.w),
                   Expanded(
                     child: TextButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => Navigator.pop(context, true),
                       style: TextButton.styleFrom(
                         backgroundColor: Colors.red,
                         foregroundColor: Colors.white,

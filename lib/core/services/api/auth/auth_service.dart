@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:aturin_app/features/profile/models/user.dart';
 import 'package:aturin_app/features/profile/services/profile_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService extends ChangeNotifier {
   static const String baseUrl = 'https://aturin-app.com/api/v1';
@@ -329,6 +330,40 @@ class AuthService extends ChangeNotifier {
       _setError(errorMessage);
       _setLoading(false);
       return AuthResult.failure(errorMessage);
+    }
+  }
+
+  Future<AuthResult> logout() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('userToken');
+
+      if (token == null) {
+        return AuthResult.failure('Token tidak ditemukan.');
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/logout'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        await prefs.remove('userToken');
+        return AuthResult.success(
+          user: null,
+          token: null,
+          message: 'Logout berhasil',
+        );
+      } else {
+        final body = jsonDecode(response.body);
+        final message = body['message'] ?? 'Logout gagal';
+        return AuthResult.failure(message);
+      }
+    } catch (e) {
+      return AuthResult.failure('Terjadi kesalahan saat logout: $e');
     }
   }
 
