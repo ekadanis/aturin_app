@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:aturin_app/features/alarm/services/alarm_service.dart';
-import 'package:aturin_app/features/task/services/task_services.dart';
-import 'package:provider/provider.dart';
 import 'package:animated_toggle_switch/animated_toggle_switch.dart'; // Added import
 
 class PengaturanCard extends StatefulWidget {
@@ -93,15 +91,12 @@ class _PengaturanCardState extends State<PengaturanCard> with SingleTickerProvid
       // Simpan status alarm global
       await _alarmService.setGlobalAlarmEnabled(value);
       
-      // Dapatkan TaskService untuk memperbarui alarm
-      final taskService = Provider.of<TaskService>(context, listen: false);
-      
       if (value) {
         // Aktifkan semua alarm yang seharusnya aktif
-        await taskService.enableAllAlarms();
+        // await taskService.enableAllAlarms();
       } else {
         // Nonaktifkan semua alarm
-        await taskService.disableAllAlarms();
+        // await taskService.disableAllAlarms();
       }
       
       if (mounted) {

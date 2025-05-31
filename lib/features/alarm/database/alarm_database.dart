@@ -2,8 +2,8 @@
 // import 'package:aturin_app/core/database/database_helper.dart';
 // import 'package:sqflite/sqflite.dart';
 
+import 'package:aturin_app/core/services/api/alarm/alarm_api_service.dart';
 import 'package:aturin_app/features/alarm/model/alarm.dart';
-import 'package:aturin_app/core/services/api/alarms/alarm_api_service.dart';
 import 'package:flutter/material.dart';
 
 class AlarmDatabase {
@@ -31,22 +31,22 @@ class AlarmDatabase {
   /// Create a new alarm using API
   Future<AlarmModel?> createAlarm(AlarmModel alarm) async {
     try {
-      debugPrint('Creating alarm via API: ${alarm.alarmDateTime}');
+      debugPrint('Creating alarm via API: \\${alarm.alarmDateTime}');
       
       final result = await _apiService.createAlarm(alarm);
       
-      debugPrint('Alarm created with ID: ${result?.id}');
+      debugPrint('Alarm created with ID: \\${result?.id}');
       return result;
     } catch (e) {
       debugPrint('Error creating alarm: $e');
       return null;
     }
   }
-
   /// Get alarm by ID using API
   Future<AlarmModel?> getAlarmById(int id) async {
     try {
-      return await _apiService.getAlarmById(id);
+      final allAlarms = await _apiService.getAllAlarms();
+      return allAlarms.where((alarm) => alarm.id == id).firstOrNull;
     } catch (e) {
       debugPrint('Error getting alarm by ID: $e');
       return null;
@@ -92,7 +92,7 @@ class AlarmDatabase {
       
       final result = await _apiService.updateAlarm(alarm.slug, alarm);
       
-      debugPrint('Alarm updated: ${result != null}');
+      debugPrint('Alarm updated: \\${result != null}');
       return result != null;
     } catch (e) {
       debugPrint('Error updating alarm: $e');

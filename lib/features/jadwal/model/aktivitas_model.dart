@@ -54,6 +54,8 @@ enum ActivityCategory {
   }
 }
 
+
+
 class AktivitasModel {
   final int? id;
   final int? userId;  // Foreign key to users table
@@ -85,20 +87,8 @@ class AktivitasModel {
     this.user,
     this.alarm,
   });  factory AktivitasModel.fromJson(Map<String, dynamic> json) {
-    // Debug logging for alarm_id parsing
-    print('=== PARSING JSON IN AktivitasModel.fromJson ===');
-    print('Raw alarm_id value: ${json['alarm_id']}');
-    print('Raw alarm_id type: ${json['alarm_id'].runtimeType}');
-    print('Raw alarm_id is null: ${json['alarm_id'] == null}');
-    
-    int? parsedAlarmId;
-    if (json['alarm_id'] is String) {
-      parsedAlarmId = int.tryParse(json['alarm_id']);
-      print('Parsed from string: "${json['alarm_id']}" -> $parsedAlarmId');
-    } else {
-      parsedAlarmId = json['alarm_id'];
-      print('Used as-is: ${json['alarm_id']} -> $parsedAlarmId');
-    }
+    // Debug logging
+    print('DEBUG: Parsing JSON data: $json');
     
     return AktivitasModel(
       id: json['id'] is String ? int.tryParse(json['id']) : json['id'],
@@ -108,32 +98,27 @@ class AktivitasModel {
       activityStartTime: _parseDateTime(json['activity_date'], json['activity_start_time']),
       activityCompleteTime: _parseDateTime(json['activity_date'], json['activity_complete_time']),
       activityCategory: _parseActivityCategory(json['activity_category']),
-      alarmId: parsedAlarmId,
+      alarmId: json['alarm_id'] is String ? int.tryParse(json['alarm_id']) : json['alarm_id'],
       slug: json['slug'],
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
       updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at']) : null,
       alarm: json['alarm'] != null ? AlarmModel.fromJson(json['alarm']) : null,
     );
-  }// Helper method to parse datetime from date and time strings
+  }
+  // Helper method to parse datetime from date and time strings
   static DateTime _parseDateTime(String date, String time) {
     try {
       // Try to parse as full ISO8601 datetime first
       return DateTime.parse(time);
     } catch (e) {
-      // If that fails, assume it's H:i or H:i:s format and combine with date
+      // If that fails, assume it's H:i format and combine with date
       try {
         final timeParts = time.split(':');
-        if (timeParts.length >= 2) {
-          final hour = int.parse(timeParts[0]);
-          final minute = int.parse(timeParts[1]);
-          // Ignore seconds if present (timeParts[2])
-          final dateTime = DateTime.parse(date);
-          return DateTime(dateTime.year, dateTime.month, dateTime.day, hour, minute);
-        } else {
-          throw FormatException('Invalid time format: $time');
-        }
+        final hour = int.parse(timeParts[0]);
+        final minute = int.parse(timeParts[1]);
+        final dateTime = DateTime.parse(date);
+        return DateTime(dateTime.year, dateTime.month, dateTime.day, hour, minute);
       } catch (e2) {
-        print('DEBUG: Error parsing time "$time": $e2');
         throw FormatException('Invalid date format: $time');
       }
     }

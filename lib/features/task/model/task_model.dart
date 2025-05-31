@@ -152,14 +152,28 @@ class Task {
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };
-  }  factory Task.fromMap(Map<String, dynamic> map) {
+  }  static Duration _parseDuration(dynamic value) {
+    if (value is int) {
+      return Duration(minutes: value);
+    } else if (value is String && value.contains(':')) {
+      final parts = value.split(':');
+      final hours = int.tryParse(parts[0]) ?? 0;
+      final minutes = int.tryParse(parts[1]) ?? 0;
+      return Duration(hours: hours, minutes: minutes);
+    } else if (value is String) {
+      return Duration(minutes: int.tryParse(value) ?? 0);
+    }
+    return Duration.zero;
+  }
+
+  factory Task.fromMap(Map<String, dynamic> map) {
     return Task(
       id: map['id'],
       userId: map['user_id'],
       title: map['task_title'] ?? '',
       description: map['task_description'],
       deadline: DateTime.parse(map['task_deadline']),
-      estimatedDuration: Duration(minutes: map['estimated_task_duration'] ?? 0),
+      estimatedDuration: _parseDuration(map['estimated_task_duration']),
       taskStatus: TaskDatabaseStatus.fromValue(map['task_status'] ?? 'belum_selesai'),
       completedAt: map['task_completed_at'] != null ? DateTime.parse(map['task_completed_at']) : null,
       category: map['task_category'] ?? 'akademik',

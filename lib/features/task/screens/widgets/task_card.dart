@@ -8,6 +8,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/utils/debouncer.dart';
 import 'package:sizer/sizer.dart';
+import 'package:aturin_app/core/services/api/task/task_api_service.dart';
 
 class TaskCard extends StatefulWidget {
   final Task task;
@@ -155,23 +156,6 @@ class _TaskCardState extends State<TaskCard> {
                                     widget.task.category,
                                   ),
                                 ),
-                                SizedBox(width: 1.5.w),                                // badge tugas / aktivitas
-                                _buildBadge(
-                                  icon: SvgPicture.asset(
-                                    _isTaskBasedOnSlug()
-                                        ? 'assets/icons/tugas.svg'
-                                        : 'assets/icons/activity.svg',
-                                    width: 3.w,
-                                    height: 3.w,
-                                    colorFilter: const ColorFilter.mode(
-                                      AppTheme.primaryColor,
-                                      BlendMode.srcIn,
-                                    ),
-                                  ),
-                                  label: _isTaskBasedOnSlug() ? 'Tugas' : 'Aktivitas',
-                                  bgColor: const Color(0xFFDFEAFF),
-                                  textColor: AppTheme.primaryColor,
-                                ),
                                 SizedBox(width: 1.5.w),
                                 // badge alarm
                                 if (hasAlarmIndicator)
@@ -281,17 +265,20 @@ class _TaskCardState extends State<TaskCard> {
                         ),
                       ),
                       color: const Color.fromARGB(255, 249, 251, 255),
-                      onSelected: (value) async {
-                        if (value == 'edit') {
+                      onSelected: (value) async {                        if (value == 'edit') {
+                          // Ambil data task terbaru dari API
+                          final latestTask = widget.task.slug != null
+                              ? await TaskApiService().getTaskBySlug(widget.task.slug!)
+                              : null;
                           final result = await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder:
-                                  (_) =>
-                                      AddTaskScreen(existingTask: widget.task),
+                              builder: (_) => AddTaskScreen(
+                                existingTask: latestTask ?? widget.task,
+                                // Anda bisa modifikasi AddTaskScreen untuk menerima alarm jika perlu
+                              ),
                             ),
                           );
-
                           if (result == true) {
                             final updatedTask = widget.task.id;
                             if (updatedTask != null) {
@@ -588,10 +575,5 @@ class _TaskCardState extends State<TaskCard> {
       case TaskStatus.upcoming:
         return const Color(0xFFE89B00);
     }
-  }
-
-  // Check if task is based on slug containing "tugas"
-  bool _isTaskBasedOnSlug() {
-    return widget.task.slug?.contains('tugas') ?? false;
   }
 }

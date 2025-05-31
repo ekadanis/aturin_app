@@ -2,10 +2,10 @@ import 'package:aturin_app/features/task/screens/ui/add_task_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../model/task_model.dart';
-import '../../services/task_services.dart';
 import '../../../../../../core/theme/app_theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:aturin_app/core/services/api/task/task_api_service.dart';
 
 @RoutePage()
 class TaskDetailScreen extends StatefulWidget {
@@ -66,7 +66,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               );
 
               if (result == true) {
-                final updatedTask = await TaskService().getTaskById(_task.id!);
+                final updatedTask = _task.slug != null
+                    ? await TaskApiService().getTaskBySlug(_task.slug!)
+                    : null;
                 if (updatedTask != null) {
                   setState(() {
                     _task = updatedTask;

@@ -117,18 +117,19 @@ class ActivityApiService {
       print('DEBUG: getTodayActivities error: $e');
       throw Exception('Error fetching today activities: $e');
     }
-  }
-
-  // POST /activities → Create new activity
+  }  // POST /activities → Create new activity
   Future<AktivitasModel?> createActivity(AktivitasModel activity) async {
     try {
       final headers = await _getHeaders();
       final userId = await _getUserId();
+      
       // Prepare the activity data for API with proper formatting
       final startTimeFormatted =
           '${activity.activityStartTime.hour.toString().padLeft(2, '0')}:${activity.activityStartTime.minute.toString().padLeft(2, '0')}';
       final endTimeFormatted =
-          '${activity.activityCompleteTime.hour.toString().padLeft(2, '0')}:${activity.activityCompleteTime.minute.toString().padLeft(2, '0')}';      final activityData = {
+          '${activity.activityCompleteTime.hour.toString().padLeft(2, '0')}:${activity.activityCompleteTime.minute.toString().padLeft(2, '0')}';
+      
+      final activityData = {
         'user_id': userId,
         'activity_title': activity.activityTitle,
         'activity_date': activity.activityDate.toIso8601String().split('T')[0],
@@ -243,7 +244,7 @@ class ActivityApiService {
         'activity_start_time': startTimeFormatted,
         'activity_complete_time': endTimeFormatted,
         'activity_category': activity.activityCategory.apiName,
-        if (activity.alarmId != null) 'alarm_id': activity.alarmId,
+        'alarm_id': activity.alarmId, // Always send alarm_id, even if null
       };
 
       // Debug logging

@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:aturin_app/features/task/screens/widgets/alarm_picker_bottom.dart';
+import 'package:aturin_app/core/widgets/alarm_picker_bottom_sheet.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AlarmPickerScreen extends StatefulWidget {
   final String? selectedOption;
+  final DateTime selectedDate;
+  final TimeOfDay startTime;
 
-  const AlarmPickerScreen({Key? key, this.selectedOption}) : super(key: key);
+  const AlarmPickerScreen({
+    Key? key,
+    this.selectedOption,
+    required this.selectedDate,
+    required this.startTime,
+  }) : super(key: key);
 
   @override
   State<AlarmPickerScreen> createState() => _AlarmPickerScreenState();
@@ -75,18 +82,12 @@ class _AlarmPickerScreenState extends State<AlarmPickerScreen> {
               child: InkWell(
                 borderRadius: BorderRadius.circular(8),
                 onTap: () async {
-                  // Atur batas waktu maksimal alarm (misal, 1 jam sebelum deadline)
-                  final now = DateTime.now();
-                  final maxDateTime = now.add(
-                    const Duration(days: 7),
-                  ); // Ganti sesuai kebutuhan
-
-                  final result = await showAlarmPickerBottomSheet(
+                  final result = await showCustomAlarmPickerBottomSheet(
                     context,
-                    maxDateTime: maxDateTime,
+                    selectedDate: widget.selectedDate,
+                    startTime: widget.startTime,
                   );
                   if (result != null) {
-                    // Kirim hasil custom ke parent, misal format: 'custom:<datetime>'
                     Navigator.of(
                       context,
                     ).pop('custom:${result.toIso8601String()}');

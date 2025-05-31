@@ -4,7 +4,7 @@ import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/schedul
 import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/date_selection_section.dart';
 import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/activity_form_section.dart';
 import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/time_selection_section.dart';
-import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/alarm_configuration_section.dart';
+import 'package:aturin_app/core/widgets/alarm_configuration_section.dart';
 import 'package:aturin_app/features/task/screens/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
@@ -78,12 +78,12 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
       selectedCategory = categories.firstWhere((c) => c.name == 'Akademik');
       print('DEBUG: New activity, selectedCategory set to default: ${selectedCategory?.name}');
     }
-  }
-  Future<void> _loadAlarmData(int alarmId) async {
+  }  Future<void> _loadAlarmData(int alarmId) async {
     try {
       final aktivitasService = Provider.of<AktivitasService>(context, listen: false);
-      // Use API service instead of direct database access
-      final alarmData = await aktivitasService.alarmApiService.getAlarmById(alarmId);
+      // Use API service to get all alarms and find by ID since backend only supports slug-based endpoints
+      final allAlarms = await aktivitasService.alarmApiService.getAllAlarms();
+      final alarmData = allAlarms.where((alarm) => alarm.id == alarmId).firstOrNull;
       
       if (alarmData != null && mounted) {
         setState(() {
@@ -144,9 +144,7 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
         );
       }
       return;
-    }
-
-    final startDateTime = DateTime(
+    }    final startDateTime = DateTime(
       selectedDate.year,
       selectedDate.month,
       selectedDate.day,
@@ -154,7 +152,6 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
       startTime!.minute,
     );
 
-    // Handle activities that span across midnight
     final endDateTime = DateTime(
       selectedDate.year,
       selectedDate.month,
@@ -162,11 +159,8 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
       endTime!.hour,
       endTime!.minute,
     );
-    
-    // If end time is earlier than start time, it means activity continues to next day
-    final adjustedEndDateTime = endDateTime.isBefore(startDateTime) || endDateTime.isAtSameMomentAs(startDateTime)
-        ? endDateTime.add(const Duration(days: 1))
-        : endDateTime;    // Prepare alarm datetime if alarm is enabled
+
+    // Prepare alarm datetime if alarm is enabled
     DateTime? pickedAlarmDateTime;
     if (isAlarmEnabled && alarmDateTime != null) {
       pickedAlarmDateTime = alarmDateTime;
@@ -178,7 +172,7 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
       userId: userId, // Use dynamic user ID from SharedPreferences
       activityTitle: activityTitle.trim(),
       activityDate: selectedDate,activityStartTime: startDateTime,
-      activityCompleteTime: adjustedEndDateTime, // Use adjusted end time
+      activityCompleteTime: endDateTime, // Use original end time
       activityCategory: _getCategoryEnum(selectedCategory!.name),
       alarmId: widget.existingAktivitas?.alarmId, // Keep existing alarmId for updates
       slug: widget.existingAktivitas?.slug, // Preserve existing slug for updates

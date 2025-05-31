@@ -1,23 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:aturin_app/core/services/api/task/task_api_service.dart';
+import 'package:aturin_app/core/services/api/alarm/alarm_api_service.dart';
+import 'package:alarm/alarm.dart';
 import '../../model/task_model.dart';
-import '../../services/task_services.dart';
 import 'task_card.dart';
 import 'snackbar.dart';
 import 'task_animator.dart';
 
 class TaskListView extends StatefulWidget {
-  final List<Task> tasks;
   final void Function(String)? onShowSuccess;
   final void Function(Task)? onTapTask;
   final String currentFilter;
-  
-  // Parameter untuk gaya animasi
   final String animationStyle;
 
   const TaskListView({
     Key? key,
-    required this.tasks,
     this.onShowSuccess,
     this.onTapTask,
     required this.currentFilter,
@@ -29,13 +26,14 @@ class TaskListView extends StatefulWidget {
 }
 
 class _TaskListViewState extends State<TaskListView> with TickerProviderStateMixin {
-  // Animator untuk mengelola animasi
   late TaskAnimator _animator;
-  
-  // Track task yang sedang dianimasikan
   int? _animatingTaskId;
   bool _isAnimating = false;
-  
+
+  List<Task> _tasks = [];
+  bool _isLoading = true;
+  String? _error;
+
   @override
   void initState() {
     super.initState();
@@ -43,18 +41,36 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
       vsync: this,
       animationStyle: widget.animationStyle,
     );
+    _fetchTasks();
   }
-  
+
+  Future<void> _fetchTasks() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final tasks = await TaskApiService().getAllTasks();
+      setState(() {
+        _tasks = tasks;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Gagal memuat tugas';
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   void didUpdateWidget(TaskListView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
-    // Update animator jika gaya animasi berubah
     if (widget.animationStyle != oldWidget.animationStyle) {
       _animator.updateAnimationStyle(widget.animationStyle);
     }
   }
-  
+
   @override
   void dispose() {
     _animator.dispose();
@@ -63,7 +79,13 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    if (widget.tasks.isEmpty) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(child: Text(_error!));
+    }
+    if (_tasks.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -78,40 +100,30 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
         ),
       );
     }
-
-    // Reset animation state when tasks list changes (like when switching tabs)
-    if (_isAnimating && !widget.tasks.any((t) => t.id == _animatingTaskId)) {
-      // If the currently animating task is no longer in the list, reset animation state
+    if (_isAnimating && !_tasks.any((t) => t.id == _animatingTaskId)) {
       _isAnimating = false;
       _animatingTaskId = null;
     }
-
     return ListView.builder(
-      padding: const EdgeInsets.only(top: 0, bottom: 80), // Reduced top padding to move list higher
-      itemCount: widget.tasks.length,
+      padding: const EdgeInsets.only(top: 0, bottom: 80),
+      itemCount: _tasks.length,
       itemBuilder: (context, index) {
-        final task = widget.tasks[index];
-        
-        // Cek apakah task ini sedang dianimasikan
+        final task = _tasks[index];
         final isAnimating = _animatingTaskId == task.id && _isAnimating;
-        
         if (isAnimating) {
-          // Widget dengan animasi custom
           return _animator.buildAnimatedTask(
-            task, 
+            task,
             _buildTaskCard(task),
             onAnimationComplete: () {
-              // Reset flag animasi setelah selesai
               setState(() {
                 if (_animatingTaskId == task.id) {
                   _isAnimating = false;
                   _animatingTaskId = null;
                 }
               });
-            }
+            },
           );
         } else {
-          // Widget tanpa animasi
           return _buildTaskCard(task);
         }
       },
@@ -126,67 +138,70 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
         child: TaskCard(
           task: task,
           currentFilter: widget.currentFilter,
-          onToggleCompletion: () {
-            // Set flag untuk animasi
+          onToggleCompletion: () async {
             setState(() {
               _animatingTaskId = task.id;
               _isAnimating = true;
             });
-            
-            // Mulai animasi
             _animator.prepareTaskAnimation(task, !task.isCompleted);
-            
-            // Toggle status task di provider
-            final taskService = Provider.of<TaskService>(
-              context,
-              listen: false,
-            );
-            taskService.toggleTaskCompletion(task.id);
-
-            if (!task.isCompleted) {
-              showCustomTopSnackbar(
-                context: context,
-                message: 'Berhasil Menyelesaikan Tugas',
+            try {
+              // Toggle completion using updateTask
+              final newStatus = task.isCompleted ? 'belum_selesai' : 'selesai';
+              await TaskApiService().updateTask(
+                slug: task.slug!,
+                status: newStatus,
               );
-            } else {
+              await _fetchTasks();
               showCustomTopSnackbar(
                 context: context,
-                message: 'Tugas kembali ke status awal',
+                message: !task.isCompleted
+                    ? 'Berhasil Menyelesaikan Tugas'
+                    : 'Tugas kembali ke status awal',
+              );
+            } catch (e) {
+              showCustomTopSnackbar(
+                context: context,
+                message: 'Gagal mengubah status tugas',
               );
             }
           },
           onDelete: () async {
-            // Set flag untuk animasi
             setState(() {
               _animatingTaskId = task.id;
               _isAnimating = true;
             });
-            
-            // Simpan ID task sebelum dihapus untuk menangani race condition
-            final taskId = task.id;
-            
+            final taskSlug = task.slug;
             try {
-              // Mulai animasi hapus
               _animator.prepareTaskDeletion(task, () async {
-                // Hapus task dari provider setelah animasi selesai
-                // Gunakan await untuk memastikan operasi database selesai
-                if (taskId != null) {
-                  await Provider.of<TaskService>(
-                    context,
-                    listen: false,
-                  ).deleteTask(taskId);
-                  
-                  // Tampilkan notifikasi hanya jika penghapusan berhasil
+                // Hapus alarm jika ada
+                if (task.alarmId != null) {
+                  try {
+                    // Hapus alarm lokal
+                    await Alarm.stop(task.alarmId!);
+                  } catch (e) {
+                    debugPrint('Gagal menghapus alarm lokal: $e');
+                  }                  try {
+                    // Ambil data alarm dari server lalu hapus berdasarkan slug
+                    final allAlarms = await AlarmApiService().getAllAlarms();
+                    final alarm = allAlarms.where((alarm) => alarm.id == task.alarmId!).firstOrNull;
+                    if (alarm != null && alarm.slug.isNotEmpty) {
+                      await AlarmApiService().deleteAlarm(alarm.slug);
+                    }
+                  } catch (e) {
+                    debugPrint('Gagal menghapus alarm di backend: $e');
+                  }
+                }
+                if (taskSlug != null) {
+                  await TaskApiService().deleteTask(taskSlug);
+                  await _fetchTasks();
                   showCustomTopSnackbar(
                     context: context,
                     message: 'Berhasil menghapus tugas',
                   );
                 }
-                
-                // Reset flag animasi setelah operasi database selesai
                 if (mounted) {
                   setState(() {
-                    if (_animatingTaskId == taskId) {
+                    if (_animatingTaskId == task.id) {
                       _isAnimating = false;
                       _animatingTaskId = null;
                     }
@@ -201,7 +216,6 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
                   _isAnimating = false;
                   _animatingTaskId = null;
                 });
-                
                 showCustomTopSnackbar(
                   context: context,
                   message: 'Gagal menghapus tugas, coba lagi',
@@ -212,11 +226,25 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
           onViewDetails: () {
             widget.onTapTask?.call(task);
           },
-          onToggleAlarm: () {
-            Provider.of<TaskService>(
-              context,
-              listen: false,
-            ).toggleAlarm(task.id);
+          onToggleAlarm: () async {
+            try {
+              // Toggle alarm using updateTask (e.g., set alarmId to null or to a value)
+              final newAlarmId = task.isAlarmEnabled ? null : task.alarmId;
+              await TaskApiService().updateTask(
+                slug: task.slug!,
+                alarmId: newAlarmId,
+              );
+              await _fetchTasks();
+              showCustomTopSnackbar(
+                context: context,
+                message: 'Alarm tugas diperbarui',
+              );
+            } catch (e) {
+              showCustomTopSnackbar(
+                context: context,
+                message: 'Gagal memperbarui alarm',
+              );
+            }
           },
         ),
       ),
