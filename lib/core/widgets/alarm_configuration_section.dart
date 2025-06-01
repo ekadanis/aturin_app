@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/widgets/alarm_picker.dart';
-import 'package:aturin_app/features/jadwal/screens/add_aktivitas/ui/alarm_picker_screen.dart';
+import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/waktu_mulai_waktu_selesai_picker_screen.dart';
 
 class AlarmConfigurationSection extends StatelessWidget {
   final bool isEnabled;
@@ -19,7 +19,8 @@ class AlarmConfigurationSection extends StatelessWidget {
     required this.startTime,
     required this.onToggle,
     required this.onAlarmTimeChanged,
-  });  // Check if start time allows for alarm (start time should be in the future with 1 minute buffer)
+  });
+  // Check if start time allows for alarm (start time should be in the future with 1 minute buffer)
   bool get _hasValidStartTime {
     if (startTime == null) return false;
 
@@ -32,8 +33,18 @@ class AlarmConfigurationSection extends StatelessWidget {
       startTime!.minute,
     );
 
-    // Start time must be at least 1 minute in the future to allow alarm
-    return startDateTime.isAfter(now.add(const Duration(minutes: 1)));
+    // For activities, we need to check if the complete datetime is in the future
+    // If it's today, require at least 1 minute buffer
+    // If it's a future date, allow any time on that date
+    if (selectedDate.year == now.year && 
+        selectedDate.month == now.month && 
+        selectedDate.day == now.day) {
+      // Same day - require 1 minute buffer
+      return startDateTime.isAfter(now.add(const Duration(minutes: 1)));
+    } else {
+      // Future date - just ensure the complete datetime is in the future
+      return startDateTime.isAfter(now);
+    }
   }
 
   // Check if current alarm time is still valid and not equal to current time
@@ -48,7 +59,9 @@ class AlarmConfigurationSection extends StatelessWidget {
              alarmDateTime!.day == now.day &&
              alarmDateTime!.hour == now.hour &&
              alarmDateTime!.minute == now.minute);
-  }  Future<void> _showAlarmPickerScreen(BuildContext context) async {
+  }
+
+  Future<void> _showAlarmPickerScreen(BuildContext context) async {
     if (startTime == null || !_hasValidStartTime) return;
 
     final result = await Navigator.push(
@@ -154,7 +167,14 @@ class AlarmConfigurationSection extends StatelessWidget {
     }
 
     if (!_hasValidStartTime) {
-      return '*Waktu alarm harus minimal 1 menit dari sekarang untuk mengaktifkan alarm';
+      // More specific error message based on whether it's today or future date
+      if (selectedDate.year == now.year && 
+          selectedDate.month == now.month && 
+          selectedDate.day == now.day) {
+        return '*Untuk aktivitas hari ini, alarm dapat diaktifkan minimal 1 menit sebelum waktu mulai';
+      } else {
+        return '*Waktu mulai aktivitas harus di masa depan untuk mengaktifkan alarm';
+      }
     }
 
     if (alarmDateTime != null && !_isAlarmTimeValid) {
@@ -175,7 +195,8 @@ class AlarmConfigurationSection extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [        // Alarm picker
+      children: [
+        // Alarm picker
         AlarmPicker(
           isEnabled: isEnabled && _hasValidStartTime && _isAlarmTimeValid,
           alarmDateTime: (_isAlarmTimeValid && alarmDateTime != null) ? alarmDateTime : null,

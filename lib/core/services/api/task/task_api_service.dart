@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class TaskService extends ChangeNotifier {
+class TaskApiService extends ChangeNotifier {
   static const String baseUrl = 'https://aturin-app.com/api/v1';
   bool _isLoading = false;
   String? _errorMessage;

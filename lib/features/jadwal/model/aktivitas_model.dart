@@ -54,6 +54,8 @@ enum ActivityCategory {
   }
 }
 
+
+
 class AktivitasModel {
   final int? id;
   final int? userId;  // Foreign key to users table

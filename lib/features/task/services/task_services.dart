@@ -211,7 +211,7 @@ class TaskService extends ChangeNotifier {
   
   // Generate slug from title
   String _generateSlug(String title) {
-    return 'tugas-' + title
+    return 'task-' + title
         .toLowerCase()
         .replaceAll(RegExp(r'[^a-z0-9 ]'), '')
         .replaceAll(' ', '-')

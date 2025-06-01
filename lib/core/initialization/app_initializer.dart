@@ -14,21 +14,20 @@ class AppInitializer {
     _alarmManager = AlarmManager(appRouter);
   }
 
-
   Future<void> initialize() async {
     try {
       // Set up UI elements first
       _setupSystemUI();
-      
+
       // Initialize formatting and localization
       await initializeDateFormatting('id_ID', null);
-      
+
       // Request necessary permissions
       await PermissionsService.requestAllPermissions();
-      
+
       // Initialize alarm system
       await _alarmManager.initialize();
-      
+
       debugPrint('App initialization completed successfully');
     } catch (e) {
       debugPrint('Error during app initialization: $e');
@@ -45,7 +44,7 @@ class AppInitializer {
       ),
     );
   }
-  
+
   /// Get access to the alarm manager instance
   AlarmManager get alarmManager => _alarmManager;
 }

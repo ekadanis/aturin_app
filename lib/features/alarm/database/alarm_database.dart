@@ -42,11 +42,11 @@ class AlarmDatabase {
       return null;
     }
   }
-
   /// Get alarm by ID using API
   Future<AlarmModel?> getAlarmById(int id) async {
     try {
-      return await _apiService.getAlarmById(id);
+      final allAlarms = await _apiService.getAllAlarms();
+      return allAlarms.where((alarm) => alarm.id == id).firstOrNull;
     } catch (e) {
       debugPrint('Error getting alarm by ID: $e');
       return null;

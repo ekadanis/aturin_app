@@ -3,38 +3,100 @@ import 'package:flutter/material.dart';
 // import '../database/aktivitas_database.dart'; // DISABLED SQLite
 import '../model/aktivitas_model.dart';
 import '../../alarm/services/alarm_service.dart';
-import 'package:aturin_app/features/alarm/model/alarm.dart';
-import '../../../core/services/api/alarm/alarm_api_service.dart' as api_alarm;
+import '../../alarm/model/alarm.dart';
 // import '../../alarm/database/alarm_database.dart'; // DISABLED SQLite
 import '../../../core/services/api/activities/activity_api_service.dart';
+import '../../../core/services/api/alarm/alarm_api_service.dart';
 
 class AktivitasService extends ChangeNotifier {
   // final aktivitasDatabase = AktivitasDatabase(); // DISABLED SQLite
-  final activityService = ActivityService(); // NEW API Service
+  final activityService = ActivityApiService(); // NEW API Service
   final alarmService = AlarmService();
-  final alarmApiService = api_alarm.AlarmApiService(); // NEW Alarm API Service
+  final alarmApiService = AlarmApiService(); // NEW Alarm API Service
   // final alarmDatabase = AlarmDatabase.instance; // DISABLED SQLite
   
   List<AktivitasModel> _aktivitasList = [];
   final Map<String, List<AktivitasModel>> _cachedFilteredAktivitas = {};
   DateTime _lastFetchTime = DateTime(1970);
+  
+  // Realtime updates
+  final StreamController<List<AktivitasModel>> _aktivitasStreamController = 
+      StreamController<List<AktivitasModel>>.broadcast();
+  Timer? _periodicRefreshTimer;
+  bool _isAutoRefreshEnabled = true;
+  
+  Stream<List<AktivitasModel>> get aktivitasStream => _aktivitasStreamController.stream;
 
   List<AktivitasModel> get aktivitasList => _aktivitasList;
-  /// Fetch all aktivitas from the API
-  Future<void> fetchAktivitas() async {
+  
+  /// Initialize realtime updates
+  void initializeRealtimeUpdates() {
+    debugPrint('Initializing realtime updates for aktivitas');
+    _startPeriodicRefresh();
+  }
+  
+  /// Start periodic refresh every 30 seconds
+  void _startPeriodicRefresh() {
+    _periodicRefreshTimer?.cancel();
+    if (_isAutoRefreshEnabled) {
+      _periodicRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+        debugPrint('Periodic refresh triggered');
+        fetchAktivitas(forceRefresh: true);
+      });
+    }
+  }
+  
+  /// Stop realtime updates
+  void stopRealtimeUpdates() {
+    debugPrint('Stopping realtime updates for aktivitas');
+    _periodicRefreshTimer?.cancel();
+    _isAutoRefreshEnabled = false;
+  }
+  
+  /// Enable/disable auto refresh
+  void setAutoRefresh(bool enabled) {
+    _isAutoRefreshEnabled = enabled;
+    if (enabled) {
+      _startPeriodicRefresh();
+    } else {
+      _periodicRefreshTimer?.cancel();
+    }
+  }  /// Fetch all aktivitas from the API
+  Future<void> fetchAktivitas({bool forceRefresh = false}) async {
     final now = DateTime.now();
-    if (now.difference(_lastFetchTime).inSeconds < 2 && _aktivitasList.isNotEmpty) {
+    if (!forceRefresh && now.difference(_lastFetchTime).inSeconds < 2 && _aktivitasList.isNotEmpty) {
       debugPrint('Using cached aktivitas (fetched ${now.difference(_lastFetchTime).inSeconds}s ago)');
       return;
     }
 
     try {
+      debugPrint('Fetching aktivitas from API (forceRefresh: $forceRefresh)');
       final result = await activityService.getAllActivities();
+      
+      // Check if data has actually changed
+      bool dataChanged = _aktivitasList.length != result.length;
+      if (!dataChanged && _aktivitasList.isNotEmpty) {
+        for (int i = 0; i < _aktivitasList.length; i++) {
+          if (_aktivitasList[i].id != result[i].id ||
+              _aktivitasList[i].activityTitle != result[i].activityTitle ||
+              _aktivitasList[i].updatedAt != result[i].updatedAt) {
+            dataChanged = true;
+            break;
+          }
+        }
+      }
+      
       _aktivitasList = result;
       _lastFetchTime = now;
-
       _cachedFilteredAktivitas.clear();
-      notifyListeners();
+      
+      // Emit to stream
+      _aktivitasStreamController.add(_aktivitasList);
+      
+      if (dataChanged || forceRefresh) {
+        debugPrint('Data changed or force refresh - notifying listeners');
+        notifyListeners();
+      }
     } catch (e) {
       debugPrint('Error fetching activities: $e');
       // Keep the existing list if API call fails
@@ -116,54 +178,46 @@ class AktivitasService extends ChangeNotifier {
       debugPrint('Error getting activity by ID: $e');
       return null;
     }
-  }
-  /// Add a new aktivitas using API
+  }  /// Add a new aktivitas using API
   Future<int> addAktivitas(AktivitasModel aktivitas, DateTime? pickedAlarmDateTime) async {
-    final slug = 'aktivitas-' + aktivitas.activityTitle
+    final slug = 'activity-' + aktivitas.activityTitle
         .toLowerCase()
         .replaceAll(RegExp(r'[^a-z0-9 ]'), '')
         .replaceAll(' ', '-');
 
-    if (!_isValidTiming(aktivitas)) {
-      throw Exception('Waktu mulai harus sebelum waktu selesai');
-    }    debugPrint('DEBUG addAktivitas: Starting - pickedAlarmDateTime: $pickedAlarmDateTime');
+    // Basic validation - let API handle detailed timing validation
+    // This allows cross-midnight activities
+
+    debugPrint('DEBUG addAktivitas: Starting - pickedAlarmDateTime: $pickedAlarmDateTime');
     debugPrint('DEBUG addAktivitas: Aktivitas title: ${aktivitas.activityTitle}');
     
     int? alarmId;
     if (pickedAlarmDateTime != null && pickedAlarmDateTime.isAfter(DateTime.now())) {
       debugPrint('DEBUG addAktivitas: Creating alarm via API...');
-      
-      try {
-        // Create alarm using AlarmApiService
-        final alarmSlug = 'alarm-$slug-${DateTime.now().millisecondsSinceEpoch}';
+        try {        // Create alarm using AlarmApiService
+        // Note: Backend auto-generates slug with timestamp, so we use a temporary slug
+        final tempAlarmSlug = 'alarm-activity-${aktivitas.activityTitle.toLowerCase().replaceAll(RegExp(r'[^a-z0-9 ]'), '').replaceAll(' ', '-')}';
         final newAlarm = AlarmModel(
           alarmDateTime: pickedAlarmDateTime,
           alarmEnabled: true,
-          slug: alarmSlug,
+          slug: tempAlarmSlug, // This will be replaced by backend-generated slug
         );
-        // Konversi ke model API sebelum createAlarm
-        final createdAlarm = await alarmApiService.createAlarm(
-          AlarmModel(
-            id: newAlarm.id ?? 0,
-            alarmDateTime: newAlarm.alarmDateTime,
-            alarmEnabled: newAlarm.alarmEnabled,
-            slug: newAlarm.slug,
-            createdAt: newAlarm.createdAt,
-            updatedAt: newAlarm.updatedAt,
-          ),
-        );
+        
+        final createdAlarm = await alarmApiService.createAlarm(newAlarm);
         if (createdAlarm != null) {
-          final int alarmId = createdAlarm.id!;
+          alarmId = createdAlarm.id;
           debugPrint('DEBUG addAktivitas: ✅ Alarm berhasil dibuat dengan ID: $alarmId');
+          debugPrint('DEBUG addAktivitas: Backend-generated slug: ${createdAlarm.slug}');
+          
           // Set system alarm
           try {
-              await alarmService.setAlarm(
-                alarmId,
-                pickedAlarmDateTime,
-                'Aktivitas: \\${aktivitas.activityTitle}',
-                'Aktivitas Anda akan dimulai sesuai pengaturan alarm',
-              );
-              debugPrint('DEBUG addAktivitas: ✅ System alarm berhasil diset untuk ID: $alarmId pada waktu: $pickedAlarmDateTime');
+            await alarmService.setAlarm(
+              alarmId!,
+              pickedAlarmDateTime,
+              'Aktivitas: ${aktivitas.activityTitle}',
+              'Aktivitas Anda akan dimulai sesuai pengaturan alarm',
+            );
+            debugPrint('DEBUG addAktivitas: ✅ System alarm berhasil diset untuk ID: $alarmId pada waktu: $pickedAlarmDateTime');
           } catch (e) {
             debugPrint('DEBUG addAktivitas: ❌ Gagal set system alarm: $e');
           }
@@ -184,38 +238,47 @@ class AktivitasService extends ChangeNotifier {
       createdAt: now,
       updatedAt: now,
     );
-    
-    try {
+      try {
       final createdActivity = await activityService.createActivity(aktivitasWithTimestamps);
       if (createdActivity != null) {
         debugPrint('DEBUG addAktivitas: Aktivitas berhasil disimpan dengan ID: ${createdActivity.id}, alarmId: $alarmId');
-        await fetchAktivitas(); // Refresh the list
+        // Auto-refresh data after successful creation
+        await fetchAktivitas(forceRefresh: true);
         return createdActivity.id ?? 0;
       } else {
         throw Exception('Failed to create activity');
-      }
-    } catch (e) {
+      }    } catch (e) {
       debugPrint('DEBUG addAktivitas: Error creating activity: $e');
+      
+      // Check if it's a timing validation error
+      if (e.toString().contains('activity complete time field must be a date after activity start time')) {
+        throw Exception('Waktu selesai aktivitas harus setelah waktu mulai. Pastikan waktu selesai lebih besar dari waktu mulai.');
+      }
+      
+      // Check for other validation errors
+      if (e.toString().contains('422') || e.toString().contains('validation')) {
+        throw Exception('Data aktivitas tidak valid. Periksa kembali waktu mulai dan waktu selesai.');
+      }
+      
       rethrow;
     }
-  }
-  /// Update aktivitas using API
+  }  /// Update aktivitas using API
   Future<int> updateAktivitas(AktivitasModel aktivitas, DateTime? pickedAlarmDateTime) async {
     debugPrint('DEBUG updateAktivitas: Starting - ID: ${aktivitas.id}, pickedAlarmDateTime: $pickedAlarmDateTime');
     debugPrint('DEBUG updateAktivitas: Aktivitas title: ${aktivitas.activityTitle}');
-    
-    final slug = aktivitas.slug ?? 'aktivitas-' + aktivitas.activityTitle
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9 ]'), '')
-        .replaceAll(' ', '-');
+    debugPrint('DEBUG updateAktivitas: Existing slug: ${aktivitas.slug}');
     
     if (aktivitas.id == null) {
       throw Exception('ID aktivitas tidak boleh null untuk update');
     }
     
-    if (!_isValidTiming(aktivitas)) {
-      throw Exception('Waktu mulai harus sebelum waktu selesai');
-    }
+    if (aktivitas.slug == null || aktivitas.slug!.isEmpty) {
+      throw Exception('Slug tidak boleh kosong untuk update. Data mungkin rusak.');
+    }    final slug = aktivitas.slug!; // Use existing slug from database
+    debugPrint('DEBUG updateAktivitas: Using original slug from database: $slug');
+    
+    // Basic timing validation - allow cross-midnight activities
+    // The API will handle detailed validation
     
     final existingAktivitas = await getAktivitasById(aktivitas.id!);
     debugPrint('DEBUG updateAktivitas: Existing aktivitas alarmId: ${existingAktivitas?.alarmId}');
@@ -225,71 +288,77 @@ class AktivitasService extends ChangeNotifier {
       debugPrint('DEBUG updateAktivitas: Processing alarm - waktu valid');
       if (existingAktivitas?.alarmId != null) {
         debugPrint('DEBUG updateAktivitas: Updating existing alarm dengan ID: ${existingAktivitas!.alarmId}');
-        alarmId = existingAktivitas.alarmId;
-        
-        try {
+        alarmId = existingAktivitas.alarmId;        try {
           // Get existing alarm and update it via API
-          final existingAlarm = await alarmApiService.getAlarmById(alarmId!);
-          if (existingAlarm != null) {
-            final updatedAlarm = AlarmModel(
-              id: existingAlarm.id,
+          // Since backend uses slug-based endpoints, we need to get all alarms and find by ID
+          final allAlarms = await alarmApiService.getAllAlarms();
+          final existingAlarm = allAlarms.where((alarm) => alarm.id == alarmId).firstOrNull;
+          debugPrint('DEBUG updateAktivitas: Existing alarm details - ID: ${existingAlarm?.id}, DateTime: ${existingAlarm?.alarmDateTime}, Slug: ${existingAlarm?.slug}');
+            if (existingAlarm != null) {
+            debugPrint('DEBUG updateAktivitas: === ALARM UPDATE PROCESS ===');
+            debugPrint('DEBUG updateAktivitas: Original alarm datetime: ${existingAlarm.alarmDateTime}');
+            debugPrint('DEBUG updateAktivitas: New picked datetime: $pickedAlarmDateTime');
+            debugPrint('DEBUG updateAktivitas: Alarm slug: ${existingAlarm.slug}');
+            debugPrint('DEBUG updateAktivitas: Alarm ID: ${existingAlarm.id}');
+            
+            final updatedAlarm = existingAlarm.copyWith(
               alarmDateTime: pickedAlarmDateTime,
               alarmEnabled: true,
-              slug: existingAlarm.slug,
-              createdAt: existingAlarm.createdAt,
-              updatedAt: existingAlarm.updatedAt,
             );
-            await alarmApiService.updateAlarm(existingAlarm.slug, AlarmModel(
-              id: updatedAlarm.id ?? 0,
-              alarmDateTime: updatedAlarm.alarmDateTime,
-              alarmEnabled: updatedAlarm.alarmEnabled,
-              slug: updatedAlarm.slug,
-              createdAt: updatedAlarm.createdAt,
-              updatedAt: updatedAlarm.updatedAt,
-            ));
-            debugPrint('DEBUG updateAktivitas: ✅ Alarm berhasil diupdate via API');
+            debugPrint('DEBUG updateAktivitas: Updated alarm object:');
+            debugPrint('  - DateTime: ${updatedAlarm.alarmDateTime}');
+            debugPrint('  - DateTime ISO: ${updatedAlarm.alarmDateTime.toIso8601String()}');
+            debugPrint('  - Enabled: ${updatedAlarm.alarmEnabled}');
+            debugPrint('  - Slug: ${updatedAlarm.slug}');
+            debugPrint('  - ID: ${updatedAlarm.id}');
+            
+            final result = await alarmApiService.updateAlarm(existingAlarm.slug, updatedAlarm);
+            if (result != null) {
+              debugPrint('DEBUG updateAktivitas: ✅ Alarm berhasil diupdate via API');
+              debugPrint('  - Result datetime: ${result.alarmDateTime}');
+              debugPrint('  - Result datetime ISO: ${result.alarmDateTime.toIso8601String()}');
+              debugPrint('  - Expected vs Actual: $pickedAlarmDateTime vs ${result.alarmDateTime}');
+              debugPrint('  - Match: ${pickedAlarmDateTime.isAtSameMomentAs(result.alarmDateTime)}');
+            } else {
+              debugPrint('DEBUG updateAktivitas: ❌ Update alarm API returned null');
+            }
+          } else {          debugPrint('DEBUG updateAktivitas: ❌ Existing alarm not found for ID: $alarmId');
           }
           
           // Update system alarm
-          await alarmService.setAlarm(
-            alarmId,
-            pickedAlarmDateTime,
-            'Aktivitas: \\${aktivitas.activityTitle}',
-            'Aktivitas Anda akan dimulai sesuai pengaturan alarm',
-          );
-          debugPrint('DEBUG updateAktivitas: ✅ System alarm berhasil diupdate untuk ID: $alarmId pada waktu: $pickedAlarmDateTime');
+          if (alarmId != null) {
+            await alarmService.setAlarm(
+              alarmId,
+              pickedAlarmDateTime,
+              'Aktivitas: ${aktivitas.activityTitle}',
+              'Aktivitas Anda akan dimulai sesuai pengaturan alarm',
+            );
+            debugPrint('DEBUG updateAktivitas: ✅ System alarm berhasil diupdate untuk ID: $alarmId pada waktu: $pickedAlarmDateTime');
+          }
         } catch (e) {
           debugPrint('DEBUG updateAktivitas: ❌ Gagal update alarm: $e');
         }
       } else {
         debugPrint('DEBUG updateAktivitas: Creating new alarm via API...');
-        
-        try {
+          try {
           // Create new alarm using AlarmApiService
-          final alarmSlug = 'alarm-$slug-${DateTime.now().millisecondsSinceEpoch}';
+          final alarmSlug = 'alarm-activity-${aktivitas.activityTitle.toLowerCase().replaceAll(RegExp(r'[^a-z0-9 ]'), '').replaceAll(' ', '-')}';
           final newAlarm = AlarmModel(
             alarmDateTime: pickedAlarmDateTime,
             alarmEnabled: true,
             slug: alarmSlug,
           );
-          final createdAlarm = await alarmApiService.createAlarm(
-            AlarmModel(
-              id: newAlarm.id ?? 0,
-              alarmDateTime: newAlarm.alarmDateTime,
-              alarmEnabled: newAlarm.alarmEnabled,
-              slug: newAlarm.slug,
-              createdAt: newAlarm.createdAt,
-              updatedAt: newAlarm.updatedAt,
-            ),
-          );
+          
+          final createdAlarm = await alarmApiService.createAlarm(newAlarm);
           if (createdAlarm != null) {
-            final int alarmId = createdAlarm.id!;
+            alarmId = createdAlarm.id;
             debugPrint('DEBUG updateAktivitas: ✅ New alarm berhasil dibuat dengan ID: $alarmId');
+            
             // Set system alarm
             await alarmService.setAlarm(
-              alarmId,
+              alarmId!,
               pickedAlarmDateTime,
-              'Aktivitas: \\${aktivitas.activityTitle}',
+              'Aktivitas: ${aktivitas.activityTitle}',
               'Aktivitas Anda akan dimulai sesuai pengaturan alarm',
             );
             debugPrint('DEBUG updateAktivitas: ✅ System alarm berhasil diset untuk new alarm ID: $alarmId pada waktu: $pickedAlarmDateTime');
@@ -305,10 +374,11 @@ class AktivitasService extends ChangeNotifier {
       // No alarm or invalid time - remove existing alarm if any
       if (existingAktivitas?.alarmId != null) {
         debugPrint('DEBUG updateAktivitas: Removing existing alarm dengan ID: ${existingAktivitas!.alarmId}');
-        
-        try {
+          try {
           // Delete alarm via API
-          final existingAlarm = await alarmApiService.getAlarmById(existingAktivitas.alarmId!);
+          // Since backend uses slug-based endpoints, we need to get all alarms and find by ID  
+          final allAlarms = await alarmApiService.getAllAlarms();
+          final existingAlarm = allAlarms.where((alarm) => alarm.id == existingAktivitas.alarmId).firstOrNull;
           if (existingAlarm != null) {
             await alarmApiService.deleteAlarm(existingAlarm.slug);
             debugPrint('DEBUG updateAktivitas: ✅ Alarm berhasil dihapus via API');
@@ -331,18 +401,28 @@ class AktivitasService extends ChangeNotifier {
       slug: slug,
       updatedAt: DateTime.now(),
     );
-    
-    try {
+      try {
       final updatedActivity = await activityService.updateActivity(slug, aktivitasWithTimestamp);
       if (updatedActivity != null) {
         debugPrint('DEBUG updateAktivitas: ✅ Aktivitas berhasil diupdate dengan final alarmId: $alarmId');
-        await fetchAktivitas();
+        // Auto-refresh data after successful update
+        await fetchAktivitas(forceRefresh: true);
         return 1; // Success
       } else {
         throw Exception('Failed to update activity');
-      }
-    } catch (e) {
+      }    } catch (e) {
       debugPrint('DEBUG updateAktivitas: Error updating activity: $e');
+      
+      // Check if it's a timing validation error
+      if (e.toString().contains('activity complete time field must be a date after activity start time')) {
+        throw Exception('Waktu selesai aktivitas harus setelah waktu mulai. Pastikan waktu selesai lebih besar dari waktu mulai.');
+      }
+      
+      // Check for other validation errors
+      if (e.toString().contains('422') || e.toString().contains('validation')) {
+        throw Exception('Data aktivitas tidak valid. Periksa kembali waktu mulai dan waktu selesai.');
+      }
+      
       rethrow;
     }
   }
@@ -354,8 +434,7 @@ class AktivitasService extends ChangeNotifier {
     }    try {
       // Get aktivitas to check for alarm
       final aktivitas = await getAktivitasById(id);
-      
-      // Cancel and delete alarm if exists
+        // Cancel and delete alarm if exists
       if (aktivitas?.alarmId != null) {
         try {
           // Cancel system alarm first
@@ -363,7 +442,9 @@ class AktivitasService extends ChangeNotifier {
           debugPrint('System alarm berhasil dihapus untuk aktivitas ID: $id');
           
           // Delete alarm via API
-          final existingAlarm = await alarmApiService.getAlarmById(aktivitas.alarmId!);
+          // Since backend uses slug-based endpoints, we need to get all alarms and find by ID
+          final allAlarms = await alarmApiService.getAllAlarms();
+          final existingAlarm = allAlarms.where((alarm) => alarm.id == aktivitas.alarmId).firstOrNull;
           if (existingAlarm != null) {
             await alarmApiService.deleteAlarm(existingAlarm.slug);
             debugPrint('Alarm berhasil dihapus via API untuk aktivitas ID: $id');
@@ -371,18 +452,13 @@ class AktivitasService extends ChangeNotifier {
         } catch (e) {
           debugPrint('Error menghapus alarm untuk aktivitas ID $id: $e');
         }
-      }
-
-      // Delete from API using slug
+      }// Delete from API using slug
       if (aktivitas?.slug != null) {
         final success = await activityService.deleteActivity(aktivitas!.slug!);
         if (success) {
-          // Remove from local list
-          _aktivitasList.removeWhere((aktivitas) => aktivitas.id == id);
-          _cachedFilteredAktivitas.clear();
-          
-          notifyListeners();
           debugPrint('Aktivitas berhasil dihapus dengan ID: $id');
+          // Auto-refresh data after successful deletion
+          await fetchAktivitas(forceRefresh: true);
           return 1;
         } else {
           throw Exception('Failed to delete activity from API');
@@ -412,9 +488,10 @@ class AktivitasService extends ChangeNotifier {
           // Cancel system alarm first
           await alarmService.cancelAlarm(aktivitas!.alarmId!);
           debugPrint('System alarm berhasil dihapus untuk aktivitas ID: $id (silent)');
-          
-          // Delete alarm via API
-          final existingAlarm = await alarmApiService.getAlarmById(aktivitas.alarmId!);
+            // Delete alarm via API
+          // Since backend uses slug-based endpoints, we need to get all alarms and find by ID
+          final allAlarms = await alarmApiService.getAllAlarms();
+          final existingAlarm = allAlarms.where((alarm) => alarm.id == aktivitas.alarmId).firstOrNull;
           if (existingAlarm != null) {
             await alarmApiService.deleteAlarm(existingAlarm.slug);
             debugPrint('Alarm berhasil dihapus via API untuk aktivitas ID: $id (silent)');
@@ -465,27 +542,10 @@ class AktivitasService extends ChangeNotifier {
     await fetchAktivitas();
     return _aktivitasList.length;
   }
-
   /// Get count of aktivitas by user (from cached list)
   Future<int> getCountByUserId(int userId) async {
     await fetchAktivitas();
     return _aktivitasList.length; // All activities are for current user in token-based auth
-  }
-
-  /// Validate aktivitas timing
-  bool _isValidTiming(AktivitasModel aktivitas) {
-    // Allow activities that span across midnight
-    // If end time is earlier than start time, it means the activity continues to the next day
-    final startTime = TimeOfDay.fromDateTime(aktivitas.activityStartTime);
-    final endTime = TimeOfDay.fromDateTime(aktivitas.activityCompleteTime);
-    
-    // Convert to minutes for comparison
-    final startMinutes = startTime.hour * 60 + startTime.minute;
-    final endMinutes = endTime.hour * 60 + endTime.minute;
-    
-    // If end time is earlier, it means activity spans to next day - this is valid
-    // If start and end are the same, it's invalid (0 duration)
-    return startMinutes != endMinutes;
   }
 
   /// Clear cache

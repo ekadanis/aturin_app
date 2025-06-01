@@ -1,27 +1,28 @@
-import 'package:aturin_app/core/services/api/auth/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:aturin_app/features/task/services/task_services.dart' as task;
 import 'package:aturin_app/features/home/services/home_service.dart';
 import 'package:aturin_app/features/profile/services/profile_service.dart';
-import 'package:aturin_app/features/auth/api/auth_service.dart';
 import 'package:aturin_app/features/jadwal/services/aktivitas_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'core/initialization/app_initializer.dart';
 import 'core/database/database_helper.dart';
 import 'routers/app_router.dart';
 import 'core/theme/app_theme.dart';
-import 'core/services/api/task/task_service.dart';
+import 'core/services/connectivity/connectivity_service.dart';
+import 'core/services/api/auth/auth_service.dart';
 
-// Membuat instance AppRouter di level global
+// Membuat instance AppRouter dan ConnectivityService di level global
 final appRouter = AppRouter();
+final connectivityService = ConnectivityService();
 
 Future<void> main() async {
   // Preserve splash screen until initialization is complete
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-  // await DatabaseHelper.instance.resetDatabase(); // untuk dev/test saja
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   // Set orientasi hanya potrait
   await SystemChrome.setPreferredOrientations([
@@ -43,25 +44,38 @@ Future<void> main() async {
 
 Future<void> _initializeApp() async {
   try {
-    final dbHelper = DatabaseHelper.instance;
-    await dbHelper.database;
-    debugPrint('Database initialized successfully');
-    // Initialize the app with AppInitializer
-    final appInitializer = AppInitializer(appRouter);
-    await appInitializer.initialize();
+    // Initialize connectivity service first (highest priority)
+    await connectivityService.initialize();
+    debugPrint('Connectivity service initialized successfully');
 
-    // Tambahkan logika redirect berdasarkan status login
-    final prefs = await SharedPreferences.getInstance();
-    final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    await initializeDateFormatting('id_ID', null);
+    debugPrint('Date formatting initialized for id_ID locale');
 
-    if (isLoggedIn) {
-      appRouter.replaceAll([const HomeRoute()]);
+    // Only proceed with other initializations if we have internet
+    if (connectivityService.isConnected) {
+      // Initialize the app with AppInitializer
+      final appInitializer = AppInitializer(appRouter);
+      await appInitializer.initialize();
+
+      // Setup alarm manager
+      appInitializer.alarmManager.setAppCreator(() => const MyApp());
+
+      // Handle login routing only if online
+      final prefs = await SharedPreferences.getInstance();
+      final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+
+      if (isLoggedIn) {
+        appRouter.replaceAll([const HomeRoute()]);
+      } else {
+        appRouter.replaceAll([const LoginRoute()]);
+      }
     } else {
-      appRouter.replaceAll([const LoginRoute()]);
+      // If offline, navigate directly to NoInternetScreen
+      debugPrint(
+        'No internet connection detected, navigating to NoInternetScreen',
+      );
+      appRouter.replaceAll([const NoInternetRoute()]);
     }
-
-    // Setup alarm manager
-    appInitializer.alarmManager.setAppCreator(() => const MyApp());
   } catch (e) {
     debugPrint('Failed to initialize app: $e');
     throw Exception('App initialization failed: $e');
@@ -80,7 +94,15 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => TaskService()),
+        ChangeNotifierProvider<ConnectivityService>.value(
+          value: connectivityService,
+        ),
+        // Provider untuk AuthService
+        ChangeNotifierProvider<AuthService>(create: (_) => AuthService()),
+        // Provider untuk TaskService dari features/task (untuk backward compatibility)
+        ChangeNotifierProvider<task.TaskService>(
+          create: (_) => task.TaskService(),
+        ),
         // Provider untuk HomeService (unified service for home page)
         ChangeNotifierProvider<HomeService>(create: (_) => HomeService()),
         // Provider untuk AktivitasService
@@ -89,8 +111,6 @@ class _MyAppState extends State<MyApp> {
         ),
         // Provider untuk ProfileService
         ChangeNotifierProvider<ProfileService>(create: (_) => ProfileService()),
-        // Provider untuk AuthService
-        ChangeNotifierProvider<AuthService>(create: (_) => AuthService()),
       ],
       child: Sizer(
         builder: (context, orientation, deviceType) {

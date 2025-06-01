@@ -265,7 +265,6 @@ void showDeleteDialog(BuildContext context, AktivitasModel aktivitas) {
       cancelText: 'Batal',
       onConfirm: () async {
         final aktivitasService = Provider.of<AktivitasService>(context, listen: false);
-        await aktivitasService.deleteAktivitas(aktivitas.id!);
         Navigator.of(context).pop(); // Tutup dialog
         final state = context.findAncestorStateOfType<_ActivityDetailListPageState>();
         if (state != null) {

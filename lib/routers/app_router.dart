@@ -21,6 +21,7 @@ import 'package:aturin_app/features/jadwal/screens/add_aktivitas/ui/add_aktivita
 import 'package:aturin_app/features/jadwal/screens/detailactivity/ui/activity_detail_list.dart';
 import 'package:aturin_app/features/auth/login/ui/login_page.dart';
 import 'package:aturin_app/features/auth/register/ui/register_page.dart';
+import 'package:aturin_app/features/no_internet/ui/no_internet_screen.dart';
 
 
 part 'app_router.gr.dart';
@@ -100,10 +101,14 @@ class AppRouter extends RootStackRouter {
       page: ActivityDetailListRoute.page,
       transitionsBuilder: (_, __, ___, child) => child,
       duration: Duration.zero,
-    ),     
-    CustomRoute(
+    ),       CustomRoute(
       path: '/aktivitas/task-detail',
       page: TaskDetailListRoute.page,
+      transitionsBuilder: (_, __, ___, child) => child,
+      duration: Duration.zero,
+    ),    CustomRoute(
+      path: '/no-internet',
+      page: NoInternetRoute.page,
       transitionsBuilder: (_, __, ___, child) => child,
       duration: Duration.zero,
     ),

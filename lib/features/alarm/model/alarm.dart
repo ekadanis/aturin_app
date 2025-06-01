@@ -5,6 +5,7 @@ class AlarmModel {
   final String slug;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
   AlarmModel({
     this.id,
     required this.alarmDateTime,
@@ -29,7 +30,7 @@ class AlarmModel {
     return {
       'id': id,
       'alarm_date_time': alarmDateTime.toIso8601String(),
-      'alarm_enabled': alarmEnabled,
+      'is_alarm_enabled': alarmEnabled,
       'slug': slug,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
@@ -45,17 +46,6 @@ class AlarmModel {
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };
-  }
-
-  factory AlarmModel.fromMap(Map<String, dynamic> map) {
-    return AlarmModel(
-      id: map['id'],
-      alarmDateTime: DateTime.parse(map['alarm_date_time']),
-      alarmEnabled: map['alarm_enabled'] == 1,
-      slug: map['slug'] ?? '',
-      createdAt: map['created_at'] != null ? DateTime.tryParse(map['created_at']) : null,
-      updatedAt: map['updated_at'] != null ? DateTime.tryParse(map['updated_at']) : null,
-    );
   }
 
   AlarmModel copyWith({
@@ -75,7 +65,4 @@ class AlarmModel {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
-
-  // Backward compatibility getter
-  int get alarmId => id ?? 0;
 }

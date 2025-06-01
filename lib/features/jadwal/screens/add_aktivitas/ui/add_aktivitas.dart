@@ -4,7 +4,7 @@ import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/schedul
 import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/date_selection_section.dart';
 import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/activity_form_section.dart';
 import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/time_selection_section.dart';
-import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/alarm_configuration_section.dart';
+import 'package:aturin_app/core/widgets/alarm_configuration_section.dart';
 import 'package:aturin_app/features/task/screens/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
@@ -14,6 +14,7 @@ import 'package:aturin_app/core/widgets/categories.dart';
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:aturin_app/features/jadwal/services/aktivitas_service.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 @RoutePage()
 class AddAktivitasPage extends StatefulWidget {
@@ -77,12 +78,12 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
       selectedCategory = categories.firstWhere((c) => c.name == 'Akademik');
       print('DEBUG: New activity, selectedCategory set to default: ${selectedCategory?.name}');
     }
-  }
-  Future<void> _loadAlarmData(int alarmId) async {
+  }  Future<void> _loadAlarmData(int alarmId) async {
     try {
       final aktivitasService = Provider.of<AktivitasService>(context, listen: false);
-      // Use API service instead of direct database access
-      final alarmData = await aktivitasService.alarmApiService.getAlarmById(alarmId);
+      // Use API service to get all alarms and find by ID since backend only supports slug-based endpoints
+      final allAlarms = await aktivitasService.alarmApiService.getAllAlarms();
+      final alarmData = allAlarms.where((alarm) => alarm.id == alarmId).firstOrNull;
       
       if (alarmData != null && mounted) {
         setState(() {
@@ -105,6 +106,16 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
     );
   }
 
+  // Get user ID from SharedPreferences
+  Future<int?> _getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userIdString = prefs.getString('userId');
+    if (userIdString != null) {
+      return int.tryParse(userIdString);
+    }
+    return null;
+  }
+
   void _validateAndSave() {
     final validator = ScheduleValidator();
     final validationResult = validator.validateSchedule(
@@ -122,7 +133,18 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
       _saveSchedule();
     }
   }  void _saveSchedule() async {
-    final startDateTime = DateTime(
+    // Get user ID from SharedPreferences
+    final userId = await _getUserId();
+    if (userId == null) {
+      if (mounted) {
+        showCustomTopSnackbar(
+          context: context,
+          message: 'Error: User tidak teridentifikasi. Silakan login ulang.',
+          isError: true,
+        );
+      }
+      return;
+    }    final startDateTime = DateTime(
       selectedDate.year,
       selectedDate.month,
       selectedDate.day,
@@ -130,7 +152,6 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
       startTime!.minute,
     );
 
-    // Handle activities that span across midnight
     final endDateTime = DateTime(
       selectedDate.year,
       selectedDate.month,
@@ -138,30 +159,26 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
       endTime!.hour,
       endTime!.minute,
     );
-    
-    // If end time is earlier than start time, it means activity continues to next day
-    final adjustedEndDateTime = endDateTime.isBefore(startDateTime) || endDateTime.isAtSameMomentAs(startDateTime)
-        ? endDateTime.add(const Duration(days: 1))
-        : endDateTime;    // Prepare alarm datetime if alarm is enabled
+
+    // Prepare alarm datetime if alarm is enabled
     DateTime? pickedAlarmDateTime;
     if (isAlarmEnabled && alarmDateTime != null) {
       pickedAlarmDateTime = alarmDateTime;
       print('DEBUG: Alarm enabled - pickedAlarmDateTime: $pickedAlarmDateTime');
     } else {
       print('DEBUG: Alarm disabled - isAlarmEnabled: $isAlarmEnabled, alarmDateTime: $alarmDateTime');
-    }
-
-    final schedule = AktivitasModel(
+    }    final schedule = AktivitasModel(
       id: widget.existingAktivitas?.id,
-      userId: 1, // TODO: Get from user session
+      userId: userId, // Use dynamic user ID from SharedPreferences
       activityTitle: activityTitle.trim(),
-      activityDate: selectedDate,
-      activityStartTime: startDateTime,
-      activityCompleteTime: adjustedEndDateTime, // Use adjusted end time
+      activityDate: selectedDate,activityStartTime: startDateTime,
+      activityCompleteTime: endDateTime, // Use original end time
       activityCategory: _getCategoryEnum(selectedCategory!.name),
       alarmId: widget.existingAktivitas?.alarmId, // Keep existing alarmId for updates
-      slug: 'activity_${DateTime.now().millisecondsSinceEpoch}',
-    );    try {
+      slug: widget.existingAktivitas?.slug, // Preserve existing slug for updates
+    );
+
+    try {
       final aktivitasService = Provider.of<AktivitasService>(context, listen: false);
       
       print('DEBUG: About to save aktivitas - isEdit: ${widget.existingAktivitas != null}, pickedAlarmDateTime: $pickedAlarmDateTime');
@@ -176,9 +193,7 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
         print('DEBUG: Creating new aktivitas');
         final newId = await aktivitasService.addAktivitas(schedule, pickedAlarmDateTime);
         print('DEBUG: Successfully created aktivitas with ID: $newId');
-      }
-
-      if (mounted) {
+      }      if (mounted) {
         showCustomTopSnackbar(
           context: context,
           message: widget.existingAktivitas != null
@@ -187,11 +202,14 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
           isError: false,
         );
 
-        Future.delayed(const Duration(seconds: 1), () {
-          context.router.pushAndPopUntil(
-            const AktivitasRoute(),
-            predicate: (_) => false,
-          );
+        // Small delay to show the snackbar before navigation
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            context.router.pushAndPopUntil(
+              const AktivitasRoute(),
+              predicate: (_) => false,
+            );
+          }
         });
       }
     } catch (e) {

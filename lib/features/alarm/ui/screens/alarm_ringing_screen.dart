@@ -9,7 +9,7 @@ import '../widgets/category_tag.dart';
 import '../widgets/cancel_slider_button.dart';
 import 'package:auto_route/auto_route.dart';
 import '../../services/alarm_service.dart';
-import 'package:aturin_app/core/services/api/task/task_service.dart';
+import 'package:aturin_app/core/services/api/task/task_api_service.dart';
 
 @RoutePage()
 class AlarmRingingScreen extends StatefulWidget {
@@ -40,9 +40,9 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen> {
 
   Future<void> _loadTask() async {
     try {
-      final taskService = TaskService();
+      final taskApiService = TaskApiService();
       // Fetch all tasks and find the one with alarmId matching the alarmSettings.id
-      final allTasks = await taskService.getAllTasks();
+      final allTasks = await taskApiService.getAllTasks();
       final task = allTasks.where((t) => t.alarmId == widget.alarmSettings.id).cast<Task?>().firstWhere((_) => true, orElse: () => null);
       if (mounted) {
         setState(() {

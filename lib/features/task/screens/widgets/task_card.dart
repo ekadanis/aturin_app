@@ -8,9 +8,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/utils/debouncer.dart';
 import 'package:sizer/sizer.dart';
-import 'package:aturin_app/core/services/api/task/task_service.dart';
-import 'package:aturin_app/core/services/api/alarm/alarm_api_service.dart';
-import 'package:aturin_app/features/alarm/model/alarm.dart';
+import 'package:aturin_app/core/services/api/task/task_api_service.dart';
 
 class TaskCard extends StatefulWidget {
   final Task task;
@@ -59,7 +57,7 @@ class _TaskCardState extends State<TaskCard> {
     // Tentukan apakah card memiliki indikator terlambat atau alarm
     final bool hasLateIndicator =
         widget.task.isCompleted && widget.task.status == TaskStatus.late;
-    final bool hasAlarmIndicator = widget.task.isAlarmActive;
+    final bool hasAlarmIndicator = widget.task.isAlarmEnabled;
 
     return GestureDetector(
       onTap: () {
@@ -160,7 +158,7 @@ class _TaskCardState extends State<TaskCard> {
                                 ),
                                 SizedBox(width: 1.5.w),
                                 // badge alarm
-                                if (hasAlarmIndicator)
+                                if (widget.task.alarm != null && widget.task.alarm!.alarmEnabled == true)
                                   _buildBadge(
                                     icon: SvgPicture.asset(
                                       'assets/activitycategory/chipicon/alarm2.svg',
@@ -267,15 +265,11 @@ class _TaskCardState extends State<TaskCard> {
                         ),
                       ),
                       color: const Color.fromARGB(255, 249, 251, 255),
-                      onSelected: (value) async {
-                        if (value == 'edit') {
+                      onSelected: (value) async {                        if (value == 'edit') {
                           // Ambil data task terbaru dari API
                           final latestTask = widget.task.slug != null
-                              ? await TaskService().getTaskBySlug(widget.task.slug!)
+                              ? await TaskApiService().getTaskBySlug(widget.task.slug!)
                               : null;
-                          if (latestTask != null && latestTask.alarmId != null) {
-                            await AlarmApiService().getAlarmById(latestTask.alarmId!);
-                          }
                           final result = await Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -581,10 +575,5 @@ class _TaskCardState extends State<TaskCard> {
       case TaskStatus.upcoming:
         return const Color(0xFFE89B00);
     }
-  }
-
-  // Check if task is based on slug containing "tugas"
-  bool _isTaskBasedOnSlug() {
-    return widget.task.slug?.contains('tugas') ?? false;
   }
 }

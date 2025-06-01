@@ -5,7 +5,7 @@ import '../../model/task_model.dart';
 import '../../../../../../core/theme/app_theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:aturin_app/core/services/api/task/task_service.dart';
+import 'package:aturin_app/core/services/api/task/task_api_service.dart';
 
 @RoutePage()
 class TaskDetailScreen extends StatefulWidget {
@@ -67,7 +67,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
               if (result == true) {
                 final updatedTask = _task.slug != null
-                    ? await TaskService().getTaskBySlug(_task.slug!)
+                    ? await TaskApiService().getTaskBySlug(_task.slug!)
                     : null;
                 if (updatedTask != null) {
                   setState(() {
@@ -105,7 +105,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               _formatDurationToHourDotMinute(_task.estimatedDuration),
             ),
             const SizedBox(height: 16),
-            _buildDetailField('Deadline', _formatDateTime(_task.deadline)),
+            _buildDetailField('Batas Waktu', _formatDateTime(_task.deadline)),
             const SizedBox(height: 16),
             _buildDetailField(
               'Pengingat',

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:aturin_app/features/home/services/home_service.dart' as home;
-import 'package:aturin_app/core/services/api/task/task_service.dart';
+import 'package:aturin_app/core/services/api/task/task_api_service.dart';
 
 /// Router guard yang memastikan data diambil sebelum navigasi selesai
 class DataPrefetchGuard extends AutoRouteGuard {
@@ -38,7 +38,7 @@ class DataPrefetchGuard extends AutoRouteGuard {
                 },
               );
         } else if (resolver.route.name == 'TaskListRoute') {
-          await TaskService()
+          await TaskApiService()
               .getAllTasks()
               .timeout(
                 const Duration(seconds: 3),
@@ -68,7 +68,7 @@ class DataPrefetchGuard extends AutoRouteGuard {
               .fetchData()
               .timeout(const Duration(seconds: 5));
         } else if (routeName == 'TaskListRoute') {
-          await TaskService()
+          await TaskApiService()
               .getAllTasks()
               .timeout(const Duration(seconds: 5));
         }

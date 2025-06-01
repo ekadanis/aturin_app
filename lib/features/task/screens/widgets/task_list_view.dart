@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:aturin_app/core/services/api/task/task_service.dart';
+import 'package:aturin_app/core/services/api/task/task_api_service.dart';
 import 'package:aturin_app/core/services/api/alarm/alarm_api_service.dart';
 import 'package:alarm/alarm.dart';
 import '../../model/task_model.dart';
@@ -179,7 +179,7 @@ class _TaskListViewState extends State<TaskListView>
       },
     );
   }
-
+  
   Widget _buildTaskCard(Task task) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -251,8 +251,7 @@ class _TaskListViewState extends State<TaskListView>
                     await Alarm.stop(task.alarmId!);
                   } catch (e) {
                     debugPrint('Gagal menghapus alarm lokal: $e');
-                  }
-                  try {
+                  }                  try {
                     // Ambil data alarm dari server lalu hapus berdasarkan slug
                     final alarm = await AlarmApiService().getAlarmById(
                       task.alarmId!,
@@ -282,6 +281,7 @@ class _TaskListViewState extends State<TaskListView>
                 }
               });
             } catch (e) {
+              // Tangani error dan reset state animasi
               debugPrint('Error menghapus task: $e');
               if (mounted) {
                 setState(() {
