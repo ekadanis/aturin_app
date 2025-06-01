@@ -1,3 +1,4 @@
+import 'package:aturin_app/core/services/api/profile/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -47,14 +48,14 @@ Future<void> _initializeApp() async {
     // final dbHelper = DatabaseHelper.instance;
     // await dbHelper.database;
     // debugPrint('Database initialized successfully');
-    
+
     debugPrint('App initialization started (SQLite disabled)');
-    
+
     // Initialize the app with AppInitializer
     final appInitializer = AppInitializer(appRouter);
     await appInitializer.initialize();
 
-     // Tambahkan logika redirect berdasarkan status login
+    // Tambahkan logika redirect berdasarkan status login
     final prefs = await SharedPreferences.getInstance();
     final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
 
@@ -63,10 +64,9 @@ Future<void> _initializeApp() async {
     } else {
       appRouter.replaceAll([const LoginRoute()]);
     }
-    
+
     // Setup alarm manager
     appInitializer.alarmManager.setAppCreator(() => const MyApp());
-
   } catch (e) {
     debugPrint('Failed to initialize app: $e');
     throw Exception('App initialization failed: $e');
@@ -90,21 +90,20 @@ class _MyAppState extends State<MyApp> {
           create: (_) => task.TaskService(),
         ),
         // Provider untuk HomeService (unified service for home page)
-        ChangeNotifierProvider<HomeService>(
-          create: (_) => HomeService(),
-        ),
+        ChangeNotifierProvider<HomeService>(create: (_) => HomeService()),
         // Provider untuk AktivitasService
         ChangeNotifierProvider<AktivitasService>(
           create: (_) => AktivitasService(),
         ),
         // Provider untuk ProfileService
-        ChangeNotifierProvider<ProfileService>(
-          create: (_) => ProfileService(),
-        ),
+        ChangeNotifierProvider<ProfileService>(create: (_) => ProfileService()),
         // Provider untuk AuthService
         ChangeNotifierProvider<AuthService>(
           create: (_) => AuthService(),
-        ),
+        ), // ini perlu jika ProfileService tidak pakai singleton
+        // ChangeNotifierProvider<UserProvider>(
+        //   create: (context) => UserProvider(context.read<ProfileService>()),
+        // ),
       ],
       child: Sizer(
         builder: (context, orientation, deviceType) {
@@ -154,7 +153,10 @@ class ErrorApp extends StatelessWidget {
                     Text(
                       'Terjadi kesalahan saat memulai aplikasi',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     SizedBox(height: 1.5.h),
                     Text(
@@ -165,12 +167,15 @@ class ErrorApp extends StatelessWidget {
                     SizedBox(height: 3.h),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [                        ElevatedButton(
+                      children: [
+                        ElevatedButton(
                           onPressed: () async {
                             try {
                               // SQLite reset disabled
                               // await DatabaseHelper.instance.resetDatabase();
-                              debugPrint('Database reset disabled - restarting app');
+                              debugPrint(
+                                'Database reset disabled - restarting app',
+                              );
                               main();
                             } catch (e) {
                               debugPrint('Error during app restart: $e');
