@@ -19,6 +19,7 @@ class TaskCard extends StatefulWidget {
   final String currentFilter;
   final bool showCheckbox;
   final bool showStatus;
+  final bool showPopupMenu;
 
   const TaskCard({
     Key? key,
@@ -30,6 +31,7 @@ class TaskCard extends StatefulWidget {
     required this.currentFilter,
     this.showCheckbox = true, // default aktif
     this.showStatus = true, // default aktif
+    this.showPopupMenu = true, // <-- tambahkan ini
   }) : super(key: key);
 
   @override
@@ -57,7 +59,7 @@ class _TaskCardState extends State<TaskCard> {
     // Tentukan apakah card memiliki indikator terlambat atau alarm
     final bool hasLateIndicator =
         widget.task.isCompleted && widget.task.status == TaskStatus.late;
-    final bool hasAlarmIndicator = widget.task.isAlarmActive;
+    final bool hasAlarmIndicator = widget.task.isAlarmEnabled;
 
     return GestureDetector(
       onTap: () {
@@ -158,7 +160,8 @@ class _TaskCardState extends State<TaskCard> {
                                 ),
                                 SizedBox(width: 1.5.w),
                                 // badge alarm
-                                if (hasAlarmIndicator)
+                                if (widget.task.alarm != null &&
+                                    widget.task.alarm!.alarmEnabled == true)
                                   _buildBadge(
                                     icon: SvgPicture.asset(
                                       'assets/activitycategory/chipicon/alarm2.svg',
@@ -255,102 +258,110 @@ class _TaskCardState extends State<TaskCard> {
                     ),
 
                     // titik tiga, popup edit dan hapus
-                    PopupMenuButton<String>(
-                      offset: Offset(0, 1.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: const BorderSide(
-                          color: Color(0xFF5263F3),
-                          width: 1.5,
+                    if (widget.showPopupMenu)
+                      PopupMenuButton<String>(
+                        offset: Offset(0, 1.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: const BorderSide(
+                            color: Color(0xFF5263F3),
+                            width: 1.5,
+                          ),
                         ),
-                      ),
-                      color: const Color.fromARGB(255, 249, 251, 255),
-                      onSelected: (value) async {                        if (value == 'edit') {
-                          // Ambil data task terbaru dari API
-                          final latestTask = widget.task.slug != null
-                              ? await TaskApiService().getTaskBySlug(widget.task.slug!)
-                              : null;
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AddTaskScreen(
-                                existingTask: latestTask ?? widget.task,
-                                // Anda bisa modifikasi AddTaskScreen untuk menerima alarm jika perlu
+                        color: const Color.fromARGB(255, 249, 251, 255),
+                        onSelected: (value) async {
+                          if (value == 'edit') {
+                            // Ambil data task terbaru dari API
+                            final latestTask =
+                                widget.task.slug != null
+                                    ? await TaskApiService().getTaskBySlug(
+                                      widget.task.slug!,
+                                    )
+                                    : null;
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => AddTaskScreen(
+                                      existingTask: latestTask ?? widget.task,
+                                      // Anda bisa modifikasi AddTaskScreen untuk menerima alarm jika perlu
+                                    ),
                               ),
-                            ),
-                          );
-                          if (result == true) {
-                            final updatedTask = widget.task.id;
-                            if (updatedTask != null) {
-                              setState(() {
-                                // update jika perlu
-                              });
+                            );
+                            if (result == true) {
+                              final updatedTask = widget.task.id;
+                              if (updatedTask != null) {
+                                setState(() {
+                                  // update jika perlu
+                                });
+                              }
                             }
+                          } else if (value == 'delete') {
+                            // Tampilkan DeletePopup
+                            showDialog(
+                              context: context,
+                              builder:
+                                  (_) => ConfirmDialog(
+                                    isTask:
+                                        true, // Set isTask ke true untuk tugas
+                                    onConfirm: () {
+                                      // Tutup dialog
+                                      widget
+                                          .onDelete(); // Panggil fungsi delete dari task_card
+                                    },
+                                  ),
+                            );
                           }
-                        } else if (value == 'delete') {
-                          // Tampilkan DeletePopup
-                          showDialog(
-                            context: context,
-                            builder:
-                                (_) => ConfirmDialog(
-                                  isTask:
-                                      true, // Set isTask ke true untuk tugas
-                                  onConfirm: () {
-                                    // Tutup dialog
-                                    widget
-                                        .onDelete(); // Panggil fungsi delete dari task_card
-                                  },
+                        },
+                        itemBuilder:
+                            (context) => [
+                              PopupMenuItem<String>(
+                                value: 'edit',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.edit,
+                                      color: AppTheme.primaryColor,
+                                      size: 5.w,
+                                    ),
+                                    SizedBox(width: 2.w),
+                                    Text(
+                                      'Ubah',
+                                      style: TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 13.sp,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                          );
-                        }
-                      },
-                      itemBuilder:
-                          (context) => [
-                            PopupMenuItem<String>(
-                              value: 'edit',
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.edit,
-                                    color: AppTheme.primaryColor,
-                                    size: 5.w,
-                                  ),
-                                  SizedBox(width: 2.w),
-                                  Text(
-                                    'Ubah',
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 13.sp,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
                               ),
-                            ),
-                            PopupMenuItem<String>(
-                              value: 'delete',
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.delete_outline,
-                                    color: Color(0xFFD93E39),
-                                    size: 5.w,
-                                  ),
-                                  SizedBox(width: 2.w),
-                                  Text(
-                                    'Hapus',
-                                    style: TextStyle(
+                              PopupMenuItem<String>(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.delete_outline,
                                       color: Color(0xFFD93E39),
-                                      fontSize: 13.sp,
-                                      fontWeight: FontWeight.w500,
+                                      size: 5.w,
                                     ),
-                                  ),
-                                ],
+                                    SizedBox(width: 2.w),
+                                    Text(
+                                      'Hapus',
+                                      style: TextStyle(
+                                        color: Color(0xFFD93E39),
+                                        fontSize: 13.sp,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
-                      icon: Icon(Icons.more_vert, size: 5.w),
-                    ),
+                            ],
+                        icon: Icon(Icons.more_vert, size: 5.w),
+                      ) else
+
+                      const SizedBox(width: 40),
                   ],
                 ),
                 if (hasLateIndicator)

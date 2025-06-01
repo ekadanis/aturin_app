@@ -2,7 +2,8 @@ import 'package:auto_route/auto_route.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:aturin_app/core/utils/tap_protection.dart';
-
+import 'package:aturin_app/core/services/api/task/task_api_service.dart';
+import 'package:provider/provider.dart';
 import '../../../../../../core/widgets/bottom_navbar.dart';
 import '../../../../../../routers/app_router.dart';
 import '../widgets/filter_tabs.dart';
@@ -22,18 +23,31 @@ class _TaskListScreenState extends State<TaskListScreen>
   String _selectedFilter = 'Semua';
   final List<String> _filters = [
     'Semua',
-    'Hari Ini',
     'Terlambat',
     'Belum Selesai',
     'Selesai',
   ];
 
+  int _overdueTasksCount = 0;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // No need to fetch tasks here, TaskListView will fetch from API
+      _fetchOverdueCount();
+      Provider.of<TaskApiService>(context, listen: false).fetchTasks();
     });
+  }
+
+  Future<void> _fetchOverdueCount() async {
+    final taskService = Provider.of<TaskApiService>(context, listen: false);
+    final data = await taskService.countLateTasks();
+    print('Data dari API: $data');
+    if (data != null && data['overdue_tasks'] != null) {
+      setState(() {
+        _overdueTasksCount = data['overdue_tasks'] as int;
+      });
+    }
   }
 
   @override
@@ -74,7 +88,7 @@ class _TaskListScreenState extends State<TaskListScreen>
                 child: FilterTabs(
                   filters: _filters,
                   selectedFilter: _selectedFilter,
-                  overdueTasksCount: 0, // Optionally, can be updated if needed
+                  overdueTasksCount: _overdueTasksCount, // <-- assign di sini
                   onFilterSelected: (filter) {
                     setState(() {
                       _selectedFilter = filter;
@@ -85,11 +99,20 @@ class _TaskListScreenState extends State<TaskListScreen>
               Expanded(
                 child: TaskListView(
                   currentFilter: _selectedFilter,
+                  onShowSuccess: (message) {
+                    // reload TaskListView
+                    setState(() {});
+                    // reload countLateTask agar badge overdue sinkron
+                    _fetchOverdueCount();
+                    // tampilkan snackbar jika perlu
+                    showCustomTopSnackbar(context: context, message: message);
+                  },
                   onTapTask: (task) {
                     safeOnTap(() {
                       context.router.push(TaskDetailRoute(task: task)).then((result) {
                         if (result == true) {
-                          // TaskListView will refresh itself
+                          setState(() {});
+                          _fetchOverdueCount(); // reload countLateTask juga setelah edit
                           showCustomTopSnackbar(
                             context: context,
                             message: 'Tugas berhasil diperbarui',

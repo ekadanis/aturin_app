@@ -17,6 +17,9 @@ class TaskApiService extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
+  List<Task> _tasks = [];
+  List<Task> get tasks => _tasks;
+
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
@@ -70,7 +73,9 @@ class TaskApiService extends ChangeNotifier {
       final headers = await _getHeaders();
       final userId = await _getUserId();
       if (userId == null) {
-        return TaskResult.failure('User ID tidak ditemukan. Silakan login ulang.');
+        return TaskResult.failure(
+          'User ID tidak ditemukan. Silakan login ulang.',
+        );
       }
       final response = await http.post(
         Uri.parse('$baseUrl/tasks'),
@@ -93,7 +98,9 @@ class TaskApiService extends ChangeNotifier {
           message: data['message'],
         );
       } else {
-        debugPrint('TaskService.createTask failed: status=${response.statusCode}, body=${response.body}');
+        debugPrint(
+          'TaskService.createTask failed: status=${response.statusCode}, body=${response.body}',
+        );
         return _handleErrorResponse(response);
       }
     } catch (e) {
@@ -168,6 +175,19 @@ class TaskApiService extends ChangeNotifier {
     }
   }
   // FETCH
+
+  Future<void> fetchTasks() async {
+    _setLoading(true);
+    try {
+      final tasks = await getAllTasks();
+      _tasks = tasks;
+      _setError(null);
+    } catch (e) {
+      _setError('Gagal mengambil data tugas');
+    }
+    _setLoading(false);
+    notifyListeners();
+  }
 
   Future<List<Task>> getAllTasks() async {
     try {
@@ -287,6 +307,8 @@ class TaskApiService extends ChangeNotifier {
         Uri.parse('$baseUrl/tasks/dashboard/late-count'),
         headers: headers,
       );
+      print('Status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
         return data['data'];

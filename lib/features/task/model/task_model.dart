@@ -138,7 +138,7 @@ class Task {
       'user_id': userId,
       'task_title': title,
       'task_description': description,
-      'task_deadline': deadline.toIso8601String(),
+      'task_deadline': deadline.toUtc().toIso8601String(),
       'estimated_task_duration': estimatedDuration.inMinutes,
       'task_status': taskStatus.value,
       'task_completed_at': completedAt?.toIso8601String(),
@@ -170,7 +170,7 @@ class Task {
       userId: map['user_id'],
       title: map['task_title'] ?? '',
       description: map['task_description'],
-      deadline: DateTime.parse(map['task_deadline']),
+      deadline: DateTime.parse(map['task_deadline']).toLocal(),
       estimatedDuration: _parseDuration(map['estimated_task_duration']),
       taskStatus: TaskDatabaseStatus.fromValue(
         map['task_status'] ?? 'belum_selesai',
@@ -182,16 +182,10 @@ class Task {
       category: map['task_category'] ?? 'akademik',
       alarmId: map['alarm_id'],
       slug: map['slug'],
-      createdAt:
-          map['created_at'] != null
-              ? DateTime.tryParse(map['created_at'])
-              : null,
-      updatedAt:
-          map['updated_at'] != null
-              ? DateTime.tryParse(map['updated_at'])
-              : null,
-      // Relasi User dan AlarmModel akan di-fetch terpisah oleh service      user: null,
-      alarm: null,
+      createdAt: map['created_at'] != null ? DateTime.tryParse(map['created_at']) : null,
+      updatedAt: map['updated_at'] != null ? DateTime.tryParse(map['updated_at']) : null,
+      user: null,
+      alarm: map['alarm'] != null ? AlarmModel.fromJson(map['alarm']) : null,
     );
   }
 
@@ -226,7 +220,7 @@ class Task {
       userId: map['user_id'],
       title: map['task_title'] ?? '',
       description: map['task_description'],
-      deadline: DateTime.parse(map['task_deadline']),
+      deadline: DateTime.parse(map['task_deadline']).toLocal(),
       estimatedDuration: Duration(minutes: map['estimated_task_duration'] ?? 0),
       taskStatus: TaskDatabaseStatus.fromValue(
         map['task_status'] ?? 'belum_selesai',

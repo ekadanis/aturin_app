@@ -18,6 +18,8 @@ import 'package:aturin_app/core/services/api/alarm/alarm_api_service.dart';
 import 'package:aturin_app/features/alarm/model/alarm.dart';
 import 'package:aturin_app/features/alarm/services/alarm_service.dart';
 import 'dart:async';
+import 'package:aturin_app/features/task/screens/ui/task_list_screen.dart';
+import 'package:provider/provider.dart';
 
 @RoutePage()
 class AddTaskScreen extends StatefulWidget {
@@ -156,15 +158,21 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       if (alarm != null && mounted) {
         setState(() {
           _alarmDateTime = alarm.alarmDateTime;
+          _isAlarmEnabled = alarm.alarmEnabled;
         });
 
-        // Sync to local alarm
-        await _localAlarmService.setAlarm(
-          alarm.id!,
-          alarm.alarmDateTime,
-          _titleController.text.trim(),
-          'Tugas: ${_titleController.text.trim()} sudah waktunya!',
-        );
+        if (alarm.alarmEnabled) {
+          // Sync to local alarm jika enabled
+          await _localAlarmService.setAlarm(
+            alarm.id!,
+            alarm.alarmDateTime,
+            _titleController.text.trim(),
+            'Tugas: ${_titleController.text.trim()} sudah waktunya!',
+          );
+        } else {
+          // Pastikan alarm lokal dibatalkan jika disabled
+          await _localAlarmService.cancelAlarm(alarm.id!);
+        }
       }
     } catch (e) {
       debugPrint('Gagal mengambil alarm: $e');
@@ -205,6 +213,37 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
   // Alarm Management Methods
   Future<int?> _createOrUpdateAlarm() async {
+    // Jika alarm dimatikan dan ada alarmId, tetap update alarmEnabled ke backend
+    final existingTask = widget.existingTask;
+    if (!_isAlarmEnabled && existingTask?.alarmId != null) {
+      try {
+        final allAlarms = await _alarmApiService.getAllAlarms();
+        final existingAlarm =
+            allAlarms
+                .where((alarm) => alarm.id == existingTask!.alarmId!)
+                .firstOrNull;
+        if (existingAlarm != null) {
+          final alarmModel = AlarmModel(
+            id: existingAlarm.id,
+            alarmDateTime: existingAlarm.alarmDateTime,
+            alarmEnabled: false,
+            slug: existingAlarm.slug,
+          );
+          final resultAlarm = await _alarmApiService.updateAlarm(
+            existingAlarm.slug,
+            alarmModel,
+          );
+          if (resultAlarm?.id != null) {
+            await _localAlarmService.cancelAlarm(resultAlarm!.id!);
+            return resultAlarm.id;
+          }
+        }
+      } catch (e) {
+        debugPrint('Gagal mematikan alarm: $e');
+      }
+      return null;
+    }
+
     if (_alarmDateTime == null) return null;
 
     try {
@@ -238,19 +277,21 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       }
 
       if (resultAlarm?.id != null) {
-        // Set local alarm
-        if (_isAlarmEnabled) {
+        // Set/cancel local alarm sesuai status terbaru dari backend
+        final allAlarms = await _alarmApiService.getAllAlarms();
+        final updatedAlarm =
+            allAlarms.where((a) => a.id == resultAlarm!.id!).firstOrNull;
+        if (updatedAlarm != null && updatedAlarm.alarmEnabled) {
           await _localAlarmService.setAlarm(
-            resultAlarm!.id!,
-            resultAlarm.alarmDateTime,
+            updatedAlarm.id!,
+            updatedAlarm.alarmDateTime,
             _titleController.text.trim(),
             'Tugas: ${_titleController.text.trim()} sudah waktunya!',
           );
-        } else {
-          await _localAlarmService.cancelAlarm(resultAlarm!.id!);
+        } else if (updatedAlarm != null) {
+          await _localAlarmService.cancelAlarm(updatedAlarm.id!);
         }
-
-        return resultAlarm.id;
+        return resultAlarm?.id;
       }
     } catch (e) {
       debugPrint('Gagal mengelola alarm: $e');
@@ -284,7 +325,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       final durationStr =
           _estimatedDuration != null
               ? '${_estimatedDuration!.inHours.toString().padLeft(2, '0')}:${(_estimatedDuration!.inMinutes % 60).toString().padLeft(2, '0')}'
-              : '00:00';      TaskResult result;
+              : '00:00';
+      TaskResult result;
 
       if (widget.existingTask == null) {
         // Create new task
@@ -294,7 +336,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               _descriptionController.text.trim().isEmpty
                   ? null
                   : _descriptionController.text.trim(),
-          deadline: _deadline!,
+          deadline:
+              _deadline!.add(const Duration(hours: 7)).toUtc(), // UTC+7 (WIB)
           estimatedDuration: durationStr,
           category: _selectedCategory!.name.toLowerCase(),
           alarmId: alarmId,
@@ -308,7 +351,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               _descriptionController.text.trim().isEmpty
                   ? null
                   : _descriptionController.text.trim(),
-          deadline: _deadline!,
+          deadline:
+              _deadline!.add(const Duration(hours: 7)).toUtc(), // UTC+7 (WIB)
           estimatedDuration: durationStr,
           category: _selectedCategory!.name.toLowerCase(),
           alarmId: alarmId,
@@ -317,8 +361,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
       if (result.isSuccess) {
         _showSuccessSnackbar(result.message);
-        _navigateToTaskList();
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => TaskListScreen()),
+        );
       } else {
+        debugPrint('Task update/create failed:  {result.message}');
         _showErrorSnackbar(result.message);
       }
     } catch (e) {
@@ -402,8 +450,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   void _onAlarmToggleChanged(bool value) {
     setState(() {
       _isAlarmEnabled = value;
+      // Jangan set _alarmDateTime = null agar update ke backend tetap bisa dilakukan
       if (!value) {
-        _alarmDateTime = null;
         _errors['alarmDateTime'] = null;
       }
     });
