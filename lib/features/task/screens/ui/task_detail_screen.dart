@@ -105,7 +105,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               _formatDurationToHourDotMinute(_task.estimatedDuration),
             ),
             const SizedBox(height: 16),
-            _buildDetailField('Deadline', _formatDateTime(_task.deadline)),
+            _buildDetailField('Batas Waktu', _formatDateTime(_task.deadline)),
             const SizedBox(height: 16),
             _buildDetailField(
               'Pengingat',

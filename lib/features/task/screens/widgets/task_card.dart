@@ -57,7 +57,7 @@ class _TaskCardState extends State<TaskCard> {
     // Tentukan apakah card memiliki indikator terlambat atau alarm
     final bool hasLateIndicator =
         widget.task.isCompleted && widget.task.status == TaskStatus.late;
-    final bool hasAlarmIndicator = widget.task.isAlarmActive;
+    final bool hasAlarmIndicator = widget.task.isAlarmEnabled;
 
     return GestureDetector(
       onTap: () {
@@ -158,7 +158,7 @@ class _TaskCardState extends State<TaskCard> {
                                 ),
                                 SizedBox(width: 1.5.w),
                                 // badge alarm
-                                if (hasAlarmIndicator)
+                                if (widget.task.alarm != null && widget.task.alarm!.alarmEnabled == true)
                                   _buildBadge(
                                     icon: SvgPicture.asset(
                                       'assets/activitycategory/chipicon/alarm2.svg',
