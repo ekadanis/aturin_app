@@ -87,9 +87,6 @@ class AktivitasModel {
     this.user,
     this.alarm,
   });  factory AktivitasModel.fromJson(Map<String, dynamic> json) {
-    // Debug logging
-    print('DEBUG: Parsing JSON data: $json');
-    
     return AktivitasModel(
       id: json['id'] is String ? int.tryParse(json['id']) : json['id'],
       userId: json['user_id'] is String ? int.tryParse(json['user_id']) : json['user_id'],
@@ -123,18 +120,15 @@ class AktivitasModel {
       }
     }
   }
-
   // Helper method to parse activity category safely
   static ActivityCategory _parseActivityCategory(dynamic categoryValue) {
     if (categoryValue == null) return ActivityCategory.akademik;
     
     final categoryString = categoryValue.toString().toLowerCase();
-    print('DEBUG: Parsing category: "$categoryString"');
     
     // Try to match by apiName first (lowercase enum name)
     for (final category in ActivityCategory.values) {
       if (category.apiName == categoryString) {
-        print('DEBUG: Found category by apiName: ${category.apiName}');
         return category;
       }
     }
@@ -142,12 +136,10 @@ class AktivitasModel {
     // Try to match by displayName
     for (final category in ActivityCategory.values) {
       if (category.displayName.toLowerCase() == categoryString) {
-        print('DEBUG: Found category by displayName: ${category.displayName}');
         return category;
       }
     }
     
-    print('DEBUG: Category not found, using default: akademik');
     return ActivityCategory.akademik;
   }Map<String, dynamic> toJson() {
     return {

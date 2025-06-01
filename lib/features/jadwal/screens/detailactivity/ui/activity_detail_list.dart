@@ -277,12 +277,11 @@ void showDeleteDialog(BuildContext context, AktivitasModel aktivitas) {
         
         // Get state reference
         final state = context.findAncestorStateOfType<_ActivityDetailListPageState>();
-        if (state == null) return;
-        
-        try {
-          // Delete from database using silent method first
+        if (state == null) return;        try {
           final aktivitasService = Provider.of<AktivitasService>(context, listen: false);
-          await aktivitasService.deleteAktivitasSilent(aktivitas.id!);
+          
+          // Use regular deleteAktivitas method
+          await aktivitasService.deleteAktivitas(aktivitas.id!);
           
           // Update local state after successful database deletion
           state._removeActivityAndSlide(aktivitas);
@@ -296,9 +295,6 @@ void showDeleteDialog(BuildContext context, AktivitasModel aktivitas) {
               ),
             );
           }
-          
-          // Manually notify listeners after local state is stable
-          aktivitasService.notifyListenersManually();
           
         } catch (e) {
           // If deletion fails, show error message

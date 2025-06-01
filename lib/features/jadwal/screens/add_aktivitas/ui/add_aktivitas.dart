@@ -44,7 +44,9 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
   void initState() {
     super.initState();
     _initializeExistingAktivitas();
-  }  void _initializeExistingAktivitas() async {
+  }
+
+  void _initializeExistingAktivitas() async {
     final aktivitas = widget.existingAktivitas;
     print('DEBUG: _initializeExistingAktivitas called, existingAktivitas: ${aktivitas != null ? 'NOT NULL' : 'NULL'}');
     
@@ -65,9 +67,10 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
         // Jika kategori tidak ditemukan, biarkan selectedCategory null
         selectedCategory = null;
         print('DEBUG: Category not found, set to null');
-      }      // Load alarm data via API if alarmId exists
+      }
+
+      // Load alarm data via API if alarmId exists
       if (aktivitas.alarmId != null) {
-        isAlarmEnabled = true;
         await _loadAlarmData(aktivitas.alarmId!);
       } else {
         isAlarmEnabled = false;
@@ -78,7 +81,9 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
       selectedCategory = categories.firstWhere((c) => c.name == 'Akademik');
       print('DEBUG: New activity, selectedCategory set to default: ${selectedCategory?.name}');
     }
-  }  Future<void> _loadAlarmData(int alarmId) async {
+  }
+
+  Future<void> _loadAlarmData(int alarmId) async {
     try {
       final aktivitasService = Provider.of<AktivitasService>(context, listen: false);
       // Use API service to get all alarms and find by ID since backend only supports slug-based endpoints
@@ -88,13 +93,28 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
       if (alarmData != null && mounted) {
         setState(() {
           alarmDateTime = alarmData.alarmDateTime;
+          // Set isAlarmEnabled based on the actual alarmEnabled field from the database
+          isAlarmEnabled = alarmData.alarmEnabled;
         });
-        print('DEBUG: Loaded alarm data via API - alarmDateTime: ${alarmData.alarmDateTime}');
+        print('DEBUG: Loaded alarm data via API - alarmDateTime: ${alarmData.alarmDateTime}, alarmEnabled: ${alarmData.alarmEnabled}');
+      } else {
+        // If no alarm data found, set alarm as disabled
+        setState(() {
+          isAlarmEnabled = false;
+          alarmDateTime = null;
+        });
+        print('DEBUG: No alarm data found for alarmId: $alarmId');
       }
     } catch (e) {
       print('DEBUG: Error loading alarm data via API: $e');
+      // On error, set alarm as disabled to be safe
+      setState(() {
+        isAlarmEnabled = false;
+        alarmDateTime = null;
+      });
     }
   }
+
   String _getCategoryName(ActivityCategory category) {
     return category.displayName;
   }
@@ -132,7 +152,9 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
     if (validationResult.isValid) {
       _saveSchedule();
     }
-  }  void _saveSchedule() async {
+  }
+
+  void _saveSchedule() async {
     // Get user ID from SharedPreferences
     final userId = await _getUserId();
     if (userId == null) {
@@ -144,7 +166,9 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
         );
       }
       return;
-    }    final startDateTime = DateTime(
+    }
+
+    final startDateTime = DateTime(
       selectedDate.year,
       selectedDate.month,
       selectedDate.day,
@@ -167,11 +191,14 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
       print('DEBUG: Alarm enabled - pickedAlarmDateTime: $pickedAlarmDateTime');
     } else {
       print('DEBUG: Alarm disabled - isAlarmEnabled: $isAlarmEnabled, alarmDateTime: $alarmDateTime');
-    }    final schedule = AktivitasModel(
+    }
+
+    final schedule = AktivitasModel(
       id: widget.existingAktivitas?.id,
       userId: userId, // Use dynamic user ID from SharedPreferences
       activityTitle: activityTitle.trim(),
-      activityDate: selectedDate,activityStartTime: startDateTime,
+      activityDate: selectedDate,
+      activityStartTime: startDateTime,
       activityCompleteTime: endDateTime, // Use original end time
       activityCategory: _getCategoryEnum(selectedCategory!.name),
       alarmId: widget.existingAktivitas?.alarmId, // Keep existing alarmId for updates
@@ -183,17 +210,23 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
       
       print('DEBUG: About to save aktivitas - isEdit: ${widget.existingAktivitas != null}, pickedAlarmDateTime: $pickedAlarmDateTime');
       
-      if (widget.existingAktivitas != null) {
-        // Update existing activity with new alarm time
-        print('DEBUG: Updating existing aktivitas with ID: ${widget.existingAktivitas!.id}');
-        await aktivitasService.updateAktivitas(schedule, pickedAlarmDateTime);
+      if (widget.existingAktivitas != null && widget.existingAktivitas!.slug != null) {
+        // Update existing activity with new alarm time using slug
+        print('DEBUG: Updating existing aktivitas with slug: ${widget.existingAktivitas!.slug}');
+        await aktivitasService.updateAktivitasBySlug(
+          widget.existingAktivitas!.slug!,
+          schedule,
+          pickedAlarmDateTime
+        );
         print('DEBUG: Successfully updated aktivitas');
       } else {
         // Create new activity with alarm time
         print('DEBUG: Creating new aktivitas');
-        final newId = await aktivitasService.addAktivitas(schedule, pickedAlarmDateTime);
-        print('DEBUG: Successfully created aktivitas with ID: $newId');
-      }      if (mounted) {
+        final newSlug = await aktivitasService.addAktivitas(schedule, pickedAlarmDateTime);
+        print('DEBUG: Successfully created aktivitas with slug: $newSlug');
+      }
+
+      if (mounted) {
         showCustomTopSnackbar(
           context: context,
           message: widget.existingAktivitas != null
@@ -321,6 +354,7 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
                       alarmDateTime: alarmDateTime,
                       selectedDate: selectedDate,
                       startTime: startTime,
+                      isEditing: widget.existingAktivitas != null, // Pass editing mode
                       onToggle: (value) {
                         setState(() {
                           isAlarmEnabled = value;

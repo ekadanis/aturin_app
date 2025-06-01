@@ -348,11 +348,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     showCustomTopSnackbar(context: context, message: message, isError: true);
   }
 
-  void _clearErrors() {
-    setState(() {
-      _errors.updateAll((key, value) => null);
-    });
-  }
 
   // Event Handlers
   Future<void> _onDeadlineChanged() async {
@@ -519,15 +514,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               onTap: _onCategoryChanged,
               error: _errors['category'],
             ),
-            const SizedBox(height: 32),
-
-            // Alarm Configuration
+            const SizedBox(height: 32),            // Alarm Configuration
             AlarmConfigurationSection(
               isEnabled: _isAlarmEnabled,
               alarmDateTime: _alarmDateTime,
               selectedDate: _deadline ?? DateTime.now(),
               startTime:
                   _deadline != null ? TimeOfDay.fromDateTime(_deadline!) : null,
+              isEditing: widget.existingTask != null, // Pass editing mode
               onToggle: _onAlarmToggleChanged,
               onAlarmTimeChanged: _onAlarmTimeChanged,
             ),

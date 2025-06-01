@@ -1,19 +1,13 @@
 import 'package:aturin_app/features/profile/models/user.dart';
 import 'package:aturin_app/features/alarm/model/alarm.dart';
 
-enum TaskStatus { 
-  completed, 
-  late, 
-  today, 
-  tomorrow, 
-  upcoming 
-}
+enum TaskStatus { completed, late, today, tomorrow, upcoming }
 
 enum TaskDatabaseStatus {
   belumSelesai,
-  selesai, 
+  selesai,
   terlambat;
-  
+
   String get value {
     switch (this) {
       case TaskDatabaseStatus.belumSelesai:
@@ -48,7 +42,7 @@ enum TaskCategory {
   spiritual,
   pribadi,
   istirahat;
-  
+
   String get displayName {
     switch (this) {
       case TaskCategory.akademik:
@@ -92,7 +86,7 @@ class Task {
   // Computed properties
   TaskStatus get status => calculateStatus(deadline);
   double get estimatedHours => estimatedDuration.inMinutes / 60;
-  
+
   // Backward compatibility getters
   bool get isCompleted => taskStatus == TaskDatabaseStatus.selesai;
   bool get isAlarmEnabled => alarm != null && alarm!.alarmEnabled;
@@ -136,7 +130,9 @@ class Task {
     } else {
       return TaskStatus.upcoming;
     }
-  }  Map<String, dynamic> toMap() {
+  }
+
+  Map<String, dynamic> toMap() {
     return {
       'id': id,
       'user_id': userId,
@@ -152,7 +148,9 @@ class Task {
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };
-  }  static Duration _parseDuration(dynamic value) {
+  }
+
+  static Duration _parseDuration(dynamic value) {
     if (value is int) {
       return Duration(minutes: value);
     } else if (value is String && value.contains(':')) {
@@ -174,13 +172,24 @@ class Task {
       description: map['task_description'],
       deadline: DateTime.parse(map['task_deadline']),
       estimatedDuration: _parseDuration(map['estimated_task_duration']),
-      taskStatus: TaskDatabaseStatus.fromValue(map['task_status'] ?? 'belum_selesai'),
-      completedAt: map['task_completed_at'] != null ? DateTime.parse(map['task_completed_at']) : null,
+      taskStatus: TaskDatabaseStatus.fromValue(
+        map['task_status'] ?? 'belum_selesai',
+      ),
+      completedAt:
+          map['task_completed_at'] != null
+              ? DateTime.parse(map['task_completed_at'])
+              : null,
       category: map['task_category'] ?? 'akademik',
       alarmId: map['alarm_id'],
       slug: map['slug'],
-      createdAt: map['created_at'] != null ? DateTime.tryParse(map['created_at']) : null,
-      updatedAt: map['updated_at'] != null ? DateTime.tryParse(map['updated_at']) : null,
+      createdAt:
+          map['created_at'] != null
+              ? DateTime.tryParse(map['created_at'])
+              : null,
+      updatedAt:
+          map['updated_at'] != null
+              ? DateTime.tryParse(map['updated_at'])
+              : null,
       // Relasi User dan AlarmModel akan di-fetch terpisah oleh service      user: null,
       alarm: null,
     );
@@ -190,7 +199,7 @@ class Task {
   factory Task.fromMapWithRelations(Map<String, dynamic> map) {
     User? user;
     AlarmModel? alarm;
-    
+
     // Buat User object jika data user ada
     if (map['user_name'] != null) {
       user = User(
@@ -201,7 +210,7 @@ class Task {
         slug: map['user_slug'] ?? '',
       );
     }
-    
+
     // Buat AlarmModel object jika data alarm ada
     if (map['alarm_date_time'] != null) {
       alarm = AlarmModel(
@@ -211,7 +220,7 @@ class Task {
         slug: map['alarm_slug'] ?? '',
       );
     }
-    
+
     return Task(
       id: map['id'],
       userId: map['user_id'],
@@ -219,13 +228,24 @@ class Task {
       description: map['task_description'],
       deadline: DateTime.parse(map['task_deadline']),
       estimatedDuration: Duration(minutes: map['estimated_task_duration'] ?? 0),
-      taskStatus: TaskDatabaseStatus.fromValue(map['task_status'] ?? 'belum_selesai'),
-      completedAt: map['task_completed_at'] != null ? DateTime.parse(map['task_completed_at']) : null,
+      taskStatus: TaskDatabaseStatus.fromValue(
+        map['task_status'] ?? 'belum_selesai',
+      ),
+      completedAt:
+          map['task_completed_at'] != null
+              ? DateTime.parse(map['task_completed_at'])
+              : null,
       category: map['task_category'] ?? 'akademik',
       alarmId: map['alarm_id'],
       slug: map['slug'],
-      createdAt: map['created_at'] != null ? DateTime.tryParse(map['created_at']) : null,
-      updatedAt: map['updated_at'] != null ? DateTime.tryParse(map['updated_at']) : null,
+      createdAt:
+          map['created_at'] != null
+              ? DateTime.tryParse(map['created_at'])
+              : null,
+      updatedAt:
+          map['updated_at'] != null
+              ? DateTime.tryParse(map['updated_at'])
+              : null,
       user: user,
       alarm: alarm,
     );
@@ -264,7 +284,9 @@ class Task {
       updatedAt: updatedAt ?? this.updatedAt,
       user: user ?? this.user,
       alarm: alarm ?? this.alarm,
-    );  }
+    );
+  }
+
   factory Task.empty() {
     return Task(
       title: '',

@@ -2,12 +2,17 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:aturin_app/features/task/model/task_model.dart';
+import 'package:aturin_app/core/services/api/alarm/alarm_api_service.dart';
+import 'package:aturin_app/features/alarm/model/alarm.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TaskApiService extends ChangeNotifier {
   static const String baseUrl = 'https://aturin-app.com/api/v1';
   bool _isLoading = false;
   String? _errorMessage;
+  
+  // Add AlarmApiService instance
+  final AlarmApiService _alarmApiService = AlarmApiService();
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -162,7 +167,6 @@ class TaskApiService extends ChangeNotifier {
       _setLoading(false);
     }
   }
-
   // FETCH
 
   Future<List<Task>> getAllTasks() async {
@@ -174,14 +178,35 @@ class TaskApiService extends ChangeNotifier {
       );
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        return List<Task>.from(data['data'].map((e) => Task.fromMap(e)));
+        // First create tasks from API data
+        List<Task> tasks = List<Task>.from(data['data'].map((e) => Task.fromMap(e)));
+        
+        // Get all alarms once to avoid multiple API calls
+        List<AlarmModel> allAlarms = await _alarmApiService.getAllAlarms();
+        
+        // Create a map for quick alarm lookup by ID
+        Map<int, AlarmModel> alarmMap = {
+          for (AlarmModel alarm in allAlarms) 
+            if (alarm.id != null) alarm.id!: alarm
+        };
+        
+        // Populate alarm relationships for tasks that have alarmId
+        List<Task> tasksWithAlarms = tasks.map((task) {
+          if (task.alarmId != null && alarmMap.containsKey(task.alarmId)) {
+            // Create a new task with the alarm relationship populated
+            return task.copyWith(alarm: alarmMap[task.alarmId]);
+          }
+          return task;
+        }).toList();
+        
+        return tasksWithAlarms;
       }
     } catch (e) {
+      debugPrint('Error in getAllTasks: $e');
       _handleException(e);
     }
     return [];
   }
-
   Future<List<Task>> getTasksToday() async {
     try {
       final headers = await _getHeaders();
@@ -191,9 +216,31 @@ class TaskApiService extends ChangeNotifier {
       );
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        return List<Task>.from(data['data'].map((e) => Task.fromMap(e)));
+        // First create tasks from API data
+        List<Task> tasks = List<Task>.from(data['data'].map((e) => Task.fromMap(e)));
+        
+        // Get all alarms once to avoid multiple API calls
+        List<AlarmModel> allAlarms = await _alarmApiService.getAllAlarms();
+        
+        // Create a map for quick alarm lookup by ID
+        Map<int, AlarmModel> alarmMap = {
+          for (AlarmModel alarm in allAlarms) 
+            if (alarm.id != null) alarm.id!: alarm
+        };
+        
+        // Populate alarm relationships for tasks that have alarmId
+        List<Task> tasksWithAlarms = tasks.map((task) {
+          if (task.alarmId != null && alarmMap.containsKey(task.alarmId)) {
+            // Create a new task with the alarm relationship populated
+            return task.copyWith(alarm: alarmMap[task.alarmId]);
+          }
+          return task;
+        }).toList();
+        
+        return tasksWithAlarms;
       }
     } catch (e) {
+      debugPrint('Error in getTasksToday: $e');
       _handleException(e);
     }
     return [];

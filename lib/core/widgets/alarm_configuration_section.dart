@@ -10,6 +10,7 @@ class AlarmConfigurationSection extends StatelessWidget {
   final TimeOfDay? startTime;
   final Function(bool) onToggle;
   final Function(DateTime) onAlarmTimeChanged;
+  final bool isEditing; // New parameter to distinguish between create and edit modes
 
   const AlarmConfigurationSection({
     super.key,
@@ -19,10 +20,13 @@ class AlarmConfigurationSection extends StatelessWidget {
     required this.startTime,
     required this.onToggle,
     required this.onAlarmTimeChanged,
-  });
-  // Check if start time allows for alarm (start time should be in the future with 1 minute buffer)
+    this.isEditing = false, // Default to false for backward compatibility
+  });  // Check if start time allows for alarm (start time should be in the future with 1 minute buffer)
   bool get _hasValidStartTime {
     if (startTime == null) return false;
+
+    // For editing mode, allow alarm configuration even for past activities
+    if (isEditing) return true;
 
     final now = DateTime.now();
     final startDateTime = DateTime(
@@ -46,10 +50,12 @@ class AlarmConfigurationSection extends StatelessWidget {
       return startDateTime.isAfter(now);
     }
   }
-
   // Check if current alarm time is still valid and not equal to current time
   bool get _isAlarmTimeValid {
     if (alarmDateTime == null) return true;
+    
+    // For editing mode, preserve existing alarm times even if they've passed
+    if (isEditing) return true;
     
     final now = DateTime.now();
     // Check if alarm time is in the future and not equal to current time
@@ -140,9 +146,8 @@ class AlarmConfigurationSection extends StatelessWidget {
           newAlarmTime = startDateTime.subtract(const Duration(hours: 1));
           break;
       }
-    }
-
-    if (newAlarmTime != null && newAlarmTime.isAfter(DateTime.now())) {
+    }    // In edit mode, allow setting any alarm time; in create mode, only allow future times
+    if (newAlarmTime != null && (isEditing || newAlarmTime.isAfter(DateTime.now()))) {
       onAlarmTimeChanged(newAlarmTime);
       onToggle(true);
     }
@@ -159,11 +164,13 @@ class AlarmConfigurationSection extends StatelessWidget {
       selectedDate.day,
       startTime!.hour,
       startTime!.minute,
-    );
-
-    // Check if start time has already passed
+    );    // Check if start time has already passed - but allow in edit mode
     if (startDateTime.isBefore(now) || startDateTime.isAtSameMomentAs(now)) {
-      return '*Waktu mulai sudah terlewat. Alarm tidak dapat diaktifkan untuk waktu yang sudah berlalu.';
+      if (isEditing) {
+        return '*Mode edit: Waktu aktivitas dapat diperbarui sesuai kebutuhan';
+      } else {
+        return '*Waktu mulai sudah terlewat. Alarm tidak dapat diaktifkan untuk waktu yang sudah berlalu.';
+      }
     }
 
     if (!_hasValidStartTime) {
@@ -175,31 +182,32 @@ class AlarmConfigurationSection extends StatelessWidget {
       } else {
         return '*Waktu mulai aktivitas harus di masa depan untuk mengaktifkan alarm';
       }
-    }
-
-    if (alarmDateTime != null && !_isAlarmTimeValid) {
-      return '*Waktu alarm sudah lewat, silakan atur ulang';
+    }if (alarmDateTime != null && !_isAlarmTimeValid) {
+      // In edit mode, don't show error for past alarm times - allow editing
+      if (isEditing) {
+        return '*Mode edit: Waktu alarm dapat diperbarui sesuai kebutuhan';
+      } else {
+        return '*Waktu alarm sudah lewat, silakan atur ulang';
+      }
     }
 
     return '';
   }
-
   @override
   Widget build(BuildContext context) {
-    // Auto-disable alarm if time equals current time
+    // Auto-disable alarm if time equals current time - but only for new activities, not when editing
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (isEnabled && alarmDateTime != null && !_isAlarmTimeValid) {
+      if (!isEditing && isEnabled && alarmDateTime != null && !_isAlarmTimeValid) {
         onToggle(false);
       }
     });
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Alarm picker
+      children: [        // Alarm picker
         AlarmPicker(
           isEnabled: isEnabled && _hasValidStartTime && _isAlarmTimeValid,
-          alarmDateTime: (_isAlarmTimeValid && alarmDateTime != null) ? alarmDateTime : null,
+          alarmDateTime: ((_isAlarmTimeValid || isEditing) && alarmDateTime != null) ? alarmDateTime : null,
           onToggle: _hasValidStartTime 
               ? (value) {
                   if (value) {
