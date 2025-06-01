@@ -4,10 +4,31 @@ import 'package:aturin_app/features/profile/ui/profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
 
-class GreetingHeader extends StatelessWidget implements PreferredSizeWidget {
+class GreetingHeader extends StatefulWidget implements PreferredSizeWidget {
   const GreetingHeader({super.key});
+
+  @override
+  State<GreetingHeader> createState() => _GreetingHeaderState();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(75);
+}
+
+class _GreetingHeaderState extends State<GreetingHeader> {
+  Future<User?>? _userFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  void _loadUser() {
+    setState(() {
+      _userFuture = _getLoggedInUser();
+    });
+  }
 
   Future<User?> _getLoggedInUser() async {
     try {
@@ -26,17 +47,10 @@ class GreetingHeader extends StatelessWidget implements PreferredSizeWidget {
     }
   }
 
-  // void _loadUser() {
-  //   // Langsung muat user tanpa debugging database
-  //   final profileService = Provider.of<ProfileService>(context, listen: false);
-  //   setState(() {
-  //     _userFuture = profileService.me();
-  //   });
-  // }
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<User?>(
-      future: _getLoggedInUser(),
+      future: _userFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return PreferredSize(
@@ -69,21 +83,23 @@ class GreetingHeader extends StatelessWidget implements PreferredSizeWidget {
           scrolledUnderElevation: 0,
           automaticallyImplyLeading: false,
           toolbarHeight: 65,
-
           titleSpacing: 16,
           title: Padding(
-            padding: const EdgeInsets.only(
-              top: 16.0,
-            ), // Increased from 8.0 to add more space from notification area
+            padding: const EdgeInsets.only(top: 16.0),
             child: Row(
               children: [
                 // Avatar dan dot hijau dengan ukuran lebih kecil
                 GestureDetector(
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const ProfilePage()),
                     );
+                    
+                    // Refresh jika ada perubahan dari ProfilePage
+                    if (result != null) {
+                      _loadUser();
+                    }
                   },
                   child: Stack(
                     children: [
@@ -110,7 +126,7 @@ class GreetingHeader extends StatelessWidget implements PreferredSizeWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 20), // Diperkecil dari 26
+                const SizedBox(width: 20),
                 // Informasi user dan task count
                 Expanded(
                   child: Column(
@@ -123,7 +139,7 @@ class GreetingHeader extends StatelessWidget implements PreferredSizeWidget {
                             TextSpan(
                               text: 'Hai, ',
                               style: GoogleFonts.plusJakartaSans(
-                                fontSize: 14, // Diperkecil dari 15
+                                fontSize: 14,
                                 color: AppTheme.primaryColor,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -131,7 +147,7 @@ class GreetingHeader extends StatelessWidget implements PreferredSizeWidget {
                             TextSpan(
                               text: user.name,
                               style: GoogleFonts.plusJakartaSans(
-                                fontSize: 14, // Diperkecil dari 15
+                                fontSize: 14,
                                 color: AppTheme.lightTextColor,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -139,9 +155,8 @@ class GreetingHeader extends StatelessWidget implements PreferredSizeWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(
-                        height: 3,
-                      ), // Diperkecil dari 4                      // Jumlah tugas + aktivitas hari ini (menggunakan HomeService)
+                      const SizedBox(height: 3),
+                      // Jumlah tugas + aktivitas hari ini
                       Builder(
                         builder: (context) {
                           final activityCount = user.todayActivities ?? 0;
@@ -205,7 +220,4 @@ class GreetingHeader extends StatelessWidget implements PreferredSizeWidget {
       },
     );
   }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(75); // Increased from 65 to accommodate the extra top padding
 }
