@@ -83,7 +83,6 @@ class _TaskListViewState extends State<TaskListView>
         final pa = _taskPriority(a);
         final pb = _taskPriority(b);
         if (pa != pb) return pa.compareTo(pb);
-        // Jika prioritas sama, urutkan berdasarkan jam deadline
         return a.deadline.compareTo(b.deadline);
       });
 
@@ -104,11 +103,11 @@ class _TaskListViewState extends State<TaskListView>
     final today = DateTime(now.year, now.month, now.day);
     final deadline = DateTime(t.deadline.year, t.deadline.month, t.deadline.day);
 
-    if (t.taskStatus == TaskDatabaseStatus.selesai) return 1000; // Paling bawah
-    if (deadline.isBefore(today)) return 900; // Terlambat, setelah semua yang akan datang
+    if (t.taskStatus == TaskDatabaseStatus.selesai) return 10000; // Selesai: paling bawah
+    if (deadline.isBefore(today)) return 9000; // Terlambat: di bawah semua yang akan datang, di atas selesai
 
     final diff = deadline.difference(today).inDays;
-    return diff; // 0: hari ini, 1: besok, 2: lusa, dst
+    return diff; // 0: hari ini, 1: besok, dst
   }
 
   @override
