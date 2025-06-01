@@ -2,7 +2,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:aturin_app/core/utils/tap_protection.dart';
-import 'package:aturin_app/core/services/api/task/task_service.dart';
+import 'package:aturin_app/core/services/api/task/task_api_service.dart';
 import 'package:provider/provider.dart';
 import '../../../../../../core/widgets/bottom_navbar.dart';
 import '../../../../../../routers/app_router.dart';
@@ -36,12 +36,12 @@ class _TaskListScreenState extends State<TaskListScreen>
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchOverdueCount();
-      Provider.of<TaskService>(context, listen: false).fetchTasks();
+      Provider.of<TaskApiService>(context, listen: false).fetchTasks();
     });
   }
 
   Future<void> _fetchOverdueCount() async {
-    final taskService = Provider.of<TaskService>(context, listen: false);
+    final taskService = Provider.of<TaskApiService>(context, listen: false);
     final data = await taskService.countLateTasks();
     print('Data dari API: $data');
     if (data != null && data['overdue_tasks'] != null) {
