@@ -1,6 +1,5 @@
 import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:aturin_app/features/auth/login/widgets/custom_text_field.dart';
-import 'package:aturin_app/core/widgets/email_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
@@ -38,10 +37,11 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
             color: AppTheme.lightTextColor,
           ),        ),
         SizedBox(height: 1.h),
-        EmailTextFieldWidget(
+        CustomTextFieldWidget(
           controller: widget.emailController,
           hintText: 'contoh@gmail.com',
           icon: Icons.email_outlined,
+          obscureText: false,
         ),
 
         SizedBox(height: 2.5.h),

@@ -9,7 +9,6 @@ import 'package:aturin_app/core/services/api/profile/profile_service.dart';
 import 'package:aturin_app/core/services/api/auth/auth_service.dart';
 import 'package:aturin_app/core/services/api/activities/activity_api_service.dart';
 import 'package:aturin_app/features/jadwal/services/aktivitas_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'core/initialization/app_initializer.dart';
@@ -52,33 +51,14 @@ Future<void> _initializeApp() async {
     debugPrint('Connectivity service initialized successfully');
 
     await initializeDateFormatting('id_ID', null);
-    debugPrint('Date formatting initialized for id_ID locale');
+    debugPrint('Date formatting initialized for id_ID locale');    // Initialize the app with AppInitializer
+    final appInitializer = AppInitializer(appRouter);
+    await appInitializer.initialize();
 
-    // Only proceed with other initializations if we have internet
-    if (connectivityService.isConnected) {
-      // Initialize the app with AppInitializer
-      final appInitializer = AppInitializer(appRouter);
-      await appInitializer.initialize();
-
-      // Setup alarm manager
-      appInitializer.alarmManager.setAppCreator(() => const MyApp());
-
-      // Handle login routing only if online
-      final prefs = await SharedPreferences.getInstance();
-      final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-
-      if (isLoggedIn) {
-        appRouter.replaceAll([const HomeRoute()]);
-      } else {
-        appRouter.replaceAll([const LoginRoute()]);
-      }
-    } else {
-      // If offline, navigate directly to NoInternetScreen
-      debugPrint(
-        'No internet connection detected, navigating to NoInternetScreen',
-      );
-      appRouter.replaceAll([const NoInternetRoute()]);
-    }
+    // Setup alarm manager
+    appInitializer.alarmManager.setAppCreator(() => const MyApp());
+    
+    // Navigasi awal akan diatur oleh AutoRoute berdasarkan initial route
   } catch (e) {
     debugPrint('Failed to initialize app: $e');
     throw Exception('App initialization failed: $e');

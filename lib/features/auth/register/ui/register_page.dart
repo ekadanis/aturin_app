@@ -10,6 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:provider/provider.dart';
+import 'package:aturin_app/routers/app_router.dart'; // Make sure to import your router
 
 @RoutePage()
 class RegisterPage extends StatefulWidget {
@@ -23,8 +24,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController =
-      TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
 
   @override
   void dispose() {
@@ -51,7 +51,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     children: [
                       // Custom App Bar
                       RegisterAppBarWidget(
-                        onBackPressed: () => Navigator.pop(context),
+                        onBackPressed: () => context.router.pop(),
                       ),
 
                       // Scrollable Content
@@ -76,9 +76,52 @@ class _RegisterPageState extends State<RegisterPage> {
                                 nameController: nameController,
                                 emailController: emailController,
                                 passwordController: passwordController,
-                                confirmPasswordController:
-                                    confirmPasswordController,
-                                onRegister: _handleRegister,
+                                confirmPasswordController: confirmPasswordController,
+                                onRegister: () async {
+                                  final authService = Provider.of<AuthService>(context, listen: false);
+
+                                  try {
+                                    final result = await authService.register(
+                                      name: nameController.text.trim(),
+                                      email: emailController.text.trim(),
+                                      password: passwordController.text,
+                                    );
+
+                                    if (result.isSuccess) {
+                                      // Show success message
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            result.message,
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 13.sp,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          backgroundColor: AppTheme.successColor,
+                                          behavior: SnackBarBehavior.floating,
+                                          margin: EdgeInsets.all(4.w),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          duration: const Duration(seconds: 3),
+                                        ),
+                                      );
+                                      
+                                      // Navigate to login page after a delay
+                                      Future.delayed(const Duration(seconds: 1), () {
+                                        if (mounted) {
+                                          _navigateToLogin();
+                                        }
+                                      });
+                                    } else {
+                                      // Show error message
+                                      _showSnackBar(result.message);
+                                    }
+                                  } catch (e) {
+                                    _showSnackBar('Terjadi kesalahan: ${e.toString()}');
+                                  }
+                                },
                                 onValidationError: _showSnackBar,
                               ),
 
@@ -110,57 +153,9 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  void _handleRegister() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-
-    try {
-      final result = await authService.register(
-        name: nameController.text.trim(),
-        email: emailController.text.trim(),
-        password: passwordController.text,
-      );
-
-      if (result.isSuccess) {
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              result.message,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 13.sp,
-                color: Colors.white,
-              ),
-            ),
-            backgroundColor: AppTheme.successColor,
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.all(4.w),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-
-        // Navigate to login page after a delay
-        Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) {
-            _navigateToLogin();
-          }
-        });
-      } else {
-        // Show error message
-        _showSnackBar(result.message);
-      }
-    } catch (e) {
-      _showSnackBar('Terjadi kesalahan: ${e.toString()}');
-    }
-  }
-
   void _navigateToLogin() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginPage()),
-    );
+    // Replace Navigator.pushReplacement with auto_route navigation
+    context.router.replace(const LoginRoute());
   }
 
   void _showSnackBar(String message) {

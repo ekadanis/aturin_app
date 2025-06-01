@@ -48,14 +48,34 @@ class _AktivitasPageState extends State<AktivitasPage> {
   void dispose() {
     super.dispose();
   }
-
   Future<void> _refreshData() async {
     if (!mounted) return;
 
-    // Use simple setState like TaskListView pattern - let Consumer handle the refresh
-    setState(() {
-      _isInitialLoading = false;
-    });
+    try {
+      // Fetch activities data using microtask pattern like DataPrefetchGuard
+      final activityApiService = Provider.of<ActivityApiService>(context, listen: false);
+      await activityApiService.fetchActivities().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          debugPrint('Activities fetch timeout, continuing with cached data');
+        },
+      );
+
+      final taskApiService = Provider.of<TaskApiService>(context, listen: false);
+      await taskApiService.fetchTasks().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          debugPrint('Tasks fetch timeout, continuing with cached data');
+        },
+      );
+    } catch (e) {
+      debugPrint('Error during data refresh: $e');
+    } finally {
+      // Always set loading to false, let Consumer handle the data display
+      setState(() {
+        _isInitialLoading = false;
+      });
+    }
   }
 
   Future<void> _onDateChanged(DateTime newDate) async {

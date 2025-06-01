@@ -36,11 +36,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (!mounted) return;
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isFirstTime', false);
+    await prefs.setBool('isOnboarded', true);
 
     if (!mounted) return;
 
-    await context.router.replace(const HomeRoute());
+    await context.router.replace(const LoginRoute());
   }
 
   @override
