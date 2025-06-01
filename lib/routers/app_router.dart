@@ -34,8 +34,8 @@ class AppRouter extends RootStackRouter {
   RouteType get defaultRouteType =>
       RouteType.material(enablePredictiveBackGesture: true);  @override
   List<AutoRoute> get routes => [
-    AutoRoute(path: '/splash', page: SplashRoute.page),
-    AutoRoute(path: '/onboarding', page: OnboardingRoute.page, initial: true),
+    AutoRoute(path: '/splash', page: SplashRoute.page, initial: true),
+    AutoRoute(path: '/onboarding', page: OnboardingRoute.page),
     AutoRoute(path: '/login', page: LoginRoute.page),
     AutoRoute(path: '/register', page: RegisterRoute.page),
 

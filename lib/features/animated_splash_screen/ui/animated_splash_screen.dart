@@ -63,21 +63,26 @@ class _SplashScreenState extends State<SplashScreen>
       }
     }
   }
-
   Future<void> _checkFirstTime() async {
     if (!mounted) return;
 
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final bool isFirstTime = prefs.getBool('isFirstTime') ?? true;
+      final bool isOnboarded = prefs.getBool('isOnboarded') ?? false;
+      final bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
 
       if (!mounted) return;
 
-      // Navigate based on first time status
-      if (isFirstTime) {
+      // Navigate based on onboarding and login status
+      if (!isOnboarded) {
+        // Belum pernah onboarding -> ke onboarding
         context.router.replace(const OnboardingRoute());
-      } else {
+      } else if (isLoggedIn) {
+        // Sudah onboarding dan sudah login -> ke home
         context.router.replace(const HomeRoute());
+      } else {
+        // Sudah onboarding tapi belum login -> ke login
+        context.router.replace(const LoginRoute());
       }
     } catch (e) {
       debugPrint("Error checking first time status: $e");
