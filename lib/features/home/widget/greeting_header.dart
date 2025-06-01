@@ -1,3 +1,4 @@
+import 'package:aturin_app/core/services/api/profile/profile_service.dart';
 import 'package:aturin_app/features/home/services/home_service.dart' as home;
 import 'package:aturin_app/features/profile/database/profile_database.dart';
 import 'package:aturin_app/features/profile/models/user.dart';
@@ -6,9 +7,35 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:provider/provider.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
 
 class GreetingHeader extends StatelessWidget implements PreferredSizeWidget {
   const GreetingHeader({super.key});
+
+  Future<User?> _getLoggedInUser() async {
+    try {
+      final profileService = ProfileService();
+      final user = await profileService.getBannerProfile();
+
+      if (user != null) {
+        return user;
+      } else {
+        debugPrint('User data tidak ditemukan dari getBannerProfile.');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('Error getting logged in user via banner profile: $e');
+      return null;
+    }
+  }
+
+  // void _loadUser() {
+  //   // Langsung muat user tanpa debugging database
+  //   final profileService = Provider.of<ProfileService>(context, listen: false);
+  //   setState(() {
+  //     _userFuture = profileService.me();
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -118,11 +145,15 @@ class GreetingHeader extends StatelessWidget implements PreferredSizeWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 3), // Diperkecil dari 4                      // Jumlah tugas + aktivitas hari ini (menggunakan HomeService)
-                      Consumer<home.HomeService>(
-                        builder: (context, homeService, _) {
-                          final taskCount = homeService.todayTasks.length;
-                          final activityCount = homeService.todayAktivitas.length;                          return RichText(
+                      const SizedBox(
+                        height: 3,
+                      ), // Diperkecil dari 4                      // Jumlah tugas + aktivitas hari ini (menggunakan HomeService)
+                      Builder(
+                        builder: (context) {
+                          final activityCount = user.todayActivities ?? 0;
+                          final taskCount = user.todayTasks ?? 0;
+
+                          return RichText(
                             text: TextSpan(
                               children: [
                                 TextSpan(

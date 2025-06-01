@@ -97,13 +97,15 @@ class HomeService extends ChangeNotifier {
   Future<void> fetchData() async {
     // Throttling: Batasi fetch maksimal sekali tiap 2 detik
     final now = DateTime.now();
-    if (now.difference(_lastFetchTime).inSeconds < 2 && _tasks.isNotEmpty && _aktivitas.isNotEmpty) {
+    if (now.difference(_lastFetchTime).inSeconds < 2 &&
+        _tasks.isNotEmpty &&
+        _aktivitas.isNotEmpty) {
       debugPrint(
         'Home: Using cached data (fetched ${now.difference(_lastFetchTime).inSeconds}s ago)',
       );
       return;
     }
-
+    
     try {
       // Fetch tasks
       final taskResult = await taskDatabase.queryAll();
@@ -131,11 +133,13 @@ class HomeService extends ChangeNotifier {
   Future<void> fetchTasks() async {
     await fetchData();
   }
+
   List<Task> get nonAcademicTasks {
     return _tasks
         .where((task) => task.category != TaskCategory.akademik)
         .toList();
   }
+
   void startStatusChecker() {
     _statusChecker?.cancel();
     _statusChecker = Timer.periodic(
@@ -148,6 +152,7 @@ class HomeService extends ChangeNotifier {
     _statusChecker?.cancel();
     _statusChecker = null;
   }
+
   // Count today's tasks that aren't completed
   int getTodayTasksCount() {
     final now = DateTime.now();
@@ -163,6 +168,7 @@ class HomeService extends ChangeNotifier {
           task.status != TaskStatus.completed;
     }).length;
   }
+
   // Force refresh untuk memastikan data terbaru
   Future<void> forceRefresh() async {
     _cachedTodayTasks = null;
@@ -170,6 +176,7 @@ class HomeService extends ChangeNotifier {
     _lastFetchTime = DateTime(1970); // Reset waktu fetch terakhir
     await fetchData();
   }
+
   Future<void> toggleTaskCompletion(int? id) async {
     if (id == null) return;
 
@@ -186,16 +193,17 @@ class HomeService extends ChangeNotifier {
       final updatedTask = task.copyWith(
         taskStatus: newStatus,
         completedAt: newStatus == TaskDatabaseStatus.selesai ? now : null,
-      );
-
-      await taskDatabase.update(updatedTask.toMap());
+      );      await taskDatabase.update(updatedTask.toMap());
       _tasks[index] = updatedTask;
-
+      
+      // Reset cache untuk memaksa refresh tampilan
+      _cachedTodayTasks = null;
       _cachedFilteredTasks.clear();
 
       notifyListeners();
     }
   }
+
   Future<void> toggleAlarm(int? id) async {
     if (id == null) return;
 
@@ -235,6 +243,17 @@ class HomeService extends ChangeNotifier {
     _cachedTodayAktivitas = null; // Reset cache
     notifyListeners();
   }
+
+  // void updateFromBannerProfile(User user) {
+  //   _tasks = user.todayTasks ?? [];
+  //   _aktivitas = user.todayActivities ?? [];
+
+  //   _cachedTodayTasks = null;
+  //   _cachedTodayAktivitas = null;
+  //   _lastFetchTime = DateTime.now();
+
+  //   notifyListeners();
+  // }
 
   @override
   void dispose() {

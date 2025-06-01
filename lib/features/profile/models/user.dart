@@ -7,16 +7,20 @@ class User {
   final String slug;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final int? todayActivities;
+  final int? todayTasks;
 
   User({
     this.id,
     required this.name,
     required this.email,
     this.password,
-    this.avatar = '/assets/avatars/profile1.jpg',
+    this.avatar = 'assets/avatars/profile1.jpg',
     required this.slug,
     this.createdAt,
     this.updatedAt,
+    this.todayActivities,
+    this.todayTasks,
   });
 
   Map<String, dynamic> toMap() {
@@ -29,6 +33,8 @@ class User {
       'slug': slug,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
+      'today_activities': todayActivities,
+      'today_tasks': todayTasks,
     };
   }
 
@@ -42,7 +48,38 @@ class User {
       slug: map['slug'] ?? '',
       createdAt: map['created_at'] != null ? DateTime.tryParse(map['created_at']) : null,
       updatedAt: map['updated_at'] != null ? DateTime.tryParse(map['updated_at']) : null,
+      todayActivities: map['today_activities'],
+      todayTasks: map['today_tasks'],
     );
+  }
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'],
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+      password: json['password'],
+      avatar: json['avatar'] ?? '/assets/avatars/profile1.jpg',
+      slug: json['slug'] ?? '',
+      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
+      updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at']) : null,
+      todayActivities: json['today_activities'],
+      todayTasks: json['today_tasks'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+      'avatar': avatar,
+      'slug': slug,
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
+      'today_activities': todayActivities,
+      'today_tasks': todayTasks,
+    };
   }
 
   // Method to create a copy without password for security
@@ -55,6 +92,8 @@ class User {
       slug: slug,
       createdAt: createdAt,
       updatedAt: updatedAt,
+      todayActivities: todayActivities,
+      todayTasks: todayTasks,
     );
   }
 
@@ -77,6 +116,8 @@ class User {
     String? slug,
     DateTime? createdAt,
     DateTime? updatedAt,
+    int? todayActivities,
+    int? todayTasks,
   }) {
     return User(
       id: id ?? this.id,
@@ -87,6 +128,8 @@ class User {
       slug: slug ?? this.slug,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      todayActivities: todayActivities ?? this.todayActivities,
+      todayTasks: todayTasks ?? this.todayTasks,
     );
   }
 }
