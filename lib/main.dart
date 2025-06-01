@@ -1,10 +1,12 @@
+import 'package:aturin_app/core/services/api/profile/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:aturin_app/features/task/services/task_services.dart' as task;
 import 'package:aturin_app/features/home/services/home_service.dart';
-import 'package:aturin_app/features/profile/services/profile_service.dart';
+import 'package:aturin_app/core/services/api/profile/profile_service.dart';
+import 'package:aturin_app/core/services/api/auth/auth_service.dart';
 import 'package:aturin_app/features/jadwal/services/aktivitas_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';

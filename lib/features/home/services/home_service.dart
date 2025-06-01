@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:aturin_app/features/profile/models/user.dart';
 import 'package:flutter/material.dart';
 import 'package:aturin_app/features/task/database/task_database.dart';
 import 'package:aturin_app/features/task/model/task_model.dart';
@@ -93,7 +94,7 @@ class HomeService extends ChangeNotifier {
   HomeService() {
     fetchData();
     startStatusChecker();
-  }  // Fetch both tasks and activities from the database
+  } // Fetch both tasks and activities from the database
   Future<void> fetchData() async {
     // Throttling: Batasi fetch maksimal sekali tiap 2 detik
     final now = DateTime.now();
@@ -105,11 +106,12 @@ class HomeService extends ChangeNotifier {
       );
       return;
     }
-    
     try {
-      // Fetch tasks
-      final taskResult = await taskDatabase.queryAll();
-      _tasks = taskResult.map((row) => Task.fromMap(row)).toList();
+      // SQLite disabled - using empty data for now
+      // TODO: Replace with API calls when available
+      // final taskResult = await taskDatabase.queryAll();
+      // _tasks = taskResult.map((row) => Task.fromMap(row)).toList();
+      _tasks = []; // Empty data since SQLite is disabled
 
       // Fetch activities
       final aktivitasResult = await aktivitasDatabase.queryAll();
@@ -202,6 +204,7 @@ class HomeService extends ChangeNotifier {
 
       notifyListeners();
     }
+
   }
 
   Future<void> toggleAlarm(int? id) async {

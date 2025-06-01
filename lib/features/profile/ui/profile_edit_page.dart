@@ -75,10 +75,6 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       setState(() {
         _selectedAvatar = selectedAvatar;
       });
-
-      await _saveChanges(
-        shouldPop: false,
-      ); // Jangan pop halaman setelah save avatar
     }
   }
 
@@ -143,43 +139,44 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         ),
       ),
     );
-  }  Future<void> _saveChanges({bool shouldPop = true}) async {
+  }
+  Future<void> _saveChanges({bool shouldPop = true}) async {
     if (_usernameController.text.isNotEmpty) {
-    try {
-      final updatedUser = await _profileService.editProfile(
-        _usernameController.text,
-        _selectedAvatar,
-      );
-
-      if (updatedUser != null) {
-        showCustomTopSnackbar(
-          context: context,
-          message: 'Berhasil Mengedit Profile',
+      try {
+        final updatedUser = await _profileService.editProfile(
+          _usernameController.text,
+          _selectedAvatar,
         );
 
-        if (shouldPop) {
-          Navigator.pop(context, true);
+        if (updatedUser != null) {
+          showCustomTopSnackbar(
+            context: context,
+            message: 'Berhasil Mengedit Profile',
+          );
+
+          if (shouldPop) {
+            Navigator.pop(context, true);
+          }
+        } else {
+          showCustomTopSnackbar(
+            context: context,
+            message: 'Gagal memperbarui profil',
+            isError: true,
+          );
         }
-      } else {
+      } catch (e) {
         showCustomTopSnackbar(
           context: context,
-          message: 'Gagal memperbarui profil',
+          message: 'Error: $e',
           isError: true,
         );
       }
-    } catch (e) {
+    } else {
       showCustomTopSnackbar(
         context: context,
-        message: 'Error: $e',
+        message: 'Nama tidak boleh kosong',
         isError: true,
       );
     }
-  } else {
-    showCustomTopSnackbar(
-      context: context,
-      message: 'Nama tidak boleh kosong',
-      isError: true,
-    );
-  }
   }
 }
