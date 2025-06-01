@@ -15,6 +15,7 @@ import 'routers/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/connectivity/connectivity_service.dart';
 import 'core/services/api/auth/auth_service.dart';
+import 'core/services/api/task/task_api_service.dart';
 
 // Membuat instance AppRouter dan ConnectivityService di level global
 final appRouter = AppRouter();
@@ -111,6 +112,8 @@ class _MyAppState extends State<MyApp> {
         ),
         // Provider untuk ProfileService
         ChangeNotifierProvider<ProfileService>(create: (_) => ProfileService()),
+        // Provider untuk TaskApiService
+        Provider<TaskApiService>(create: (_) => TaskApiService()),
       ],
       child: Sizer(
         builder: (context, orientation, deviceType) {

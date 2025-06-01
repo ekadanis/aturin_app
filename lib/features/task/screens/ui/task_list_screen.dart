@@ -23,7 +23,6 @@ class _TaskListScreenState extends State<TaskListScreen>
   String _selectedFilter = 'Semua';
   final List<String> _filters = [
     'Semua',
-    'Hari Ini',
     'Terlambat',
     'Belum Selesai',
     'Selesai',
@@ -100,15 +99,24 @@ class _TaskListScreenState extends State<TaskListScreen>
               Expanded(
                 child: TaskListView(
                   currentFilter: _selectedFilter,
+                  onShowSuccess: (message) {
+                    // reload TaskListView
+                    setState(() {});
+                    // reload countLateTask agar badge overdue sinkron
+                    _fetchOverdueCount();
+                    // tampilkan snackbar jika perlu
+                    showCustomTopSnackbar(context: context, message: message);
+                  },
                   onTapTask: (task) {
                     safeOnTap(() {
                       context.router.push(TaskDetailRoute(task: task)).then((result) {
                         if (result == true) {
+                          setState(() {});
+                          _fetchOverdueCount(); // reload countLateTask juga setelah edit
                           showCustomTopSnackbar(
                             context: context,
                             message: 'Tugas berhasil diperbarui',
                           );
-                          _fetchOverdueCount(); // refresh count jika ada perubahan
                         }
                       });
                     });

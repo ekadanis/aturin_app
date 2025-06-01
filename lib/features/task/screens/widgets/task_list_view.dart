@@ -50,7 +50,25 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
       _error = null;
     });
     try {
-      final tasks = await TaskApiService().getAllTasks();
+      List<Task> tasks = [];
+      if (widget.currentFilter == 'Semua') {
+        tasks = await TaskApiService().getAllTasks();
+      } else if (widget.currentFilter == 'Terlambat') {
+        final data = await TaskApiService().getTasksByStatus('terlambat');
+        if (data != null && data['tasks'] != null) {
+          tasks = List<Task>.from(data['tasks'].map((e) => Task.fromMap(e)));
+        }
+      } else if (widget.currentFilter == 'Belum Selesai') {
+        final data = await TaskApiService().getTasksByStatus('belum_selesai');
+        if (data != null && data['tasks'] != null) {
+          tasks = List<Task>.from(data['tasks'].map((e) => Task.fromMap(e)));
+        }
+      } else if (widget.currentFilter == 'Selesai') {
+        final data = await TaskApiService().getTasksByStatus('selesai');
+        if (data != null && data['tasks'] != null) {
+          tasks = List<Task>.from(data['tasks'].map((e) => Task.fromMap(e)));
+        }
+      }
       setState(() {
         _tasks = tasks;
         _isLoading = false;
@@ -66,6 +84,9 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
   @override
   void didUpdateWidget(TaskListView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.currentFilter != oldWidget.currentFilter) {
+      _fetchTasks(); // <-- reload data setiap filter berubah
+    }
     if (widget.animationStyle != oldWidget.animationStyle) {
       _animator.updateAnimationStyle(widget.animationStyle);
     }
@@ -131,6 +152,7 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
   }
   
   Widget _buildTaskCard(Task task) {
+    final isSelesai = widget.currentFilter == 'Selesai';
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Hero(
@@ -138,20 +160,33 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
         child: TaskCard(
           task: task,
           currentFilter: widget.currentFilter,
-          onToggleCompletion: () async {
+          showCheckbox: !isSelesai,    // hilangkan checkbox jika selesai
+          showPopupMenu: !isSelesai,   // hilangkan titik tiga jika selesai
+          onToggleCompletion: isSelesai ? () {} : () async {
             setState(() {
               _animatingTaskId = task.id;
               _isAnimating = true;
             });
             _animator.prepareTaskAnimation(task, !task.isCompleted);
             try {
-              // Toggle completion using updateTask
               final newStatus = task.isCompleted ? 'belum_selesai' : 'selesai';
               await TaskApiService().updateTask(
                 slug: task.slug!,
                 status: newStatus,
               );
-              await _fetchTasks();
+              // Update status di list lokal
+              setState(() {
+                final idx = _tasks.indexWhere((t) => t.id == task.id);
+                if (idx != -1) {
+                  _tasks[idx] = _tasks[idx].copyWith(
+                    taskStatus: newStatus == 'selesai'
+                        ? TaskDatabaseStatus.selesai
+                        : TaskDatabaseStatus.belumSelesai,
+                  );
+                }
+                _isAnimating = false;
+                _animatingTaskId = null;
+              });
               showCustomTopSnackbar(
                 context: context,
                 message: !task.isCompleted
@@ -165,7 +200,7 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
               );
             }
           },
-          onDelete: () async {
+          onDelete: isSelesai ? () {} : () async {
             setState(() {
               _animatingTaskId = task.id;
               _isAnimating = true;
@@ -226,7 +261,7 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
           onViewDetails: () {
             widget.onTapTask?.call(task);
           },
-          onToggleAlarm: () async {
+          onToggleAlarm: isSelesai ? () {} : () async {
             try {
               // Toggle alarm using updateTask (e.g., set alarmId to null or to a value)
               final newAlarmId = task.isAlarmEnabled ? null : task.alarmId;
