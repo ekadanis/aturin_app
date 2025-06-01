@@ -25,7 +25,8 @@ class TaskListView extends StatefulWidget {
   State<TaskListView> createState() => _TaskListViewState();
 }
 
-class _TaskListViewState extends State<TaskListView> with TickerProviderStateMixin {
+class _TaskListViewState extends State<TaskListView>
+    with TickerProviderStateMixin {
   late TaskAnimator _animator;
   int? _animatingTaskId;
   bool _isAnimating = false;
@@ -150,9 +151,11 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
       },
     );
   }
-  
+
   Widget _buildTaskCard(Task task) {
-    final isSelesai = widget.currentFilter == 'Selesai';
+    final isSelesai =
+        widget.currentFilter == 'Selesai' ||
+        (widget.currentFilter == 'Semua' && task.isCompleted);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Hero(
@@ -160,127 +163,145 @@ class _TaskListViewState extends State<TaskListView> with TickerProviderStateMix
         child: TaskCard(
           task: task,
           currentFilter: widget.currentFilter,
-          showCheckbox: !isSelesai,    // hilangkan checkbox jika selesai
-          showPopupMenu: !isSelesai,   // hilangkan titik tiga jika selesai
-          onToggleCompletion: isSelesai ? () {} : () async {
-            setState(() {
-              _animatingTaskId = task.id;
-              _isAnimating = true;
-            });
-            _animator.prepareTaskAnimation(task, !task.isCompleted);
-            try {
-              final newStatus = task.isCompleted ? 'belum_selesai' : 'selesai';
-              await TaskApiService().updateTask(
-                slug: task.slug!,
-                status: newStatus,
-              );
-              // Update status di list lokal
-              setState(() {
-                final idx = _tasks.indexWhere((t) => t.id == task.id);
-                if (idx != -1) {
-                  _tasks[idx] = _tasks[idx].copyWith(
-                    taskStatus: newStatus == 'selesai'
-                        ? TaskDatabaseStatus.selesai
-                        : TaskDatabaseStatus.belumSelesai,
-                  );
-                }
-                _isAnimating = false;
-                _animatingTaskId = null;
-              });
-              showCustomTopSnackbar(
-                context: context,
-                message: !task.isCompleted
-                    ? 'Berhasil Menyelesaikan Tugas'
-                    : 'Tugas kembali ke status awal',
-              );
-            } catch (e) {
-              showCustomTopSnackbar(
-                context: context,
-                message: 'Gagal mengubah status tugas',
-              );
-            }
-          },
-          onDelete: isSelesai ? () {} : () async {
-            setState(() {
-              _animatingTaskId = task.id;
-              _isAnimating = true;
-            });
-            final taskSlug = task.slug;
-            try {
-              _animator.prepareTaskDeletion(task, () async {
-                // Hapus alarm jika ada
-                if (task.alarmId != null) {
-                  try {
-                    // Hapus alarm lokal
-                    await Alarm.stop(task.alarmId!);
-                  } catch (e) {
-                    debugPrint('Gagal menghapus alarm lokal: $e');
-                  }                  try {
-                    // Ambil data alarm dari server lalu hapus berdasarkan slug
-                    final allAlarms = await AlarmApiService().getAllAlarms();
-                    final alarm = allAlarms.where((alarm) => alarm.id == task.alarmId!).firstOrNull;
-                    if (alarm != null && alarm.slug.isNotEmpty) {
-                      await AlarmApiService().deleteAlarm(alarm.slug);
+          showCheckbox: !isSelesai, // hilangkan checkbox jika selesai
+          showPopupMenu: !isSelesai, // hilangkan titik tiga jika selesai
+          onToggleCompletion:
+              isSelesai
+                  ? () {}
+                  : () async {
+                    setState(() {
+                      _animatingTaskId = task.id;
+                      _isAnimating = true;
+                    });
+                    _animator.prepareTaskAnimation(task, !task.isCompleted);
+                    try {
+                      final newStatus =
+                          task.isCompleted ? 'belum_selesai' : 'selesai';
+                      await TaskApiService().updateTask(
+                        slug: task.slug!,
+                        status: newStatus,
+                      );
+                      // Update status di list lokal
+                      setState(() {
+                        final idx = _tasks.indexWhere((t) => t.id == task.id);
+                        if (idx != -1) {
+                          _tasks[idx] = _tasks[idx].copyWith(
+                            taskStatus:
+                                newStatus == 'selesai'
+                                    ? TaskDatabaseStatus.selesai
+                                    : TaskDatabaseStatus.belumSelesai,
+                          );
+                        }
+                        _isAnimating = false;
+                        _animatingTaskId = null;
+                      });
+                      showCustomTopSnackbar(
+                        context: context,
+                        message:
+                            !task.isCompleted
+                                ? 'Berhasil Menyelesaikan Tugas'
+                                : 'Tugas kembali ke status awal',
+                      );
+                    } catch (e) {
+                      showCustomTopSnackbar(
+                        context: context,
+                        message: 'Gagal mengubah status tugas',
+                      );
                     }
-                  } catch (e) {
-                    debugPrint('Gagal menghapus alarm di backend: $e');
-                  }
-                }
-                if (taskSlug != null) {
-                  await TaskApiService().deleteTask(taskSlug);
-                  await _fetchTasks();
-                  showCustomTopSnackbar(
-                    context: context,
-                    message: 'Berhasil menghapus tugas',
-                  );
-                }
-                if (mounted) {
-                  setState(() {
-                    if (_animatingTaskId == task.id) {
-                      _isAnimating = false;
-                      _animatingTaskId = null;
+                  },
+          onDelete:
+              isSelesai
+                  ? () {}
+                  : () async {
+                    setState(() {
+                      _animatingTaskId = task.id;
+                      _isAnimating = true;
+                    });
+                    final taskSlug = task.slug;
+                    try {
+                      _animator.prepareTaskDeletion(task, () async {
+                        // Hapus alarm jika ada
+                        if (task.alarmId != null) {
+                          try {
+                            // Hapus alarm lokal
+                            await Alarm.stop(task.alarmId!);
+                          } catch (e) {
+                            debugPrint('Gagal menghapus alarm lokal: $e');
+                          }
+                          try {
+                            // Ambil data alarm dari server lalu hapus berdasarkan slug
+                            final allAlarms =
+                                await AlarmApiService().getAllAlarms();
+                            final alarm =
+                                allAlarms
+                                    .where((alarm) => alarm.id == task.alarmId!)
+                                    .firstOrNull;
+                            if (alarm != null && alarm.slug.isNotEmpty) {
+                              await AlarmApiService().deleteAlarm(alarm.slug);
+                            }
+                          } catch (e) {
+                            debugPrint('Gagal menghapus alarm di backend: $e');
+                          }
+                        }
+                        if (taskSlug != null) {
+                          await TaskApiService().deleteTask(taskSlug);
+                          await _fetchTasks();
+                          showCustomTopSnackbar(
+                            context: context,
+                            message: 'Berhasil menghapus tugas',
+                          );
+                        }
+                        if (mounted) {
+                          setState(() {
+                            if (_animatingTaskId == task.id) {
+                              _isAnimating = false;
+                              _animatingTaskId = null;
+                            }
+                          });
+                        }
+                      });
+                    } catch (e) {
+                      // Tangani error dan reset state animasi
+                      debugPrint('Error menghapus task: $e');
+                      if (mounted) {
+                        setState(() {
+                          _isAnimating = false;
+                          _animatingTaskId = null;
+                        });
+                        showCustomTopSnackbar(
+                          context: context,
+                          message: 'Gagal menghapus tugas, coba lagi',
+                        );
+                      }
                     }
-                  });
-                }
-              });
-            } catch (e) {
-              // Tangani error dan reset state animasi
-              debugPrint('Error menghapus task: $e');
-              if (mounted) {
-                setState(() {
-                  _isAnimating = false;
-                  _animatingTaskId = null;
-                });
-                showCustomTopSnackbar(
-                  context: context,
-                  message: 'Gagal menghapus tugas, coba lagi',
-                );
-              }
-            }
-          },
+                  },
           onViewDetails: () {
             widget.onTapTask?.call(task);
           },
-          onToggleAlarm: isSelesai ? () {} : () async {
-            try {
-              // Toggle alarm using updateTask (e.g., set alarmId to null or to a value)
-              final newAlarmId = task.isAlarmEnabled ? null : task.alarmId;
-              await TaskApiService().updateTask(
-                slug: task.slug!,
-                alarmId: newAlarmId,
-              );
-              await _fetchTasks();
-              showCustomTopSnackbar(
-                context: context,
-                message: 'Alarm tugas diperbarui',
-              );
-            } catch (e) {
-              showCustomTopSnackbar(
-                context: context,
-                message: 'Gagal memperbarui alarm',
-              );
-            }
-          },
+          onToggleAlarm:
+              isSelesai
+                  ? () {}
+                  : () async {
+                    try {
+                      // Toggle alarm using updateTask (e.g., set alarmId to null or to a value)
+                      final newAlarmId =
+                          task.isAlarmEnabled ? null : task.alarmId;
+                      await TaskApiService().updateTask(
+                        slug: task.slug!,
+                        alarmId: newAlarmId,
+                      );
+                      await _fetchTasks();
+                      showCustomTopSnackbar(
+                        context: context,
+                        message: 'Alarm tugas diperbarui',
+                      );
+                    } catch (e) {
+                      showCustomTopSnackbar(
+                        context: context,
+                        message: 'Gagal memperbarui alarm',
+                      );
+                    }
+                  },
         ),
       ),
     );

@@ -34,7 +34,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.lightBackgroundColor,      appBar: AppBar(
+      backgroundColor: AppTheme.lightBackgroundColor,
+      appBar: AppBar(
         backgroundColor: AppTheme.lightBackgroundColor,
         elevation: 0,
         leading: IconButton(
@@ -50,35 +51,35 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         ),
         centerTitle: false,
         actions: [
-          IconButton(
-            icon: SvgPicture.asset(
-              'assets/icons/edit.svg', // Ganti dengan path asset yang kamu siapkan
-              width: 20, // Sesuaikan ukuran ikon
-              height: 20,
-              color: Colors.black,
-            ),
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => AddTaskScreen(existingTask: _task),
-                ),
-              );
+          if (_task.taskStatus != TaskDatabaseStatus.selesai) // hanya tampil jika belum selesai
+            IconButton(
+              icon: SvgPicture.asset(
+                'assets/icons/edit.svg',
+                width: 20,
+                height: 20,
+                color: Colors.black,
+              ),
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AddTaskScreen(existingTask: _task),
+                  ),
+                );
 
-              if (result == true) {
-                final updatedTask = _task.slug != null
-                    ? await TaskApiService().getTaskBySlug(_task.slug!)
-                    : null;
-                if (updatedTask != null) {
-                  setState(() {
-                    _task = updatedTask;
-                  });
-                  // Tandai bahwa ada perubahan untuk diteruskan ke halaman daftar
-                  Navigator.pop(context, true);
+                if (result == true) {
+                  final updatedTask = _task.slug != null
+                      ? await TaskApiService().getTaskBySlug(_task.slug!)
+                      : null;
+                  if (updatedTask != null) {
+                    setState(() {
+                      _task = updatedTask;
+                    });
+                    Navigator.pop(context, true);
+                  }
                 }
-              }
-            },
-          ),
+              },
+            ),
         ],
       ),
       body: SingleChildScrollView(

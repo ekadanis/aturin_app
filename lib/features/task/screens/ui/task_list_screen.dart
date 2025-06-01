@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:auto_route/auto_route.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
@@ -30,13 +31,36 @@ class _TaskListScreenState extends State<TaskListScreen>
 
   int _overdueTasksCount = 0;
 
+  Timer? _reloadTimer;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchOverdueCount();
       Provider.of<TaskApiService>(context, listen: false).fetchTasks();
+      _startAutoReload();
     });
+  }
+
+  void _startAutoReload() {
+    _reloadTimer?.cancel();
+    _reloadTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _fetchOverdueCount();
+      setState(() {}); // Trigger reload TaskListView
+    });
+  }
+
+  void _resetAutoReloadTimer() {
+    _startAutoReload();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _reloadTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchOverdueCount() async {
@@ -51,82 +75,101 @@ class _TaskListScreenState extends State<TaskListScreen>
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _fetchOverdueCount();
+      setState(() {});
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        safeNavigate(() {
-          context.router.pushAndPopUntil(
-            const HomeRoute(),
-            predicate: (_) => false
-          );
-        });
-        return;
-      },
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: _resetAutoReloadTimer,
+      onPanDown: (_) => _resetAutoReloadTimer(),
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          safeNavigate(() {
+            context.router.pushAndPopUntil(
+              const HomeRoute(),
+              predicate: (_) => false
+            );
+          });
+          return;
+        },
+        child: Scaffold(
           backgroundColor: Colors.white,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          title: Text(
-            'Tugas',
-            style: GoogleFonts.plusJakartaSans(
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            title: Text(
+              'Tugas',
+              style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
             ),
           ),
-        ),
-        body: SafeArea(
-          bottom: false,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Transform.translate(
-                offset: const Offset(0, -8),
-                child: FilterTabs(
-                  filters: _filters,
-                  selectedFilter: _selectedFilter,
-                  overdueTasksCount: _overdueTasksCount, // <-- assign di sini
-                  onFilterSelected: (filter) {
-                    setState(() {
-                      _selectedFilter = filter;
-                    });
-                  },
-                ),
+          body: SafeArea(
+            bottom: false,
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                _resetAutoReloadTimer();
+                return false;
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Transform.translate(
+                    offset: const Offset(0, -8),
+                    child: FilterTabs(
+                      filters: _filters,
+                      selectedFilter: _selectedFilter,
+                      overdueTasksCount: _overdueTasksCount, // <-- assign di sini
+                      onFilterSelected: (filter) {
+                        setState(() {
+                          _selectedFilter = filter;
+                        });
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    child: TaskListView(
+                      currentFilter: _selectedFilter,
+                      onShowSuccess: (message) {
+                        // reload TaskListView
+                        setState(() {});
+                        // reload countLateTask agar badge overdue sinkron
+                        _fetchOverdueCount();
+                        // tampilkan snackbar jika perlu
+                        showCustomTopSnackbar(context: context, message: message);
+                      },
+                      onTapTask: (task) {
+                        safeOnTap(() {
+                          context.router.push(TaskDetailRoute(task: task)).then((result) {
+                            if (result == true) {
+                              setState(() {});
+                              _fetchOverdueCount(); // reload countLateTask juga setelah edit
+                              showCustomTopSnackbar(
+                                context: context,
+                                message: 'Tugas berhasil diperbarui',
+                              );
+                            }
+                          });
+                        });
+                      },
+                    ),
+                  ),
+                ],
               ),
-              Expanded(
-                child: TaskListView(
-                  currentFilter: _selectedFilter,
-                  onShowSuccess: (message) {
-                    // reload TaskListView
-                    setState(() {});
-                    // reload countLateTask agar badge overdue sinkron
-                    _fetchOverdueCount();
-                    // tampilkan snackbar jika perlu
-                    showCustomTopSnackbar(context: context, message: message);
-                  },
-                  onTapTask: (task) {
-                    safeOnTap(() {
-                      context.router.push(TaskDetailRoute(task: task)).then((result) {
-                        if (result == true) {
-                          setState(() {});
-                          _fetchOverdueCount(); // reload countLateTask juga setelah edit
-                          showCustomTopSnackbar(
-                            context: context,
-                            message: 'Tugas berhasil diperbarui',
-                          );
-                        }
-                      });
-                    });
-                  },
-                ),
-              ),
-            ],
+            ),
           ),
+          bottomNavigationBar: const BottomNavbar(currentIndex: 2),
         ),
-        bottomNavigationBar: const BottomNavbar(currentIndex: 2),
       ),
     );
   }
