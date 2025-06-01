@@ -189,6 +189,19 @@ class TaskApiService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> fetchTasksToday() async {
+    _setLoading(true);
+    try {
+      final tasks = await getTasksToday();
+      _tasks = tasks;
+      _setError(null);
+    } catch (e) {
+      _setError('Gagal mengambil data tugas hari ini');
+    }
+    _setLoading(false);
+    notifyListeners();
+  }
+
   Future<List<Task>> getAllTasks() async {
     try {
       final headers = await _getHeaders();

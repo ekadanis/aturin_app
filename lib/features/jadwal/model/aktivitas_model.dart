@@ -91,29 +91,28 @@ class AktivitasModel {
       id: json['id'] is String ? int.tryParse(json['id']) : json['id'],
       userId: json['user_id'] is String ? int.tryParse(json['user_id']) : json['user_id'],
       activityTitle: json['activity_title'] ?? '',
-      activityDate: DateTime.parse(json['activity_date']),
+      activityDate: DateTime.parse(json['activity_date']).toLocal(),
       activityStartTime: _parseDateTime(json['activity_date'], json['activity_start_time']),
       activityCompleteTime: _parseDateTime(json['activity_date'], json['activity_complete_time']),
       activityCategory: _parseActivityCategory(json['activity_category']),
       alarmId: json['alarm_id'] is String ? int.tryParse(json['alarm_id']) : json['alarm_id'],
       slug: json['slug'],
-      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
-      updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at']) : null,
+      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'])?.toLocal() : null,
+      updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at'])?.toLocal() : null,
       alarm: json['alarm'] != null ? AlarmModel.fromJson(json['alarm']) : null,
     );
-  }
-  // Helper method to parse datetime from date and time strings
+  }  // Helper method to parse datetime from date and time strings
   static DateTime _parseDateTime(String date, String time) {
     try {
       // Try to parse as full ISO8601 datetime first
-      return DateTime.parse(time);
+      return DateTime.parse(time).toLocal();
     } catch (e) {
       // If that fails, assume it's H:i format and combine with date
       try {
         final timeParts = time.split(':');
         final hour = int.parse(timeParts[0]);
         final minute = int.parse(timeParts[1]);
-        final dateTime = DateTime.parse(date);
+        final dateTime = DateTime.parse(date).toLocal();
         return DateTime(dateTime.year, dateTime.month, dateTime.day, hour, minute);
       } catch (e2) {
         throw FormatException('Invalid date format: $time');
@@ -187,7 +186,7 @@ class AktivitasModel {
       id: map['id'],
       userId: map['user_id'],
       activityTitle: map['activity_title'] ?? '',
-      activityDate: DateTime.parse(map['activity_date']),
+      activityDate: DateTime.parse(map['activity_date']).toLocal(),
       activityStartTime: _parseDateTime(map['activity_date'], map['activity_start_time']),
       activityCompleteTime: _parseDateTime(map['activity_date'], map['activity_complete_time']),
       activityCategory: ActivityCategory.values.firstWhere(
@@ -196,8 +195,8 @@ class AktivitasModel {
       ),
       alarmId: map['alarm_id'],
       slug: map['slug'],
-      createdAt: map['created_at'] != null ? DateTime.tryParse(map['created_at']) : null,
-      updatedAt: map['updated_at'] != null ? DateTime.tryParse(map['updated_at']) : null,
+      createdAt: map['created_at'] != null ? DateTime.tryParse(map['created_at'])?.toLocal() : null,
+      updatedAt: map['updated_at'] != null ? DateTime.tryParse(map['updated_at'])?.toLocal() : null,
       alarm: alarm,
     );
   }

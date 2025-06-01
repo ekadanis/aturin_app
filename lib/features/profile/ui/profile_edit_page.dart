@@ -152,7 +152,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 
         if (updatedUser != null) {
           setState(() {
-            _hasChanges = true; // Set flag bahwa ada perubahan
+            _hasChanges = true;
           });
 
           showCustomTopSnackbar(

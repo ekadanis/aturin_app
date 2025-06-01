@@ -43,7 +43,7 @@ class _InfiniteScheduleListWidgetState
     extends State<InfiniteScheduleListWidget> {
   late PageController _pageController;
   late DateTime _baseDate;
-  
+
   static const int _initialPageIndex = 100000;
   int _currentPageIndex = _initialPageIndex;
   bool _isPageChanging = false;
@@ -53,13 +53,13 @@ class _InfiniteScheduleListWidgetState
     super.initState();
     final now = DateTime.now();
     _baseDate = DateTime(now.year, now.month, now.day);
-    
+
     final normalizedSelectedDate = DateTime(
       widget.selectedDate.year,
       widget.selectedDate.month,
       widget.selectedDate.day,
     );
-    
+
     final daysDifference = normalizedSelectedDate.difference(_baseDate).inDays;
     _currentPageIndex = _initialPageIndex + daysDifference;
     _pageController = PageController(initialPage: _currentPageIndex);
@@ -68,10 +68,10 @@ class _InfiniteScheduleListWidgetState
   @override
   void didUpdateWidget(InfiniteScheduleListWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     final oldDate = DateTime(
       oldWidget.selectedDate.year,
-      oldWidget.selectedDate.month, 
+      oldWidget.selectedDate.month,
       oldWidget.selectedDate.day,
     );
     final newDate = DateTime(
@@ -79,7 +79,7 @@ class _InfiniteScheduleListWidgetState
       widget.selectedDate.month,
       widget.selectedDate.day,
     );
-    
+
     if (newDate != oldDate && !_isPageChanging) {
       _animateToDate(widget.selectedDate);
     }
@@ -93,18 +93,18 @@ class _InfiniteScheduleListWidgetState
 
   void _animateToDate(DateTime targetDate) {
     if (!_pageController.hasClients) return;
-    
+
     final normalizedDate = DateTime(
       targetDate.year,
       targetDate.month,
       targetDate.day,
     );
-    
+
     final daysDifference = normalizedDate.difference(_baseDate).inDays;
     final targetPageIndex = _initialPageIndex + daysDifference;
-    
+
     _isPageChanging = true;
-    
+
     _pageController
         .animateToPage(
           targetPageIndex,
@@ -125,36 +125,38 @@ class _InfiniteScheduleListWidgetState
 
   List<AktivitasModel> _getSchedulesForDate(DateTime date) {
     final normalizedDate = DateTime(date.year, date.month, date.day);
-    
+
     return widget.schedules.where((schedule) {
       final scheduleDate = DateTime(
         schedule.activityDate.year,
         schedule.activityDate.month,
         schedule.activityDate.day,
       );
-      
-      bool categoryMatch = widget.selectedCategory == 'Semua' ||
+
+      bool categoryMatch =
+          widget.selectedCategory == 'Semua' ||
           schedule.activityCategory.displayName == widget.selectedCategory;
       bool dateMatch = scheduleDate.isAtSameMomentAs(normalizedDate);
-      
+
       return categoryMatch && dateMatch;
     }).toList();
   }
 
   List<Task> _getTasksForDate(DateTime date) {
     final normalizedDate = DateTime(date.year, date.month, date.day);
-    
+
     return widget.tasks.where((task) {
       final taskDate = DateTime(
         task.deadline.year,
         task.deadline.month,
         task.deadline.day,
       );
-      
-      bool categoryMatch = widget.selectedCategory == 'Semua' ||
+
+      bool categoryMatch =
+          widget.selectedCategory == 'Semua' ||
           task.category == widget.selectedCategory;
       bool dateMatch = taskDate.isAtSameMomentAs(normalizedDate);
-      
+
       return categoryMatch && dateMatch;
     }).toList();
   }
@@ -167,7 +169,8 @@ class _InfiniteScheduleListWidgetState
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final targetDate = DateTime(date.year, date.month, date.day);
-    return targetDate.isAtSameMomentAs(today);  }
+    return targetDate.isAtSameMomentAs(today);
+  }
 
   Widget _buildEmptyState() {
     return Center(
@@ -199,7 +202,9 @@ class _InfiniteScheduleListWidgetState
         ),
       ),
     );
-  }  @override
+  }
+
+  @override
   Widget build(BuildContext context) {
     return PageView.builder(
       controller: _pageController,
@@ -244,53 +249,67 @@ class _InfiniteScheduleListWidgetState
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Schedule list and tasks or empty state
                 if (schedulesForDate.isEmpty && tasksForDate.isEmpty)
                   _buildEmptyState()
                 else ...[
                   // Display schedules first
-                  ...schedulesForDate.map((schedule) => ActivityCard(
-                    activity: schedule,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ActivityDetailListPage(
-                            activities: schedulesForDate,
-                            initialIndex: schedulesForDate.indexOf(schedule),
+                  ...schedulesForDate.map(
+                    (schedule) => ActivityCard(
+                      activity: schedule,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (_) => ActivityDetailListPage(
+                                  activities: schedulesForDate,
+                                  initialIndex: schedulesForDate.indexOf(
+                                    schedule,
+                                  ),
+                                ),
                           ),
-                        ),
-                      );
-                    },
-                    onEdit: widget.onEditSchedule != null
-                        ? () => widget.onEditSchedule!(schedule)
-                        : null,
-                    onDelete: widget.onDeleteSchedule != null
-                        ? () => widget.onDeleteSchedule!(schedule)
-                        : null,
-                  )),
+                        );
+                      },
+                      onEdit:
+                          widget.onEditSchedule != null
+                              ? () => widget.onEditSchedule!(schedule)
+                              : null,
+                      onDelete:
+                          widget.onDeleteSchedule != null
+                              ? () => widget.onDeleteSchedule!(schedule)
+                              : null,
+                    ),
+                  ),
 
                   // Then display tasks
-                  ...tasksForDate.map((task) => TaskCard(
-                    task: task,
-                    onToggleCompletion: widget.onToggleTaskCompletion != null
-                        ? () => widget.onToggleTaskCompletion!(task)
-                        : () {},
-                    onDelete: widget.onDeleteTask != null
-                        ? () => widget.onDeleteTask!(task)
-                        : () {},
-                    onViewDetails: () {
-                      // Handle view details if needed
-                    },
-                    onToggleAlarm: () {
-                      // Handle toggle alarm if needed
-                    },
-                    currentFilter: widget.selectedCategory,
-                    showCheckbox: false,
-                    showStatus: true,
-                    margin: EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 0),
-                  )),
+                  ...tasksForDate.map(
+                    (task) => TaskCard(
+                      task: task,
+                      onToggleCompletion:
+                          widget.onToggleTaskCompletion != null
+                              ? () => widget.onToggleTaskCompletion!(task)
+                              : () {},
+                      onDelete:
+                          widget.onDeleteTask != null
+                              ? () => widget.onDeleteTask!(task)
+                              : () {},
+                      onViewDetails: () {
+                        // Handle view details if needed
+                      },
+                      onToggleAlarm: () {
+                        // Handle toggle alarm if needed
+                      },
+                      currentFilter: widget.selectedCategory,
+                      showCheckbox: false,
+                      showStatus: true,
+                      margin: EdgeInsets.symmetric(
+                        vertical: 0.5.h,
+                        horizontal: 0,
+                      ),
+                    ),
+                  ),
                 ],
                 const SizedBox(height: 100),
               ],

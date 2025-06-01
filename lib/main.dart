@@ -7,6 +7,7 @@ import 'package:aturin_app/features/task/services/task_services.dart' as task;
 import 'package:aturin_app/features/home/services/home_service.dart';
 import 'package:aturin_app/core/services/api/profile/profile_service.dart';
 import 'package:aturin_app/core/services/api/auth/auth_service.dart';
+import 'package:aturin_app/core/services/api/activities/activity_api_service.dart';
 import 'package:aturin_app/features/jadwal/services/aktivitas_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
@@ -16,7 +17,6 @@ import 'core/database/database_helper.dart';
 import 'routers/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/connectivity/connectivity_service.dart';
-import 'core/services/api/auth/auth_service.dart';
 import 'core/services/api/task/task_api_service.dart';
 
 // Membuat instance AppRouter dan ConnectivityService di level global
@@ -104,18 +104,19 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider<AuthService>(create: (_) => AuthService()),
         // Provider untuk TaskService dari features/task (untuk backward compatibility)
         ChangeNotifierProvider<task.TaskService>(
-          create: (_) => task.TaskService(),
+          create: (_) => task.TaskService(),        ),        // Provider untuk HomeService (unified service for home page)
+        ChangeNotifierProvider<HomeService>(create: (_) => HomeService()),        // Provider untuk ActivityApiService
+        ChangeNotifierProvider<ActivityApiService>(
+          create: (_) => ActivityApiService(),
         ),
-        // Provider untuk HomeService (unified service for home page)
-        ChangeNotifierProvider<HomeService>(create: (_) => HomeService()),
-        // Provider untuk AktivitasService
+        // Provider untuk AktivitasService (for add/edit operations)
         ChangeNotifierProvider<AktivitasService>(
           create: (_) => AktivitasService(),
         ),
         // Provider untuk ProfileService
         ChangeNotifierProvider<ProfileService>(create: (_) => ProfileService()),
         // Provider untuk TaskApiService
-        Provider<TaskApiService>(create: (_) => TaskApiService()),
+        ChangeNotifierProvider<TaskApiService>(create: (_) => TaskApiService()),
       ],
       child: Sizer(
         builder: (context, orientation, deviceType) {

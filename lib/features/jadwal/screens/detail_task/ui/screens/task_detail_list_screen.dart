@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../../../../task/model/task_model.dart';
 import '../../../../../profile/models/user.dart';
 import '../../../../../alarm/model/alarm.dart';
 import '../widgets/task_detail_card.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:aturin_app/core/widgets/confirm_dialog.dart';
+import 'package:aturin_app/core/services/api/task/task_api_service.dart';
 
 @RoutePage()
 class TaskDetailListScreen extends StatefulWidget {
-  const TaskDetailListScreen({Key? key}) : super(key: key);
+  final List<Task>? tasks;
+  final int? initialIndex;
+  
+  const TaskDetailListScreen({
+    Key? key, 
+    this.tasks, 
+    this.initialIndex,
+  }) : super(key: key);
 
   @override
   State<TaskDetailListScreen> createState() => _TaskDetailListScreenState();
@@ -19,86 +28,18 @@ class TaskDetailListScreen extends StatefulWidget {
 class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
   late final PageController _pageController;
   int _currentPageIndex = 0;
-  // Dummy data untuk testing - sesuai dengan model database baru
-  final List<Task> _tasks = [
-    Task(
-      id: 1,
-      userId: 1,
-      title: 'Tugas GIS',
-      description: 'Belajar per lembar tentang sistem informasi geografis',
-      deadline: DateTime(2024, 3, 20, 14, 0),
-      estimatedDuration: const Duration(minutes: 120),
-      category: 'akademik',
-      taskStatus: TaskDatabaseStatus.selesai,
-      alarmId: 1,
-      slug: 'tugas-gis',
-      // Relasi dengan User
-      user: User(
-        id: 1,
-        name: 'John Doe',
-        email: 'john@example.com',
-        slug: 'john-doe',
-      ),
-      // Relasi dengan AlarmModel
-      alarm: AlarmModel(
-        id: 1,
-        alarmDateTime: DateTime(2024, 3, 20, 13, 30),
-        alarmEnabled: true,
-        slug: 'alarm-tugas-gis',
-      ),
-    ),
-    Task(
-      id: 2,
-      userId: 1,
-      title: 'Meeting Project',
-      description: 'Diskusi progress project dengan tim development',
-      deadline: DateTime(2024, 3, 21, 10, 0),
-      estimatedDuration: const Duration(hours: 2),
-      category: 'pekerjaan',
-      taskStatus: TaskDatabaseStatus.belumSelesai,
-      slug: 'meeting-project',
-      // Relasi dengan User
-      user: User(
-        id: 1,
-        name: 'John Doe',
-        email: 'john@example.com',
-        slug: 'john-doe',
-      ),
-      // Tidak ada alarm
-      alarm: null,
-    ),
-    Task(
-      id: 3,
-      userId: 1,
-      title: 'Les Bahasa Jepang',
-      description: 'Belajar hiragana dan katakana dasar',
-      deadline: DateTime(2024, 3, 22, 16, 30),
-      estimatedDuration: const Duration(hours: 1, minutes: 30),
-      category: 'hiburan',
-      taskStatus: TaskDatabaseStatus.belumSelesai,
-      alarmId: 2,
-      slug: 'les-bahasa-jepang',
-      // Relasi dengan User
-      user: User(
-        id: 1,
-        name: 'John Doe',
-        email: 'john@example.com',
-        slug: 'john-doe',
-      ),
-      // Relasi dengan AlarmModel
-      alarm: AlarmModel(
-        id: 2,
-        alarmDateTime: DateTime(2024, 3, 22, 16, 0),
-        alarmEnabled: true,
-        slug: 'alarm-les-jepang',
-      ),
-    ),
-  ];
+  List<Task> _tasks = [];
+  bool _isLoading = false;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(viewportFraction: 0.85);
+    _currentPageIndex = widget.initialIndex ?? 0;
+    _pageController = PageController(
+      viewportFraction: 0.85,
+      initialPage: _currentPageIndex,
+    );
     _pageController.addListener(() {
       final page = _pageController.page ?? 0;
       final newIndex = page.round();
@@ -108,12 +49,186 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
         });
       }
     });
+    
+    _initializeTasks();
+  }
+
+  void _initializeTasks() {
+    if (widget.tasks != null && widget.tasks!.isNotEmpty) {
+      // Use provided tasks
+      setState(() {
+        _tasks = widget.tasks!;
+      });
+    } else {
+      // Fetch tasks from API
+      _fetchTasksFromAPI();
+    }
+  }
+
+  Future<void> _fetchTasksFromAPI() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final taskApiService = Provider.of<TaskApiService>(context, listen: false);
+      await taskApiService.fetchTasks();
+      
+      setState(() {
+        _tasks = taskApiService.tasks;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Gagal memuat data tugas: $e';
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  Widget _buildContent() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _error!,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _fetchTasksFromAPI,
+              child: const Text('Coba Lagi'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_tasks.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.task_alt,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Tidak ada tugas',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return PageView.builder(
+      controller: _pageController,
+      itemCount: _tasks.length,
+      itemBuilder: (context, index) {
+        final task = _tasks[index];
+        final isSelected = index == _currentPageIndex;
+
+        return AnimatedScale(
+          scale: isSelected ? 1.0 : 0.9,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          child: TaskDetailCard(
+            task: task,
+            isSelected: isSelected,
+            onTap: () {
+              // Handle card tap
+              print('Task tapped: ${task.title}');
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _handleEditTask() async {
+    if (_tasks.isEmpty) return;
+    
+    final currentTask = _tasks[_currentPageIndex];
+    // TODO: Navigate to edit task screen
+    print('Edit task: ${currentTask.title}');
+  }
+
+  Future<void> _handleDeleteTask() async {
+    if (_tasks.isEmpty) return;
+    
+    final currentTask = _tasks[_currentPageIndex];
+    
+    try {
+      final taskApiService = Provider.of<TaskApiService>(context, listen: false);
+      
+      if (currentTask.slug != null) {
+        final result = await taskApiService.deleteTask(currentTask.slug!);
+        
+        if (result.isSuccess) {
+          // Remove task from local list
+          setState(() {
+            _tasks.removeAt(_currentPageIndex);
+            
+            // Adjust current page index if needed
+            if (_currentPageIndex >= _tasks.length && _tasks.isNotEmpty) {
+              _currentPageIndex = _tasks.length - 1;
+            }
+          });
+          
+          // Navigate back if no more tasks
+          if (_tasks.isEmpty) {
+            Navigator.pop(context);
+          } else {
+            // Animate to adjusted page
+            _pageController.animateToPage(
+              _currentPageIndex,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          }
+        } else {
+          // Show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result.message)),
+          );
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menghapus tugas: $e')),
+      );
+    }
   }
 
   @override
@@ -157,33 +272,11 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
                           color: Colors.black,
                         ),
                       ),
-                    ],
-                  ),
+                    ],                  ),
 
-                  // Task Cards
+                  // Task Cards with loading and error handling
                   Expanded(
-                    child: PageView.builder(
-                      controller: _pageController,
-                      itemCount: _tasks.length,
-                      itemBuilder: (context, index) {
-                        final task = _tasks[index];
-                        final isSelected = index == _currentPageIndex;
-
-                        return AnimatedScale(
-                          scale: isSelected ? 1.0 : 0.9,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                          child: TaskDetailCard(
-                            task: task,
-                            isSelected: isSelected,
-                            onTap: () {
-                              // Handle card tap
-                              print('Task tapped: ${task.title}');
-                            },
-                          ),
-                        );
-                      },
-                    ),
+                    child: _buildContent(),
                   ),
 
                   const SizedBox(height: 64),
@@ -223,8 +316,7 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
                     ),
                     onPressed: () {
                       // Handle edit
-                      final currentTask = _tasks[_currentPageIndex];
-                      print('Edit task: ${currentTask.title}');
+                      _handleEditTask();
                     },
                   ),
                 ),
@@ -258,10 +350,8 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
                           isTask: true,
                           onConfirm: () {
                             // Handle delete task
-                            final currentTask = _tasks[_currentPageIndex];
-                            print('Delete task: ${currentTask.title}');
+                            _handleDeleteTask();
                             Navigator.pop(context); // Close dialog
-                            Navigator.pop(context); // Close detail screen
                           },
                         ),
                       );

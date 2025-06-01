@@ -20,8 +20,6 @@ class AktivitasService extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Error fetching aktivitas: $e');
-      // Don't modify the list if there's an error, keep existing data
-      // Only rethrow if the list is empty (first load)
       if (_aktivitasList.isEmpty) {
         rethrow;
       }
@@ -246,11 +244,9 @@ class AktivitasService extends ChangeNotifier {
       final success = await activityApiService.deleteActivity(slug);
       if (success) {
         debugPrint('✅ Activity deleted successfully from API');
-        
-        // Update local cache immediately and notify listeners once
-        _aktivitasList.removeWhere((a) => a.slug == slug);
-        notifyListeners();
-        
+  
+        await fetchAktivitas();
+  
         return true;
       }
       throw Exception('Failed to delete activity from API');

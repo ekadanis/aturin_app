@@ -1,14 +1,55 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:aturin_app/core/services/api/alarm/alarm_api_service.dart';
 
-class ActivityApiService {
+class ActivityApiService extends ChangeNotifier {
   static const String baseUrl = 'https://aturin-app.com/api/v1/activities';
   
   // Instance for loading alarm relationships
   final AlarmApiService _alarmApiService = AlarmApiService();
+
+  // State management properties
+  List<AktivitasModel> _activities = [];
+  bool _isLoading = false;
+  String? _error;
+
+  // Getters
+  List<AktivitasModel> get activities => _activities;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+
+  void _setLoading(bool loading) {
+    _isLoading = loading;
+    notifyListeners();
+  }
+
+  void _setError(String? error) {
+    _error = error;
+    notifyListeners();
+  }
+
+  void _setActivities(List<AktivitasModel> activities) {
+    _activities = activities;
+    notifyListeners();
+  }
+
+  // Fetch activities with automatic state management
+  Future<void> fetchActivities() async {
+    _setLoading(true);
+    _setError(null);
+    
+    try {
+      final activities = await getAllActivities();
+      _setActivities(activities);
+    } catch (e) {
+      _setError(e.toString());
+    } finally {
+      _setLoading(false);
+    }
+  }
 
   // Get authorization token from SharedPreferences
   Future<String?> _getToken() async {
@@ -433,8 +474,7 @@ class ActivityApiService {
       }
       throw Exception('Error updating activity: $e');
     }
-  }
-  // DELETE /activities/{slug} → Delete activity
+  }  // DELETE /activities/{slug} → Delete activity
   Future<bool> deleteActivity(String slug) async {
     try {
       final headers = await _getHeaders();
@@ -461,9 +501,9 @@ class ActivityApiService {
         print('  📍 This suggests the activity was already deleted or slug is incorrect');
         print('  📍 Treating this as successful deletion since the goal is achieved');
       }
-      print('====== ACTIVITY DELETE DEBUG END ======');
-
-      if (response.statusCode == 200 || response.statusCode == 204 || response.statusCode == 404) {
+      print('====== ACTIVITY DELETE DEBUG END ======');      if (response.statusCode == 200 || response.statusCode == 204 || response.statusCode == 404) {
+        // Don't auto refresh here - let AktivitasService handle the refresh
+        // This prevents double notification issues
         return true;
       } else {
         throw Exception('Failed to delete activity: ${response.statusCode}');
