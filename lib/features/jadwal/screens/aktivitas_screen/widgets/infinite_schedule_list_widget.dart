@@ -7,6 +7,8 @@ import 'task_card.dart';
 import 'package:intl/intl.dart';
 import 'package:aturin_app/features/jadwal/screens/detailactivity/ui/activity_detail_list.dart';
 import 'package:sizer/sizer.dart';
+import '../../../services/schedule_api_service.dart';
+import '../../widgets/schedule_animator.dart';
 
 class InfiniteScheduleListWidget extends StatefulWidget {
   final DateTime selectedDate;
@@ -18,8 +20,8 @@ class InfiniteScheduleListWidget extends StatefulWidget {
   final Function(AktivitasModel)? onDeleteSchedule;
   final Function(Task)? onEditTask;
   final Function(Task)? onDeleteTask;
-  final Function(Task)? onToggleTaskCompletion;
 
+  final void Function(String)? onShowSuccess; // Add callback like TaskService
   const InfiniteScheduleListWidget({
     super.key,
     required this.selectedDate,
@@ -31,7 +33,8 @@ class InfiniteScheduleListWidget extends StatefulWidget {
     this.onDeleteSchedule,
     this.onEditTask,
     this.onDeleteTask,
-    this.onToggleTaskCompletion,
+    // NOTE: onToggleTaskCompletion removed - schedule context doesn't support completion
+    this.onShowSuccess, // Add this
   });
 
   @override
@@ -40,14 +43,21 @@ class InfiniteScheduleListWidget extends StatefulWidget {
 }
 
 class _InfiniteScheduleListWidgetState
-    extends State<InfiniteScheduleListWidget> {
+    extends State<InfiniteScheduleListWidget> with TickerProviderStateMixin {
   late PageController _pageController;
   late DateTime _baseDate;
+  late ScheduleAnimator _animator;
 
   static const int _initialPageIndex = 100000;
   int _currentPageIndex = _initialPageIndex;
   bool _isPageChanging = false;
+  
+  // Animation tracking
+  dynamic _animatingItem;
+  bool _isAnimating = false;
 
+  // Service instance
+  final ScheduleApiService _scheduleService = ScheduleApiService();
   @override
   void initState() {
     super.initState();
@@ -63,6 +73,12 @@ class _InfiniteScheduleListWidgetState
     final daysDifference = normalizedSelectedDate.difference(_baseDate).inDays;
     _currentPageIndex = _initialPageIndex + daysDifference;
     _pageController = PageController(initialPage: _currentPageIndex);
+    
+    // Initialize animator
+    _animator = ScheduleAnimator(
+      vsync: this,
+      animationStyle: 'scale', // Default animation style
+    );
   }
 
   @override
@@ -84,10 +100,10 @@ class _InfiniteScheduleListWidgetState
       _animateToDate(widget.selectedDate);
     }
   }
-
   @override
   void dispose() {
     _pageController.dispose();
+    _animator.dispose();
     super.dispose();
   }
 
@@ -204,6 +220,140 @@ class _InfiniteScheduleListWidgetState
     );
   }
 
+  // Helper methods for building animated cards
+  Widget _buildAnimatedActivityCard(AktivitasModel schedule, List<AktivitasModel> schedulesForDate) {
+    final isAnimating = _isAnimating && _animatingItem == schedule;
+    
+    final activityCard = ActivityCard(
+      activity: schedule,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ActivityDetailListPage(
+              activities: schedulesForDate,
+              initialIndex: schedulesForDate.indexOf(schedule),
+            ),
+          ),
+        );
+      },
+      onEdit: widget.onEditSchedule != null
+          ? () => widget.onEditSchedule!(schedule)
+          : null,
+      onDelete: widget.onDeleteSchedule != null
+          ? () => _handleDeleteAktivitas(schedule)
+          : null,
+    );
+
+    if (isAnimating) {
+      return _animator.buildAnimatedItem(
+        schedule,
+        activityCard,
+        onAnimationComplete: () {
+          setState(() {
+            _isAnimating = false;
+            _animatingItem = null;
+          });
+        },
+      );
+    } else {
+      return activityCard;
+    }
+  }
+
+  Widget _buildAnimatedTaskCard(Task task) {
+    final isAnimating = _isAnimating && _animatingItem == task;
+    
+    final taskCard = TaskCard(
+      task: task,
+      onToggleCompletion: () {},
+      onDelete: widget.onDeleteTask != null
+          ? () => _handleDeleteTask(task)
+          : () {},
+      currentFilter: widget.selectedCategory,
+      showCheckbox: false,
+      showStatus: true,
+      margin: EdgeInsets.symmetric(
+        vertical: 0.5.h,
+        horizontal: 0,
+      ),
+    );
+
+    if (isAnimating) {
+      return _animator.buildAnimatedItem(
+        task,
+        taskCard,
+        onAnimationComplete: () {
+          setState(() {
+            _isAnimating = false;
+            _animatingItem = null;
+          });
+        },
+      );
+    } else {
+      return taskCard;
+    }
+  }
+
+  // Delete handlers with animation support
+  Future<void> _handleDeleteAktivitas(AktivitasModel aktivitas) async {
+    try {
+      setState(() {
+        _animatingItem = aktivitas;
+        _isAnimating = true;
+      });
+
+      // Use ScheduleAnimator for deletion animation
+      _animator.prepareItemDeletion(aktivitas, () async {
+        if (aktivitas.slug != null) {
+          await _scheduleService.deleteAktivitas(aktivitas.slug!);
+          widget.onShowSuccess?.call('Aktivitas berhasil dihapus');
+        } else {
+          throw Exception('Slug aktivitas tidak valid');
+        }
+      });
+    } catch (e) {
+      widget.onShowSuccess?.call('Gagal menghapus aktivitas');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAnimating = false;
+          _animatingItem = null;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleDeleteTask(Task task) async {
+    try {
+      setState(() {
+        _animatingItem = task;
+        _isAnimating = true;
+      });
+
+      // Use ScheduleAnimator for deletion animation
+      _animator.prepareItemDeletion(task, () async {
+        if (task.slug != null) {
+          await _scheduleService.deleteTask(task.slug!);
+          widget.onShowSuccess?.call('Tugas berhasil dihapus');
+        } else {
+          throw Exception('Slug tugas tidak valid');
+        }
+      });
+    } catch (e) {
+      widget.onShowSuccess?.call('Gagal menghapus tugas');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAnimating = false;
+          _animatingItem = null;
+        });
+      }
+    }
+  }
+
+  // NOTE: _handleToggleTaskCompletion removed - schedule context doesn't support completion
+
   @override
   Widget build(BuildContext context) {
     return PageView.builder(
@@ -253,62 +403,13 @@ class _InfiniteScheduleListWidgetState
                 // Schedule list and tasks or empty state
                 if (schedulesForDate.isEmpty && tasksForDate.isEmpty)
                   _buildEmptyState()
-                else ...[
-                  // Display schedules first
+                else ...[                  // Display schedules first
                   ...schedulesForDate.map(
-                    (schedule) => ActivityCard(
-                      activity: schedule,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (_) => ActivityDetailListPage(
-                                  activities: schedulesForDate,
-                                  initialIndex: schedulesForDate.indexOf(
-                                    schedule,
-                                  ),
-                                ),
-                          ),
-                        );
-                      },
-                      onEdit:
-                          widget.onEditSchedule != null
-                              ? () => widget.onEditSchedule!(schedule)
-                              : null,
-                      onDelete:
-                          widget.onDeleteSchedule != null
-                              ? () => widget.onDeleteSchedule!(schedule)
-                              : null,
-                    ),
-                  ),
-
+                    (schedule) => _buildAnimatedActivityCard(schedule, schedulesForDate),
+                  ), 
                   // Then display tasks
                   ...tasksForDate.map(
-                    (task) => TaskCard(
-                      task: task,
-                      onToggleCompletion:
-                          widget.onToggleTaskCompletion != null
-                              ? () => widget.onToggleTaskCompletion!(task)
-                              : () {},
-                      onDelete:
-                          widget.onDeleteTask != null
-                              ? () => widget.onDeleteTask!(task)
-                              : () {},
-                      // onViewDetails: () {
-                      //   // Handle view details if needed
-                      // },
-                      // onToggleAlarm: () {
-                      //   // Handle toggle alarm if needed
-                      // },
-                      currentFilter: widget.selectedCategory,
-                      showCheckbox: false,
-                      showStatus: true,
-                      margin: EdgeInsets.symmetric(
-                        vertical: 0.5.h,
-                        horizontal: 0,
-                      ),
-                    ),
+                    (task) => _buildAnimatedTaskCard(task),
                   ),
                 ],
                 const SizedBox(height: 100),

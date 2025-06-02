@@ -10,7 +10,7 @@ import 'package:aturin_app/features/jadwal/screens/aktivitas_screen/widgets/cate
 import 'package:aturin_app/features/jadwal/screens/aktivitas_screen/widgets/infinite_schedule_list_widget.dart';
 import 'package:aturin_app/core/widgets/bottom_navbar.dart';
 import 'package:aturin_app/core/widgets/confirm_dialog.dart';
-import 'package:aturin_app/features/profile/widgets/snackbar.dart';
+import 'package:aturin_app/core/widgets/custom_snackbar_top.dart';
 import 'package:aturin_app/routers/app_router.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
@@ -285,9 +285,7 @@ class _AktivitasPageState extends State<AktivitasPage> {
                               debugPrint('Error filtering tasks: $e');
                               return false;
                             }
-                          }).toList();
-
-                      return RefreshIndicator(
+                          }).toList();                      return RefreshIndicator(
                         onRefresh: _refreshData,
                         child: InfiniteScheduleListWidget(
                           tasks: tasksList,
@@ -303,6 +301,17 @@ class _AktivitasPageState extends State<AktivitasPage> {
                               (aktivitas) => _deleteActivity(aktivitas),
                           onEditTask: (task) => _editTask(task),
                           onDeleteTask: (task) => _deleteTask(task),
+                          onShowSuccess: (message) {
+                            // Reload data after successful delete
+                            setState(() {});
+                            _refreshData();
+                            // Show snackbar
+                            showCustomTopSnackbar(
+                              context: context,
+                              message: message,
+                              isError: false,
+                            );
+                          },
                         ),
                       );
                     } catch (e) {

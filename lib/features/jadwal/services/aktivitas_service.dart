@@ -1,307 +1,299 @@
 import 'package:flutter/material.dart';
-import '../model/aktivitas_model.dart';
-import '../../alarm/services/alarm_service.dart';
-import '../../alarm/model/alarm.dart';
-import '../../../core/services/api/activities/activity_api_service.dart';
-import '../../../core/services/api/alarm/alarm_api_service.dart';
+import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
+import 'package:aturin_app/features/jadwal/services/schedule_api_service.dart';
+import 'package:aturin_app/core/services/api/alarm/alarm_api_service.dart';
+import 'package:aturin_app/core/services/api/activities/activity_api_service.dart';
+import 'package:aturin_app/features/alarm/model/alarm.dart';
+import 'package:alarm/alarm.dart';
 
+/// AktivitasService that provides high-level operations for managing activities with alarms
+/// Uses ScheduleApiService internally for API operations
 class AktivitasService extends ChangeNotifier {
-  final ActivityApiService activityApiService = ActivityApiService();
-  final AlarmService alarmService = AlarmService();
-  final AlarmApiService alarmApiService = AlarmApiService();
-  
-  List<AktivitasModel> _aktivitasList = [];
-  
-  List<AktivitasModel> get aktivitasList => _aktivitasList;  /// Fetch all aktivitas from the API
-  Future<void> fetchAktivitas() async {
+  final ScheduleApiService _scheduleApiService = ScheduleApiService();
+  final AlarmApiService _alarmApiService = AlarmApiService();
+  final ActivityApiService _activityApiService = ActivityApiService();
+
+  // Expose alarm API service for direct access when needed
+  AlarmApiService get alarmApiService => _alarmApiService;
+
+  // ============================
+  // AKTIVITAS CRUD OPERATIONS
+  // ============================
+
+  /// Get all aktivitas
+  Future<List<AktivitasModel>> getAllAktivitas() async {
     try {
-      final result = await activityApiService.getAllActivities();
-      _aktivitasList = result;
-      notifyListeners();
+      return await _scheduleApiService.getAllAktivitas();
     } catch (e) {
-      debugPrint('Error fetching aktivitas: $e');
-      if (_aktivitasList.isEmpty) {
-        rethrow;
-      }
-    }
-  }
-
-  /// Get aktivitas by slug (from local cache)
-  AktivitasModel? getAktivitasBySlugFromCache(String slug) {
-    return _aktivitasList.where((a) => a.slug == slug).firstOrNull;
-  }
-
-  /// Get aktivitas by slug (from API)
-  Future<AktivitasModel?> getAktivitasBySlug(String slug) async {
-    try {
-      return await activityApiService.getActivityBySlug(slug);
-    } catch (e) {
-      debugPrint('Error getting activity by slug: $e');
-      return null;
-    }
-  }
-
-  /// Convert ID to slug (helper method for transition)
-  String? getSlugById(int id) {
-    final aktivitas = _aktivitasList.where((a) => a.id == id).firstOrNull;
-    return aktivitas?.slug;
-  }
-
-  /// Generate slug from title
-  String _generateSlug(String title) {
-    return 'activity-' + title
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9 ]'), '')
-        .replaceAll(' ', '-');
-  }
-
-  /// Add aktivitas
-  Future<String?> addAktivitas(AktivitasModel aktivitas, DateTime? alarmDateTime) async {
-    try {
-      final slug = _generateSlug(aktivitas.activityTitle);
-      int? alarmId;
-
-      // Create alarm if needed
-      if (alarmDateTime != null && alarmDateTime.isAfter(DateTime.now())) {
-        try {
-          final newAlarm = AlarmModel(
-            alarmDateTime: alarmDateTime,
-            alarmEnabled: true,
-            slug: 'alarm-$slug',
-          );
-          
-          final createdAlarm = await alarmApiService.createAlarm(newAlarm);
-          if (createdAlarm != null) {
-            alarmId = createdAlarm.id;
-            await alarmService.setAlarm(
-              alarmId!,
-              alarmDateTime,
-              'Aktivitas: ${aktivitas.activityTitle}',
-              'Aktivitas Anda akan dimulai',
-            );
-          }
-        } catch (e) {
-          debugPrint('Error creating alarm: $e');
-        }
-      }
-
-      final now = DateTime.now();
-      final newAktivitas = aktivitas.copyWith(
-        alarmId: alarmId,
-        slug: slug,
-        createdAt: now,
-        updatedAt: now,
-      );
-
-      final created = await activityApiService.createActivity(newAktivitas);
-      if (created != null) {
-        await fetchAktivitas();
-        return created.slug;
-      }
-      throw Exception('Failed to create activity');
-    } catch (e) {
-      debugPrint('Error adding aktivitas: $e');
+      debugPrint('AktivitasService: Error getting all aktivitas: $e');
       rethrow;
-    }
-  }
-
-  /// Update aktivitas by slug
-  Future<bool> updateAktivitasBySlug(String slug, AktivitasModel aktivitas, DateTime? alarmDateTime) async {
-    try {
-      if (slug.isEmpty || aktivitas.slug == null) {
-        throw Exception('Slug tidak boleh kosong');
-      }
-
-      // Get existing data using slug
-      final existing = await getAktivitasBySlug(slug);
-      int? alarmId = aktivitas.alarmId;      // Handle alarm based on isAlarmEnabled status
-      if (existing?.alarmId != null) {
-        // Aktivitas sudah punya alarm, update status enabled/disabled
-        try {
-          final allAlarms = await alarmApiService.getAllAlarms();
-          final existingAlarm = allAlarms.where((a) => a.id == existing!.alarmId).firstOrNull;
-          
-          if (existingAlarm != null) {
-            if (alarmDateTime != null && alarmDateTime.isAfter(DateTime.now())) {
-              // Enable alarm dengan waktu baru
-              final updatedAlarm = existingAlarm.copyWith(
-                alarmDateTime: alarmDateTime,
-                alarmEnabled: true,
-              );
-              await alarmApiService.updateAlarm(existingAlarm.slug, updatedAlarm);              await alarmService.setAlarm(
-                existing!.alarmId!,
-                alarmDateTime,
-                'Aktivitas: ${aktivitas.activityTitle}',
-                'Aktivitas Anda akan dimulai',
-              );
-              debugPrint('✅ Alarm enabled and updated');
-            } else {
-              // Disable alarm (set alarmEnabled = false)
-              final updatedAlarm = existingAlarm.copyWith(
-                alarmEnabled: false,
-              );
-              await alarmApiService.updateAlarm(existingAlarm.slug, updatedAlarm);
-              await alarmService.cancelAlarm(existing!.alarmId!);
-              debugPrint('✅ Alarm disabled (alarmEnabled = false)');
-            }            // Keep the same alarmId
-            alarmId = existing.alarmId;
-          }        } catch (e) {
-          debugPrint('Error updating alarm status: $e');
-          alarmId = existing?.alarmId; // Keep existing alarmId if available
-        }
-      } else if (alarmDateTime != null && alarmDateTime.isAfter(DateTime.now())) {
-        // Aktivitas belum punya alarm, buat alarm baru
-        try {
-          final newAlarm = AlarmModel(
-            alarmDateTime: alarmDateTime,
-            alarmEnabled: true,
-            slug: 'alarm-$slug',
-          );
-          
-          final created = await alarmApiService.createAlarm(newAlarm);
-          if (created != null) {
-            alarmId = created.id;
-            await alarmService.setAlarm(
-              alarmId!,
-              alarmDateTime,
-              'Aktivitas: ${aktivitas.activityTitle}',
-              'Aktivitas Anda akan dimulai',
-            );
-            debugPrint('✅ New alarm created');
-          }
-        } catch (e) {
-          debugPrint('Error creating new alarm: $e');
-        }
-      }
-
-      final updated = aktivitas.copyWith(
-        alarmId: alarmId,
-        updatedAt: DateTime.now(),
-      );
-
-      final result = await activityApiService.updateActivity(slug, updated);
-      if (result != null) {
-        await fetchAktivitas();
-        return true;
-      }
-      throw Exception('Failed to update activity');
-    } catch (e) {
-      debugPrint('Error updating aktivitas: $e');
-      rethrow;
-    }
-  }
-
-  /// Delete aktivitas by ID (convert to slug first)
-  Future<bool> deleteAktivitas(int? id) async {
-    if (id == null) return false;
-
-    try {
-      // Convert ID to slug
-      final slug = getSlugById(id);
-      if (slug == null) {
-        debugPrint('❌ Tidak dapat menemukan slug untuk ID: $id');
-        // Refresh data dan coba lagi
-        await fetchAktivitas();
-        final refreshedSlug = getSlugById(id);
-        if (refreshedSlug == null) {
-          throw Exception('Aktivitas tidak ditemukan');
-        }
-        return await deleteAktivitasBySlug(refreshedSlug);
-      }
-      
-      return await deleteAktivitasBySlug(slug);
-    } catch (e) {
-      debugPrint('Error deleting aktivitas by ID: $e');
-      rethrow;
-    }
-  }
-
-  /// Delete aktivitas by slug
-  Future<bool> deleteAktivitasBySlug(String slug) async {
-    if (slug.isEmpty) return false;
-
-    try {
-      debugPrint('🗑️ Deleting aktivitas with slug: $slug');
-      
-      // Get aktivitas info first for alarm cleanup
-      final aktivitas = await getAktivitasBySlug(slug);
-      
-      // Delete alarm if exists
-      if (aktivitas?.alarmId != null) {
-        try {
-          await alarmService.cancelAlarm(aktivitas!.alarmId!);
-          
-          final allAlarms = await alarmApiService.getAllAlarms();
-          final existingAlarm = allAlarms.where((a) => a.id == aktivitas.alarmId).firstOrNull;
-          if (existingAlarm != null) {
-            await alarmApiService.deleteAlarm(existingAlarm.slug);
-            debugPrint('✅ Alarm deleted successfully');
-          }
-        } catch (e) {
-          debugPrint('❌ Error deleting alarm: $e');
-        }
-      }      // Delete activity using slug
-      final success = await activityApiService.deleteActivity(slug);
-      if (success) {
-        debugPrint('✅ Activity deleted successfully from API');
-  
-        await fetchAktivitas();
-  
-        return true;
-      }
-      throw Exception('Failed to delete activity from API');
-    } catch (e) {
-      debugPrint('❌ Error deleting aktivitas by slug: $e');
-      rethrow;
-    }
-  }
-
-  /// Get today's aktivitas
-  Future<List<AktivitasModel>> getTodayAktivitas() async {
-    try {
-      return await activityApiService.getTodayActivities();
-    } catch (e) {
-      debugPrint('Error getting today activities: $e');
-      return [];
-    }
-  }
-
-  /// Get aktivitas by date range
-  Future<List<AktivitasModel>> getAktivitasByDateRange(
-    DateTime startDate,
-    DateTime endDate,
-  ) async {
-    try {
-      return await activityApiService.getActivitiesByDateRange(startDate, endDate);
-    } catch (e) {
-      debugPrint('Error getting activities by date range: $e');
-      return [];
     }
   }
 
   /// Get aktivitas by date
   Future<List<AktivitasModel>> getAktivitasByDate(DateTime date) async {
     try {
-      return await activityApiService.getActivitiesByDate(date);
+      return await _scheduleApiService.getAktivitasByDate(date);
     } catch (e) {
-      debugPrint('Error getting activities by date: $e');
-      return [];
+      debugPrint('AktivitasService: Error getting aktivitas by date: $e');
+      rethrow;
     }
   }
 
-  /// Get aktivitas by category
-  Future<List<AktivitasModel>> getAktivitasByCategory(ActivityCategory category) async {
+  /// Add new aktivitas with optional alarm
+  Future<String?> addAktivitas(AktivitasModel aktivitas, DateTime? alarmDateTime) async {
     try {
-      return await activityApiService.getActivitiesByCategory(category);
+      AktivitasModel? createdAktivitas;
+        // Create alarm first if alarm datetime is provided
+      if (alarmDateTime != null) {
+        final alarmModel = AlarmModel(
+          slug: '', // Will be generated by the server
+          alarmDateTime: alarmDateTime,
+          alarmEnabled: true,
+        );
+        
+        final createdAlarm = await _alarmApiService.createAlarm(alarmModel);
+        if (createdAlarm != null) {
+          // Set alarm ID to the aktivitas
+          final aktivitasWithAlarm = AktivitasModel(
+            id: aktivitas.id,
+            userId: aktivitas.userId,
+            activityTitle: aktivitas.activityTitle,
+            activityDate: aktivitas.activityDate,
+            activityStartTime: aktivitas.activityStartTime,
+            activityCompleteTime: aktivitas.activityCompleteTime,
+            activityCategory: aktivitas.activityCategory,
+            alarmId: createdAlarm.id,
+            slug: aktivitas.slug,
+          );
+          
+          createdAktivitas = await _scheduleApiService.createAktivitas(aktivitasWithAlarm);
+          
+          if (createdAktivitas != null) {            // Update alarm with the activity ID
+            await _alarmApiService.updateAlarm(
+              createdAlarm.slug,
+              AlarmModel(
+                slug: createdAlarm.slug,
+                alarmDateTime: createdAlarm.alarmDateTime,
+                alarmEnabled: createdAlarm.alarmEnabled,
+              ),
+            );
+            
+            // Schedule system alarm
+            await _scheduleSystemAlarm(createdAlarm.id!, alarmDateTime, aktivitas.activityTitle);
+          }
+        }
+      } else {
+        // Create aktivitas without alarm
+        createdAktivitas = await _scheduleApiService.createAktivitas(aktivitas);
+      }
+      
+      if (createdAktivitas != null) {
+        notifyListeners();
+        return createdAktivitas.slug;
+      }
+      
+      return null;
     } catch (e) {
-      debugPrint('Error getting activities by category: $e');
-      return [];
+      debugPrint('AktivitasService: Error adding aktivitas: $e');
+      rethrow;
     }
   }
 
-  /// Get aktivitas filtered by category (from local cache)
-  List<AktivitasModel> getAktivitasByCategoryFromCache(ActivityCategory? category) {
-    if (category == null) return _aktivitasList;
-    return _aktivitasList.where((aktivitas) => aktivitas.activityCategory == category).toList();
+  /// Update aktivitas by slug with optional alarm update
+  Future<AktivitasModel?> updateAktivitasBySlug(
+    String slug,
+    AktivitasModel updatedAktivitas,
+    DateTime? alarmDateTime,
+  ) async {
+    try {
+      // Get current aktivitas to check existing alarm
+      final currentAktivitas = await _activityApiService.getActivityBySlug(slug);
+      if (currentAktivitas == null) {
+        throw Exception('Aktivitas not found with slug: $slug');
+      }
+
+      AktivitasModel? result;
+      
+      // Handle alarm update logic
+      if (alarmDateTime != null) {
+        if (currentAktivitas.alarmId != null) {
+          // Update existing alarm
+          final allAlarms = await _alarmApiService.getAllAlarms();
+          final existingAlarm = allAlarms.where((a) => a.id == currentAktivitas.alarmId).firstOrNull;
+            if (existingAlarm != null) {
+            await _alarmApiService.updateAlarm(
+              existingAlarm.slug,
+              AlarmModel(
+                slug: existingAlarm.slug,
+                alarmDateTime: alarmDateTime,
+                alarmEnabled: true,
+              ),
+            );
+            
+            // Update system alarm
+            await Alarm.stop(existingAlarm.id!);
+            await _scheduleSystemAlarm(existingAlarm.id!, alarmDateTime, updatedAktivitas.activityTitle);
+          }
+        } else {          // Create new alarm for existing aktivitas
+          final alarmModel = AlarmModel(
+            slug: '', // Will be generated by the server
+            alarmDateTime: alarmDateTime,
+            alarmEnabled: true,
+          );
+          
+          final createdAlarm = await _alarmApiService.createAlarm(alarmModel);
+          if (createdAlarm != null) {
+            // Update aktivitas with new alarm ID
+            final aktivitasWithAlarm = AktivitasModel(
+              id: updatedAktivitas.id,
+              userId: updatedAktivitas.userId,
+              activityTitle: updatedAktivitas.activityTitle,
+              activityDate: updatedAktivitas.activityDate,
+              activityStartTime: updatedAktivitas.activityStartTime,
+              activityCompleteTime: updatedAktivitas.activityCompleteTime,
+              activityCategory: updatedAktivitas.activityCategory,
+              alarmId: createdAlarm.id,
+              slug: updatedAktivitas.slug,
+            );
+            
+            result = await _scheduleApiService.updateAktivitas(
+              slug: slug,
+              data: aktivitasWithAlarm,
+            );
+            
+            // Schedule system alarm
+            await _scheduleSystemAlarm(createdAlarm.id!, alarmDateTime, updatedAktivitas.activityTitle);
+          }
+        }
+      } else {
+        // No alarm datetime provided
+        if (currentAktivitas.alarmId != null) {
+          // Remove existing alarm
+          final allAlarms = await _alarmApiService.getAllAlarms();
+          final existingAlarm = allAlarms.where((a) => a.id == currentAktivitas.alarmId).firstOrNull;
+          
+          if (existingAlarm != null) {
+            await Alarm.stop(existingAlarm.id!);
+            await _alarmApiService.deleteAlarm(existingAlarm.slug);
+          }
+          
+          // Update aktivitas without alarm
+          final aktivitasWithoutAlarm = AktivitasModel(
+            id: updatedAktivitas.id,
+            userId: updatedAktivitas.userId,
+            activityTitle: updatedAktivitas.activityTitle,
+            activityDate: updatedAktivitas.activityDate,
+            activityStartTime: updatedAktivitas.activityStartTime,
+            activityCompleteTime: updatedAktivitas.activityCompleteTime,
+            activityCategory: updatedAktivitas.activityCategory,
+            alarmId: null,
+            slug: updatedAktivitas.slug,
+          );
+          
+          result = await _scheduleApiService.updateAktivitas(
+            slug: slug,
+            data: aktivitasWithoutAlarm,
+          );
+        }
+      }
+      
+      // Update aktivitas if no alarm changes were made
+      if (result == null) {
+        result = await _scheduleApiService.updateAktivitas(
+          slug: slug,
+          data: updatedAktivitas,
+        );
+      }
+      
+      if (result != null) {
+        notifyListeners();
+      }
+      
+      return result;
+    } catch (e) {
+      debugPrint('AktivitasService: Error updating aktivitas by slug: $e');
+      rethrow;
+    }
+  }
+
+  /// Delete aktivitas by ID
+  Future<bool> deleteAktivitas(int id) async {
+    try {
+      // Get aktivitas by ID first
+      final allAktivitas = await _scheduleApiService.getAllAktivitas();
+      final aktivitas = allAktivitas.where((a) => a.id == id).firstOrNull;
+      
+      if (aktivitas?.slug != null) {
+        final success = await _scheduleApiService.deleteAktivitas(aktivitas!.slug!);
+        if (success) {
+          notifyListeners();
+        }
+        return success;
+      }
+      
+      return false;
+    } catch (e) {
+      debugPrint('AktivitasService: Error deleting aktivitas: $e');
+      rethrow;
+    }
+  }
+
+  // ============================
+  // ALARM HELPER METHODS
+  // ============================
+  /// Schedule system alarm
+  Future<void> _scheduleSystemAlarm(int alarmId, DateTime alarmDateTime, String title) async {
+    try {
+      final alarmSettings = AlarmSettings(
+        id: alarmId,
+        dateTime: alarmDateTime,
+        assetAudioPath: 'assets/audio/alarm.mp3',
+        loopAudio: true,
+        vibrate: true,
+        warningNotificationOnKill: true,
+        androidFullScreenIntent: true,
+        volumeSettings: VolumeSettings.staircaseFade(
+          volume: null,
+          fadeSteps: [VolumeFadeStep(Duration.zero, 0.5)],
+          volumeEnforced: false,
+        ),
+        notificationSettings: NotificationSettings(
+          title: 'Reminder Aktivitas',
+          body: title,
+          stopButton: 'Stop',
+          icon: 'notification_icon',
+        ),
+      );
+      
+      await Alarm.set(alarmSettings: alarmSettings);
+    } catch (e) {
+      debugPrint('AktivitasService: Error scheduling system alarm: $e');
+      // Don't rethrow as this is not critical for the main operation
+    }
+  }
+
+  // ============================
+  // COMBINED OPERATIONS
+  // ============================
+
+  /// Get combined schedule for date
+  Future<Map<String, dynamic>> getScheduleByDate(DateTime date) async {
+    try {
+      return await _scheduleApiService.getScheduleByDate(date);
+    } catch (e) {
+      debugPrint('AktivitasService: Error getting schedule by date: $e');
+      rethrow;
+    }
+  }
+
+  /// Get combined schedule for date range
+  Future<Map<String, dynamic>> getScheduleByDateRange(DateTime startDate, DateTime endDate) async {
+    try {
+      return await _scheduleApiService.getScheduleByDateRange(startDate, endDate);
+    } catch (e) {
+      debugPrint('AktivitasService: Error getting schedule by date range: $e');
+      rethrow;
+    }
   }
 }

@@ -75,8 +75,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
+    return MultiProvider(      providers: [
         ChangeNotifierProvider<ConnectivityService>.value(
           value: connectivityService,
         ),
@@ -84,12 +83,15 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider<AuthService>(create: (_) => AuthService()),
         // Provider untuk TaskService dari features/task (untuk backward compatibility)
         ChangeNotifierProvider<task.TaskService>(
-          create: (_) => task.TaskService(),        ),        // Provider untuk HomeService (unified service for home page)
-        ChangeNotifierProvider<HomeService>(create: (_) => HomeService()),        // Provider untuk ActivityApiService
+          create: (_) => task.TaskService(),
+        ),
+        // Provider untuk HomeService (unified service for home page)
+        ChangeNotifierProvider<HomeService>(create: (_) => HomeService()),
+        // Provider untuk ActivityApiService
         ChangeNotifierProvider<ActivityApiService>(
           create: (_) => ActivityApiService(),
         ),
-        // Provider untuk AktivitasService (for add/edit operations)
+        // Provider untuk AktivitasService (using ScheduleApiService)
         ChangeNotifierProvider<AktivitasService>(
           create: (_) => AktivitasService(),
         ),
