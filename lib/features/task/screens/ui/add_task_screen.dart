@@ -567,6 +567,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               isEnabled: _isAlarmEnabled,
               alarmDateTime: _alarmDateTime,
               selectedDate: _deadline ?? DateTime.now(),
+              maxDate: _deadline ?? DateTime.now(), // Gunakan deadline sebagai maxDate
               startTime:
                   _deadline != null ? TimeOfDay.fromDateTime(_deadline!) : null,
               isEditing: widget.existingTask != null, // Pass editing mode

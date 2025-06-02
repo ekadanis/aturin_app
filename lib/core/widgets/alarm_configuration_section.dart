@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/widgets/alarm_picker.dart';
-import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/waktu_mulai_waktu_selesai_picker_screen.dart';
+import 'package:aturin_app/core/widgets/alarm_picker_screen.dart';
 
 class AlarmConfigurationSection extends StatelessWidget {
   final bool isEnabled;
   final DateTime? alarmDateTime;
   final DateTime selectedDate;
+  final DateTime maxDate;
   final TimeOfDay? startTime;
   final Function(bool) onToggle;
   final Function(DateTime) onAlarmTimeChanged;
@@ -17,6 +18,7 @@ class AlarmConfigurationSection extends StatelessWidget {
     required this.isEnabled,
     required this.alarmDateTime,
     required this.selectedDate,
+    required this.maxDate,
     required this.startTime,
     required this.onToggle,
     required this.onAlarmTimeChanged,
@@ -75,6 +77,9 @@ class AlarmConfigurationSection extends StatelessWidget {
       MaterialPageRoute(
         builder: (_) => AlarmPickerScreen(
           selectedOption: _getCurrentAlarmOption(),
+          selectedDate: selectedDate,
+          startTime: startTime!,
+          maxDate: maxDate,
         ),
       ),
     );

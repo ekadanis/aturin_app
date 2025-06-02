@@ -6,12 +6,14 @@ class AlarmPickerScreen extends StatefulWidget {
   final String? selectedOption;
   final DateTime selectedDate;
   final TimeOfDay startTime;
+  final DateTime maxDate;
 
   const AlarmPickerScreen({
     Key? key,
     this.selectedOption,
     required this.selectedDate,
     required this.startTime,
+    required this.maxDate
   }) : super(key: key);
 
   @override
@@ -86,6 +88,7 @@ class _AlarmPickerScreenState extends State<AlarmPickerScreen> {
                     context,
                     selectedDate: widget.selectedDate,
                     startTime: widget.startTime,
+                    maxDate: widget.maxDate, // Pastikan maxDate dikirim
                   );
                   if (result != null) {
                     Navigator.of(
