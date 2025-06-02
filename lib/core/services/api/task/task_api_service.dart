@@ -222,6 +222,19 @@ class TaskApiService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> fetchUncompletedTasksToday() async {
+    _setLoading(true);
+    try {
+      final tasks = await getUncompletedTasksToday();
+      _tasks = tasks;
+      _setError(null);
+    } catch (e) {
+      _setError('Gagal mengambil data tugas yang belum selesai hari ini');
+    }
+    _setLoading(false);
+    notifyListeners();
+  }
+
   Future<List<Task>> getAllTasks() async {
     try {
       final headers = await _getHeaders();
@@ -294,6 +307,45 @@ class TaskApiService extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('Error in getTasksToday: $e');
+      _handleException(e);
+    }
+    return [];
+  }
+
+  Future<List<Task>> getUncompletedTasksToday() async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/tasks/uncompleted-today'),
+        headers: headers,
+      );
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        // First create tasks from API data
+        List<Task> tasks = List<Task>.from(data['data'].map((e) => Task.fromMap(e)));
+        
+        // Get all alarms once to avoid multiple API calls
+        List<AlarmModel> allAlarms = await _alarmApiService.getAllAlarms();
+        
+        // Create a map for quick alarm lookup by ID
+        Map<int, AlarmModel> alarmMap = {
+          for (AlarmModel alarm in allAlarms) 
+            if (alarm.id != null) alarm.id!: alarm
+        };
+        
+        // Populate alarm relationships for tasks that have alarmId
+        List<Task> tasksWithAlarms = tasks.map((task) {
+          if (task.alarmId != null && alarmMap.containsKey(task.alarmId)) {
+            // Create a new task with the alarm relationship populated
+            return task.copyWith(alarm: alarmMap[task.alarmId]);
+          }
+          return task;
+        }).toList();
+        
+        return tasksWithAlarms;
+      }
+    } catch (e) {
+      debugPrint('Error in getUncompletedTasksToday: $e');
       _handleException(e);
     }
     return [];

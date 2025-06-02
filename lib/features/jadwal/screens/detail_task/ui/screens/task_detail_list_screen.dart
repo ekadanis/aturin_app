@@ -3,8 +3,6 @@ import 'package:auto_route/auto_route.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../../../task/model/task_model.dart';
-import '../../../../../profile/models/user.dart';
-import '../../../../../alarm/model/alarm.dart';
 import '../widgets/task_detail_card.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:aturin_app/core/widgets/confirm_dialog.dart';

@@ -9,6 +9,7 @@ class User {
   final DateTime? updatedAt;
   final int? todayActivities;
   final int? todayTasks;
+  final bool is_global_enabled;
 
   User({
     this.id,
@@ -21,6 +22,7 @@ class User {
     this.updatedAt,
     this.todayActivities,
     this.todayTasks,
+    final this.is_global_enabled = true,
   });
 
   Map<String, dynamic> toMap() {

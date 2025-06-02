@@ -68,18 +68,31 @@ class _AktivitasPageState extends State<AktivitasPage> {
         onTimeout: () {
           debugPrint('Activities fetch timeout, continuing with cached data');
         },
-      );
-
-      final taskApiService = Provider.of<TaskApiService>(
+      );      final taskApiService = Provider.of<TaskApiService>(
         context,
         listen: false,
       );
-      await taskApiService.fetchTasks().timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          debugPrint('Tasks fetch timeout, continuing with cached data');
-        },
-      );
+      
+      // Fetch appropriate tasks based on selected date
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final selectedDay = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+      
+      if (selectedDay.isAtSameMomentAs(today)) {
+        await taskApiService.fetchUncompletedTasksToday().timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            debugPrint('Uncompleted tasks fetch timeout, continuing with cached data');
+          },
+        );
+      } else {
+        await taskApiService.fetchTasks().timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            debugPrint('Tasks fetch timeout, continuing with cached data');
+          },
+        );
+      }
     } catch (e) {
       debugPrint('Error during data refresh: $e');
       if (mounted) {
@@ -97,7 +110,6 @@ class _AktivitasPageState extends State<AktivitasPage> {
       }
     }
   }
-
   Future<void> _onDateChanged(DateTime newDate) async {
     if (!mounted) return;
 
@@ -113,8 +125,10 @@ class _AktivitasPageState extends State<AktivitasPage> {
       final selectedDay = DateTime(newDate.year, newDate.month, newDate.day);
 
       if (selectedDay.isAtSameMomentAs(today)) {
-        await taskApiService.fetchTasksToday();
+        // For today, fetch uncompleted tasks only
+        await taskApiService.fetchUncompletedTasksToday();
       } else {
+        // For other dates, fetch all tasks
         await taskApiService.fetchTasks();
       }
     } catch (e) {
@@ -268,24 +282,43 @@ class _AktivitasPageState extends State<AktivitasPage> {
                               debugPrint('Error filtering aktivitas: $e');
                               return false;
                             }
-                          }).toList();
-
-                      final tasksList =
-                          taskApiService.tasks.where((t) {
-                            try {
-                              final isSameDate =
-                                  t.deadline.year == selectedDate.year &&
-                                  t.deadline.month == selectedDate.month &&
-                                  t.deadline.day == selectedDate.day;
-                              final isCategory =
-                                  selectedCategory == 'Semua' ||
-                                  t.category == selectedCategory;
-                              return isSameDate && isCategory;
-                            } catch (e) {
-                              debugPrint('Error filtering tasks: $e');
-                              return false;
-                            }
-                          }).toList();                      return RefreshIndicator(
+                          }).toList();                      // Get tasks based on selected date
+                      List<Task> availableTasks;
+                      final now = DateTime.now();
+                      final today = DateTime(now.year, now.month, now.day);
+                      final selectedDay = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+                      
+                      if (selectedDay.isAtSameMomentAs(today)) {
+                        // For today, use uncompleted tasks that were fetched by fetchUncompletedTasksToday()
+                        availableTasks = taskApiService.tasks.where((t) => !t.isCompleted).toList();
+                      } else {
+                        // For other dates, filter all tasks by date
+                        availableTasks = taskApiService.tasks.where((t) {
+                          try {
+                            final isSameDate =
+                                t.deadline.year == selectedDate.year &&
+                                t.deadline.month == selectedDate.month &&
+                                t.deadline.day == selectedDate.day;
+                            return isSameDate;
+                          } catch (e) {
+                            debugPrint('Error filtering tasks by date: $e');
+                            return false;
+                          }
+                        }).toList();
+                      }
+                      
+                      // Apply category filter
+                      final tasksList = availableTasks.where((t) {
+                        try {
+                          final isCategory =
+                              selectedCategory == 'Semua' ||
+                              t.category == selectedCategory;
+                          return isCategory;
+                        } catch (e) {
+                          debugPrint('Error filtering tasks by category: $e');
+                          return false;
+                        }
+                      }).toList();return RefreshIndicator(
                         onRefresh: _refreshData,
                         child: InfiniteScheduleListWidget(
                           tasks: tasksList,
