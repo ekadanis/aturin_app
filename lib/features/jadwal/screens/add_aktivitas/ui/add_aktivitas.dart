@@ -5,7 +5,7 @@ import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/date_se
 import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/activity_form_section.dart';
 import 'package:aturin_app/features/jadwal/screens/add_aktivitas/widgets/time_selection_section.dart';
 import 'package:aturin_app/core/widgets/alarm_configuration_section.dart';
-import 'package:aturin_app/features/task/screens/widgets/snackbar.dart';
+import 'package:aturin_app/core/widgets/custom_snackbar_top.dart';
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:table_calendar/table_calendar.dart';

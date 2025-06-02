@@ -153,18 +153,38 @@ class TaskApiService extends ChangeNotifier {
       _setLoading(false);
     }
   }
-
   Future<TaskResult> deleteTask(String slug) async {
     try {
       _setLoading(true);
       final headers = await _getHeaders();
+      
+      print('====== TASK DELETE DEBUG START ======');
+      print('🗑️ DELETE REQUEST DETAILS:');
+      print('  📍 Slug being used: "$slug"');
+      print('  📍 Full URL: $baseUrl/tasks/$slug');
+      print('  📍 Method: DELETE');
+      
       final response = await http.delete(
         Uri.parse('$baseUrl/tasks/$slug'),
         headers: headers,
       );
+      
+      print('🗑️ DELETE RESPONSE DETAILS:');
+      print('  📍 Status Code: ${response.statusCode}');
+      print('  📍 Response Body: ${response.body}');
+      print('====== TASK DELETE DEBUG END ======');
+      
       final data = jsonDecode(response.body);
-      if (response.statusCode == 200) {
-        return TaskResult.success(message: data['message']);
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        // Auto refresh data after successful deletion
+        try {
+          await fetchTasks();
+          print('✅ Tasks refreshed after deletion');
+        } catch (e) {
+          print('⚠️ Warning: Failed to refresh tasks after deletion: $e');
+        }
+        
+        return TaskResult.success(message: data['message'] ?? 'Tugas berhasil dihapus');
       } else {
         return _handleErrorResponse(response);
       }

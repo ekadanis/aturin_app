@@ -4,7 +4,7 @@ import 'package:aturin_app/core/services/api/alarm/alarm_api_service.dart';
 import 'package:alarm/alarm.dart';
 import '../../model/task_model.dart';
 import 'task_card.dart';
-import 'snackbar.dart';
+import '../../../../core/widgets/custom_snackbar_top.dart';
 import 'task_animator.dart';
 
 class TaskListView extends StatefulWidget {

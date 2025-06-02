@@ -295,12 +295,12 @@ class _InfiniteScheduleListWidgetState
                           widget.onDeleteTask != null
                               ? () => widget.onDeleteTask!(task)
                               : () {},
-                      onViewDetails: () {
-                        // Handle view details if needed
-                      },
-                      onToggleAlarm: () {
-                        // Handle toggle alarm if needed
-                      },
+                      // onViewDetails: () {
+                      //   // Handle view details if needed
+                      // },
+                      // onToggleAlarm: () {
+                      //   // Handle toggle alarm if needed
+                      // },
                       currentFilter: widget.selectedCategory,
                       showCheckbox: false,
                       showStatus: true,

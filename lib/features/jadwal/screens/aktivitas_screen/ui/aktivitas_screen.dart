@@ -48,33 +48,53 @@ class _AktivitasPageState extends State<AktivitasPage> {
   void dispose() {
     super.dispose();
   }
+
   Future<void> _refreshData() async {
     if (!mounted) return;
 
     try {
+      // Set loading state
+      setState(() {
+        _isInitialLoading = true;
+      });
+
       // Fetch activities data using microtask pattern like DataPrefetchGuard
-      final activityApiService = Provider.of<ActivityApiService>(context, listen: false);
+      final activityApiService = Provider.of<ActivityApiService>(
+        context,
+        listen: false,
+      );
       await activityApiService.fetchActivities().timeout(
-        const Duration(seconds: 5),
+        const Duration(seconds: 10),
         onTimeout: () {
           debugPrint('Activities fetch timeout, continuing with cached data');
         },
       );
 
-      final taskApiService = Provider.of<TaskApiService>(context, listen: false);
+      final taskApiService = Provider.of<TaskApiService>(
+        context,
+        listen: false,
+      );
       await taskApiService.fetchTasks().timeout(
-        const Duration(seconds: 5),
+        const Duration(seconds: 10),
         onTimeout: () {
           debugPrint('Tasks fetch timeout, continuing with cached data');
         },
       );
     } catch (e) {
       debugPrint('Error during data refresh: $e');
+      if (mounted) {
+        showCustomTopSnackbar(
+          context: context,
+          message: 'Gagal memuat ulang data',
+          isError: true,
+        );
+      }
     } finally {
-      // Always set loading to false, let Consumer handle the data display
-      setState(() {
-        _isInitialLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isInitialLoading = false;
+        });
+      }
     }
   }
 
@@ -127,7 +147,7 @@ class _AktivitasPageState extends State<AktivitasPage> {
                 child: Row(
                   children: [
                     Text(
-                      'Aktivitas',
+                      'Jadwal',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -283,8 +303,6 @@ class _AktivitasPageState extends State<AktivitasPage> {
                               (aktivitas) => _deleteActivity(aktivitas),
                           onEditTask: (task) => _editTask(task),
                           onDeleteTask: (task) => _deleteTask(task),
-                          onToggleTaskCompletion:
-                              (task) => _toggleTaskCompletion(task),
                         ),
                       );
                     } catch (e) {
@@ -358,10 +376,33 @@ class _AktivitasPageState extends State<AktivitasPage> {
               Navigator.of(dialogContext).pop();
 
               try {
+                // Validasi slug
+                if (aktivitas.slug == null || aktivitas.slug!.isEmpty) {
+                  if (mounted) {
+                    showCustomTopSnackbar(
+                      context: context,
+                      message:
+                          'Tidak dapat menghapus aktivitas: data tidak lengkap',
+                      isError: true,
+                    );
+                  }
+                  return;
+                }
+
                 final activityApiService = Provider.of<ActivityApiService>(
                   context,
                   listen: false,
                 );
+
+                // Show loading indicator
+                if (mounted) {
+                  showCustomTopSnackbar(
+                    context: context,
+                    message: 'Menghapus aktivitas...',
+                    isError: false,
+                  );
+                }
+
                 final success = await activityApiService.deleteActivity(
                   aktivitas.slug!,
                 );
@@ -369,7 +410,8 @@ class _AktivitasPageState extends State<AktivitasPage> {
                 if (!mounted) return;
 
                 if (success) {
-                  setState(() {});
+                  // // Force refresh data
+                  // await _refreshData();
 
                   showCustomTopSnackbar(
                     context: context,
@@ -414,32 +456,8 @@ class _AktivitasPageState extends State<AktivitasPage> {
               Navigator.of(dialogContext).pop();
 
               try {
-                if (task.slug != null) {
-                  final taskApiService = Provider.of<TaskApiService>(
-                    context,
-                    listen: false,
-                  );
-                  final result = await taskApiService.deleteTask(task.slug!);
-
-                  if (!mounted) return;
-
-                  if (result.isSuccess) {
-                    // Refresh data like TaskListScreen pattern
-                    setState(() {});
-
-                    showCustomTopSnackbar(
-                      context: context,
-                      message: 'Tugas berhasil dihapus',
-                      isError: false,
-                    );
-                  } else {
-                    showCustomTopSnackbar(
-                      context: context,
-                      message: result.message,
-                      isError: true,
-                    );
-                  }
-                } else {
+                // Validasi slug
+                if (task.slug == null || task.slug!.isEmpty) {
                   if (mounted) {
                     showCustomTopSnackbar(
                       context: context,
@@ -448,6 +466,42 @@ class _AktivitasPageState extends State<AktivitasPage> {
                       isError: true,
                     );
                   }
+                  return;
+                }
+
+                final taskApiService = Provider.of<TaskApiService>(
+                  context,
+                  listen: false,
+                );
+
+                // Show loading indicator
+                if (mounted) {
+                  showCustomTopSnackbar(
+                    context: context,
+                    message: 'Menghapus tugas...',
+                    isError: false,
+                  );
+                }
+
+                final result = await taskApiService.deleteTask(task.slug!);
+
+                if (!mounted) return;
+
+                if (result.isSuccess) {
+                  // Force refresh data
+                  await _refreshData();
+
+                  showCustomTopSnackbar(
+                    context: context,
+                    message: 'Tugas berhasil dihapus',
+                    isError: false,
+                  );
+                } else {
+                  showCustomTopSnackbar(
+                    context: context,
+                    message: result.message,
+                    isError: true,
+                  );
                 }
               } catch (e) {
                 if (mounted) {
@@ -461,59 +515,5 @@ class _AktivitasPageState extends State<AktivitasPage> {
             },
           ),
     );
-  }
-
-  void _toggleTaskCompletion(Task task) async {
-    try {
-      if (task.slug != null) {
-        final taskApiService = Provider.of<TaskApiService>(
-          context,
-          listen: false,
-        );
-        final newStatus = task.isCompleted ? 'belum_selesai' : 'selesai';
-        final result = await taskApiService.updateTask(
-          slug: task.slug!,
-          status: newStatus,
-        );
-
-        if (!mounted) return;
-
-        if (result.isSuccess) {
-          // Refresh data like TaskListScreen pattern
-          setState(() {});
-
-          showCustomTopSnackbar(
-            context: context,
-            message:
-                task.isCompleted
-                    ? 'Tugas ditandai belum selesai'
-                    : 'Tugas ditandai selesai',
-            isError: false,
-          );
-        } else {
-          showCustomTopSnackbar(
-            context: context,
-            message: result.message,
-            isError: true,
-          );
-        }
-      } else {
-        if (mounted) {
-          showCustomTopSnackbar(
-            context: context,
-            message: 'Tidak dapat mengubah status tugas: data tidak lengkap',
-            isError: true,
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        showCustomTopSnackbar(
-          context: context,
-          message: 'Gagal mengubah status tugas: ${e.toString()}',
-          isError: true,
-        );
-      }
-    }
   }
 }

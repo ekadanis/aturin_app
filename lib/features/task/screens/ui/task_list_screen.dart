@@ -9,7 +9,7 @@ import '../../../../../../core/widgets/bottom_navbar.dart';
 import '../../../../../../routers/app_router.dart';
 import '../widgets/filter_tabs.dart';
 import '../widgets/task_list_view.dart';
-import '../widgets/snackbar.dart';
+import '../../../../core/widgets/custom_snackbar_top.dart';
 
 @RoutePage()
 class TaskListScreen extends StatefulWidget {
@@ -129,7 +129,7 @@ class _TaskListScreenState extends State<TaskListScreen>
                     child: FilterTabs(
                       filters: _filters,
                       selectedFilter: _selectedFilter,
-                      overdueTasksCount: _overdueTasksCount, // <-- assign di sini
+                      overdueTasksCount: _overdueTasksCount,
                       onFilterSelected: (filter) {
                         setState(() {
                           _selectedFilter = filter;

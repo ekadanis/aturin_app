@@ -12,7 +12,7 @@ import 'category_picker_screen.dart';
 import '../../../../core/widgets/alarm_configuration_section.dart';
 import '../../../../../../routers/app_router.dart';
 import 'package:aturin_app/core/widgets/field_tile.dart';
-import 'package:aturin_app/features/task/screens/widgets/snackbar.dart';
+import 'package:aturin_app/core/widgets/custom_snackbar_top.dart';
 import 'package:aturin_app/core/services/api/task/task_api_service.dart';
 import 'package:aturin_app/core/services/api/alarm/alarm_api_service.dart';
 import 'package:aturin_app/features/alarm/model/alarm.dart';

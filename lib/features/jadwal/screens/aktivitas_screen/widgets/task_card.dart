@@ -15,8 +15,8 @@ class TaskCard extends StatefulWidget {
   final Task task;
   final VoidCallback onToggleCompletion;
   final VoidCallback onDelete;
-  final VoidCallback onViewDetails;
-  final VoidCallback onToggleAlarm;
+  // final VoidCallback onViewDetails;
+  // final VoidCallback onToggleAlarm;
   final String currentFilter;
   final bool showCheckbox;
   final bool showStatus;
@@ -27,8 +27,8 @@ class TaskCard extends StatefulWidget {
     required this.task,
     required this.onToggleCompletion,
     required this.onDelete,
-    required this.onViewDetails,
-    required this.onToggleAlarm,
+    // required this.onViewDetails,
+    // required this.onToggleAlarm,
     required this.currentFilter,
     this.showCheckbox = false,
     this.showStatus = true,
@@ -272,12 +272,17 @@ class _TaskCardState extends State<TaskCard> {
                           // update jika perlu
                         });
                       }
-                    }
-                  } else if (value == 'delete') {
+                    }                  } else if (value == 'delete') {
                     // Tampilkan DeletePopup
                     showDialog(
                       context: context,
                       builder: (_) => ConfirmDialog(
+                        iconPath: 'assets/activitycategory/trash-round-tipis.svg',
+                        title: 'Hapus Tugas',
+                        description: 'Yakin nih kamu mau hapus tugas ini?',
+                        confirmText: 'Hapus',
+                        cancelText: 'Batal',
+                        isTask: true, // Set isTask ke true untuk tugas
                         onConfirm: () {
                           // Tutup dialog
                           widget.onDelete(); // Panggil fungsi delete dari task_card
