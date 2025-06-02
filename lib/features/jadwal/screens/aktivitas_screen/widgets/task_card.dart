@@ -1,7 +1,6 @@
 import 'package:aturin_app/core/widgets/confirm_dialog.dart';
 import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:aturin_app/features/task/screens/ui/add_task_screen.dart';
-import 'package:aturin_app/features/task/screens/ui/task_detail_screen.dart';
 import 'package:aturin_app/features/jadwal/screens/detail_task/ui/screens/task_detail_list_screen.dart';
 import 'package:flutter/material.dart';
 import '../../../../../../core/theme/app_theme.dart';
@@ -15,6 +14,7 @@ class TaskCard extends StatefulWidget {
   final Task task;
   final VoidCallback onToggleCompletion;
   final VoidCallback onDelete;
+  final VoidCallback? onTap;
   // final VoidCallback onViewDetails;
   // final VoidCallback onToggleAlarm;
   final String currentFilter;
@@ -27,6 +27,7 @@ class TaskCard extends StatefulWidget {
     required this.task,
     required this.onToggleCompletion,
     required this.onDelete,
+    this.onTap,
     // required this.onViewDetails,
     // required this.onToggleAlarm,
     required this.currentFilter,
@@ -65,19 +66,21 @@ class _TaskCardState extends State<TaskCard> {
     final category = categories.firstWhere(
       (c) => c.name.toLowerCase() == widget.task.category.toLowerCase(),
       orElse: () => categories.first,
-    );
-
-    return GestureDetector(
+    );    return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => TaskDetailListScreen(
-              tasks: [widget.task], // Pass the current task
-              initialIndex: 0,
+        if (widget.onTap != null) {
+          widget.onTap!();
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => TaskDetailListScreen(
+                tasks: [widget.task], // Pass the current task
+                initialIndex: 0,
+              ),
             ),
-          ),
-        );
+          );
+        }
       },
       child: Container(
         key: ValueKey(widget.task.id),

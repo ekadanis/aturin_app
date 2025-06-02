@@ -37,12 +37,61 @@ class AktivitasService extends ChangeNotifier {
     } catch (e) {
       debugPrint('AktivitasService: Error getting aktivitas by date: $e');
       rethrow;
+    }  }
+
+  /// Generate unique slug for activity
+  Future<String> _generateUniqueSlug(String title) async {
+    // Base slug from title
+    String baseSlug = 'activity-' + title
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9 ]'), '')
+        .replaceAll(' ', '-')
+        .replaceAll(RegExp(r'-+'), '-') // Replace multiple dashes with single dash
+        .replaceAll(RegExp(r'^-|-$'), ''); // Remove leading/trailing dashes
+
+    // Get all existing activities to check for slug conflicts
+    try {
+      final existingActivities = await _activityApiService.getAllActivities();
+      final existingSlugs = existingActivities.map((a) => a.slug).where((s) => s != null).toSet();
+      
+      String uniqueSlug = baseSlug;
+      int counter = 1;
+      
+      // Keep incrementing counter until we find a unique slug
+      while (existingSlugs.contains(uniqueSlug)) {
+        uniqueSlug = '$baseSlug-$counter';
+        counter++;
+      }
+      
+      debugPrint('Generated unique slug: $uniqueSlug for title: $title');
+      return uniqueSlug;
+    } catch (e) {
+      // If we can't check existing slugs, add timestamp to ensure uniqueness
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fallbackSlug = '$baseSlug-$timestamp';
+      debugPrint('Fallback slug generation: $fallbackSlug for title: $title (error: $e)');
+      return fallbackSlug;
     }
   }
-
   /// Add new aktivitas with optional alarm
   Future<String?> addAktivitas(AktivitasModel aktivitas, DateTime? alarmDateTime) async {
     try {
+      // Generate unique slug before creating activity
+      final uniqueSlug = await _generateUniqueSlug(aktivitas.activityTitle);
+      
+      // Create activity with unique slug
+      final aktivitasWithSlug = AktivitasModel(
+        id: aktivitas.id,
+        userId: aktivitas.userId,
+        activityTitle: aktivitas.activityTitle,
+        activityDate: aktivitas.activityDate,
+        activityStartTime: aktivitas.activityStartTime,
+        activityCompleteTime: aktivitas.activityCompleteTime,
+        activityCategory: aktivitas.activityCategory,
+        alarmId: aktivitas.alarmId,
+        slug: uniqueSlug,
+      );
+      
       AktivitasModel? createdAktivitas;
         // Create alarm first if alarm datetime is provided
       if (alarmDateTime != null) {
@@ -51,20 +100,19 @@ class AktivitasService extends ChangeNotifier {
           alarmDateTime: alarmDateTime,
           alarmEnabled: true,
         );
-        
-        final createdAlarm = await _alarmApiService.createAlarm(alarmModel);
+          final createdAlarm = await _alarmApiService.createAlarm(alarmModel);
         if (createdAlarm != null) {
-          // Set alarm ID to the aktivitas
+          // Set alarm ID to the aktivitas with unique slug
           final aktivitasWithAlarm = AktivitasModel(
-            id: aktivitas.id,
-            userId: aktivitas.userId,
-            activityTitle: aktivitas.activityTitle,
-            activityDate: aktivitas.activityDate,
-            activityStartTime: aktivitas.activityStartTime,
-            activityCompleteTime: aktivitas.activityCompleteTime,
-            activityCategory: aktivitas.activityCategory,
+            id: aktivitasWithSlug.id,
+            userId: aktivitasWithSlug.userId,
+            activityTitle: aktivitasWithSlug.activityTitle,
+            activityDate: aktivitasWithSlug.activityDate,
+            activityStartTime: aktivitasWithSlug.activityStartTime,
+            activityCompleteTime: aktivitasWithSlug.activityCompleteTime,
+            activityCategory: aktivitasWithSlug.activityCategory,
             alarmId: createdAlarm.id,
-            slug: aktivitas.slug,
+            slug: aktivitasWithSlug.slug,
           );
           
           createdAktivitas = await _scheduleApiService.createAktivitas(aktivitasWithAlarm);
@@ -78,14 +126,13 @@ class AktivitasService extends ChangeNotifier {
                 alarmEnabled: createdAlarm.alarmEnabled,
               ),
             );
-            
-            // Schedule system alarm
-            await _scheduleSystemAlarm(createdAlarm.id!, alarmDateTime, aktivitas.activityTitle);
+              // Schedule system alarm
+            await _scheduleSystemAlarm(createdAlarm.id!, alarmDateTime, aktivitasWithSlug.activityTitle);
           }
         }
       } else {
-        // Create aktivitas without alarm
-        createdAktivitas = await _scheduleApiService.createAktivitas(aktivitas);
+        // Create aktivitas without alarm using the unique slug
+        createdAktivitas = await _scheduleApiService.createAktivitas(aktivitasWithSlug);
       }
       
       if (createdAktivitas != null) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:aturin_app/features/jadwal/services/schedule_api_service.dart';
+import 'package:aturin_app/features/jadwal/screens/detail_task/ui/screens/task_detail_list_screen.dart';
 import 'package:alarm/alarm.dart';
 import '../aktivitas_screen/widgets/activity_card.dart';
 import '../aktivitas_screen/widgets/task_card.dart';
@@ -233,12 +234,23 @@ class _ScheduleListViewState extends State<ScheduleListView>
     Widget card = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Hero(
-        tag: 'task-${task.id}',
-        child: TaskCard(
+        tag: 'task-${task.id}',        child: TaskCard(
           task: task,
           currentFilter: widget.currentFilter,
           showCheckbox: false, // Schedule context doesn't support completion
           onToggleCompletion: () {}, // Empty - no completion in schedule context
+          onTap: () {
+            // Navigate to TaskDetailListScreen with all tasks for the date
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => TaskDetailListScreen(
+                  tasks: _filteredTasks,
+                  initialIndex: _filteredTasks.indexOf(task),
+                ),
+              ),
+            );
+          },
           onDelete: () async {
             // Following TaskService delete pattern
             setState(() {

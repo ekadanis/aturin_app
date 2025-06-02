@@ -210,8 +210,7 @@ class ActivityApiService extends ChangeNotifier {
       final startTimeFormatted =
           '${activity.activityStartTime.hour.toString().padLeft(2, '0')}:${activity.activityStartTime.minute.toString().padLeft(2, '0')}';
       final endTimeFormatted =
-          '${activity.activityCompleteTime.hour.toString().padLeft(2, '0')}:${activity.activityCompleteTime.minute.toString().padLeft(2, '0')}';
-        final activityData = <String, dynamic>{
+          '${activity.activityCompleteTime.hour.toString().padLeft(2, '0')}:${activity.activityCompleteTime.minute.toString().padLeft(2, '0')}';        final activityData = <String, dynamic>{
         'user_id': userId,
         'activity_title': activity.activityTitle,
         'activity_date': activity.activityDate.toIso8601String().split('T')[0],
@@ -219,6 +218,14 @@ class ActivityApiService extends ChangeNotifier {
         'activity_complete_time': endTimeFormatted,
         'activity_category': activity.activityCategory.apiName,
       };
+      
+      // Include slug if provided to override server-side generation
+      if (activity.slug != null && activity.slug!.isNotEmpty) {
+        activityData['slug'] = activity.slug;
+        print('🔄 CREATE SLUG HANDLING: Including client-generated slug = ${activity.slug}');
+      } else {
+        print('🔄 CREATE SLUG HANDLING: No client slug provided, server will generate');
+      }
       
       // Only include alarm_id if it's not null to avoid validation errors
       if (activity.alarmId != null) {
@@ -228,6 +235,9 @@ class ActivityApiService extends ChangeNotifier {
         print('🔄 CREATE ALARM_ID HANDLING: Excluding alarm_id (value is null)');
       }      // Enhanced debug: Print individual values and types
       print('=== CREATE ACTIVITY DEBUG ===');
+      print('activity.slug value: ${activity.slug}');
+      print('activity.slug type: ${activity.slug.runtimeType}');
+      print('activity.slug is null: ${activity.slug == null}');
       print('activity.alarmId value: ${activity.alarmId}');
       print('activity.alarmId type: ${activity.alarmId.runtimeType}');
       print('activity.alarmId is null: ${activity.alarmId == null}');

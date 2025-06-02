@@ -6,6 +6,7 @@ import 'activity_card.dart';
 import 'task_card.dart';
 import 'package:intl/intl.dart';
 import 'package:aturin_app/features/jadwal/screens/detailactivity/ui/activity_detail_list.dart';
+import 'package:aturin_app/features/jadwal/screens/detail_task/ui/screens/task_detail_list_screen.dart';
 import 'package:sizer/sizer.dart';
 import '../../../services/schedule_api_service.dart';
 import '../../widgets/schedule_animator.dart';
@@ -260,8 +261,7 @@ class _InfiniteScheduleListWidgetState
       return activityCard;
     }
   }
-
-  Widget _buildAnimatedTaskCard(Task task) {
+  Widget _buildAnimatedTaskCard(Task task, List<Task> tasksForDate) {
     final isAnimating = _isAnimating && _animatingItem == task;
     
     final taskCard = TaskCard(
@@ -270,6 +270,17 @@ class _InfiniteScheduleListWidgetState
       onDelete: widget.onDeleteTask != null
           ? () => _handleDeleteTask(task)
           : () {},
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TaskDetailListScreen(
+              tasks: tasksForDate,
+              initialIndex: tasksForDate.indexOf(task),
+            ),
+          ),
+        );
+      },
       currentFilter: widget.selectedCategory,
       showCheckbox: false,
       showStatus: true,
@@ -409,7 +420,7 @@ class _InfiniteScheduleListWidgetState
                   ), 
                   // Then display tasks
                   ...tasksForDate.map(
-                    (task) => _buildAnimatedTaskCard(task),
+                    (task) => _buildAnimatedTaskCard(task, tasksForDate),
                   ),
                 ],
                 const SizedBox(height: 100),
