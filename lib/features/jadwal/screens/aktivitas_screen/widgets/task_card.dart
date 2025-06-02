@@ -8,7 +8,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/utils/debouncer.dart';
 import 'package:sizer/sizer.dart';
-import 'package:aturin_app/core/widgets/categories.dart';
+import 'package:aturin_app/core/utils/category_helper.dart';
 
 class TaskCard extends StatefulWidget {
   final Task task;
@@ -61,12 +61,8 @@ class _TaskCardState extends State<TaskCard> {
   Widget build(BuildContext context) {
     // Tentukan apakah card memiliki alarm indicator
     final bool hasAlarmIndicator = widget.task.isAlarmActive;
-    
-    // Cari kategori dari categories.dart berdasarkan task category
-    final category = categories.firstWhere(
-      (c) => c.name.toLowerCase() == widget.task.category.toLowerCase(),
-      orElse: () => categories.first,
-    );    return GestureDetector(
+      // Gunakan CategoryHelper untuk mendapatkan CategoryOption dari task category string
+    final category = CategoryHelper.getCategoryOptionFromString(widget.task.category);return GestureDetector(
       onTap: () {
         if (widget.onTap != null) {
           widget.onTap!();

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:aturin_app/features/task/model/task_model.dart';
+import 'package:aturin_app/core/utils/category_helper.dart';
 import 'activity_card.dart';
 import 'task_card.dart';
 import 'package:intl/intl.dart';
@@ -139,7 +140,6 @@ class _InfiniteScheduleListWidgetState
     final daysDifference = pageIndex - _initialPageIndex;
     return _baseDate.add(Duration(days: daysDifference));
   }
-
   List<AktivitasModel> _getSchedulesForDate(DateTime date) {
     final normalizedDate = DateTime(date.year, date.month, date.day);
 
@@ -150,9 +150,13 @@ class _InfiniteScheduleListWidgetState
         schedule.activityDate.day,
       );
 
-      bool categoryMatch =
-          widget.selectedCategory == 'Semua' ||
-          schedule.activityCategory.displayName == widget.selectedCategory;
+      bool categoryMatch = widget.selectedCategory == 'Semua';
+      if (!categoryMatch) {
+        // Konversi ActivityCategory enum ke CategoryOption name untuk perbandingan yang konsisten
+        final categoryName = schedule.activityCategory.displayName;
+        categoryMatch = categoryName == widget.selectedCategory;
+      }
+      
       bool dateMatch = scheduleDate.isAtSameMomentAs(normalizedDate);
 
       return categoryMatch && dateMatch;
@@ -169,9 +173,13 @@ class _InfiniteScheduleListWidgetState
         task.deadline.day,
       );
 
-      bool categoryMatch =
-          widget.selectedCategory == 'Semua' ||
-          task.category == widget.selectedCategory;
+      bool categoryMatch = widget.selectedCategory == 'Semua';
+      if (!categoryMatch) {
+        // Konversi task category string ke CategoryOption name untuk perbandingan yang konsisten
+        final categoryOption = CategoryHelper.getCategoryOptionFromString(task.category);
+        categoryMatch = categoryOption.name == widget.selectedCategory;
+      }
+      
       bool dateMatch = taskDate.isAtSameMomentAs(normalizedDate);
 
       return categoryMatch && dateMatch;
@@ -244,19 +252,8 @@ class _InfiniteScheduleListWidgetState
       onDelete: widget.onDeleteSchedule != null
           ? () => _handleDeleteAktivitas(schedule)
           : null,
-    );
-
-    if (isAnimating) {
-      return _animator.buildAnimatedItem(
-        schedule,
-        activityCard,
-        onAnimationComplete: () {
-          setState(() {
-            _isAnimating = false;
-            _animatingItem = null;
-          });
-        },
-      );
+    );    if (isAnimating) {
+      return _animator.buildAnimatedItem(schedule, activityCard);
     } else {
       return activityCard;
     }
@@ -288,24 +285,12 @@ class _InfiniteScheduleListWidgetState
         vertical: 0.5.h,
         horizontal: 0,
       ),
-    );
-
-    if (isAnimating) {
-      return _animator.buildAnimatedItem(
-        task,
-        taskCard,
-        onAnimationComplete: () {
-          setState(() {
-            _isAnimating = false;
-            _animatingItem = null;
-          });
-        },
-      );
+    );    if (isAnimating) {
+      return _animator.buildAnimatedItem(task, taskCard);
     } else {
       return taskCard;
     }
   }
-
   // Delete handlers with animation support
   Future<void> _handleDeleteAktivitas(AktivitasModel aktivitas) async {
     try {
@@ -315,17 +300,28 @@ class _InfiniteScheduleListWidgetState
       });
 
       // Use ScheduleAnimator for deletion animation
-      _animator.prepareItemDeletion(aktivitas, () async {
-        if (aktivitas.slug != null) {
-          await _scheduleService.deleteAktivitas(aktivitas.slug!);
-          widget.onShowSuccess?.call('Aktivitas berhasil dihapus');
-        } else {
-          throw Exception('Slug aktivitas tidak valid');
-        }
-      });
+      _animator.prepareItemDeletion(
+        aktivitas, 
+        () async {
+          if (aktivitas.slug != null) {
+            await _scheduleService.deleteAktivitas(aktivitas.slug!);
+            widget.onShowSuccess?.call('Aktivitas berhasil dihapus');
+          } else {
+            throw Exception('Slug aktivitas tidak valid');
+          }
+        },
+        () {
+          // Animation completion callback
+          if (mounted) {
+            setState(() {
+              _isAnimating = false;
+              _animatingItem = null;
+            });
+          }
+        },
+      );
     } catch (e) {
       widget.onShowSuccess?.call('Gagal menghapus aktivitas');
-    } finally {
       if (mounted) {
         setState(() {
           _isAnimating = false;
@@ -334,7 +330,6 @@ class _InfiniteScheduleListWidgetState
       }
     }
   }
-
   Future<void> _handleDeleteTask(Task task) async {
     try {
       setState(() {
@@ -343,17 +338,28 @@ class _InfiniteScheduleListWidgetState
       });
 
       // Use ScheduleAnimator for deletion animation
-      _animator.prepareItemDeletion(task, () async {
-        if (task.slug != null) {
-          await _scheduleService.deleteTask(task.slug!);
-          widget.onShowSuccess?.call('Tugas berhasil dihapus');
-        } else {
-          throw Exception('Slug tugas tidak valid');
-        }
-      });
+      _animator.prepareItemDeletion(
+        task, 
+        () async {
+          if (task.slug != null) {
+            await _scheduleService.deleteTask(task.slug!);
+            widget.onShowSuccess?.call('Tugas berhasil dihapus');
+          } else {
+            throw Exception('Slug tugas tidak valid');
+          }
+        },
+        () {
+          // Animation completion callback
+          if (mounted) {
+            setState(() {
+              _isAnimating = false;
+              _animatingItem = null;
+            });
+          }
+        },
+      );
     } catch (e) {
       widget.onShowSuccess?.call('Gagal menghapus tugas');
-    } finally {
       if (mounted) {
         setState(() {
           _isAnimating = false;

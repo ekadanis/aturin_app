@@ -167,34 +167,40 @@ class _ScheduleListViewState extends State<ScheduleListView>
               _isAnimating = true;
             });
             
-            final aktivitasSlug = aktivitas.slug;
-            try {
-              _animator.prepareItemDeletion(aktivitas, () async {
-                // Delete alarm if exists - same as TaskService
-                if (aktivitas.alarmId != null) {
-                  try {
-                    await Alarm.stop(aktivitas.alarmId!);
-                  } catch (e) {
-                    debugPrint('Error stopping alarm: $e');
+            final aktivitasSlug = aktivitas.slug;            try {
+              _animator.prepareItemDeletion(
+                aktivitas, 
+                () async {
+                  // Delete alarm if exists - same as TaskService
+                  if (aktivitas.alarmId != null) {
+                    try {
+                      await Alarm.stop(aktivitas.alarmId!);
+                    } catch (e) {
+                      debugPrint('Error stopping alarm: $e');
+                    }
                   }
-                }
-                
-                // Delete aktivitas
-                if (aktivitasSlug != null) {
-                  await ScheduleApiService().deleteAktivitas(aktivitasSlug);
-                }
-                
-                // Refresh data and notify parent
-                if (mounted) {
-                  await _fetchSchedule();
-                  widget.onShowSuccess?.call('Berhasil menghapus aktivitas');
                   
-                  setState(() {
-                    _isAnimating = false;
-                    _animatingItemSlug = null;
-                  });
-                }
-              });
+                  // Delete aktivitas
+                  if (aktivitasSlug != null) {
+                    await ScheduleApiService().deleteAktivitas(aktivitasSlug);
+                  }
+                  
+                  // Refresh data and notify parent
+                  if (mounted) {
+                    await _fetchSchedule();
+                    widget.onShowSuccess?.call('Berhasil menghapus aktivitas');
+                  }
+                },
+                () {
+                  // Animation completion callback
+                  if (mounted) {
+                    setState(() {
+                      _isAnimating = false;
+                      _animatingItemSlug = null;
+                    });
+                  }
+                },
+              );
             } catch (e) {
               debugPrint('Error deleting aktivitas: $e');
               if (mounted) {
@@ -208,21 +214,8 @@ class _ScheduleListViewState extends State<ScheduleListView>
           },
         ),
       ),
-    );
-
-    if (isAnimating) {
-      return _animator.buildAnimatedItem(
-        aktivitas,
-        card,
-        onAnimationComplete: () {
-          setState(() {
-            if (_animatingItemSlug == aktivitas.slug) {
-              _isAnimating = false;
-              _animatingItemSlug = null;
-            }
-          });
-        },
-      );
+    );    if (isAnimating) {
+      return _animator.buildAnimatedItem(aktivitas, card);
     }
     
     return card;
@@ -258,34 +251,40 @@ class _ScheduleListViewState extends State<ScheduleListView>
               _isAnimating = true;
             });
             
-            final taskSlug = task.slug;
-            try {
-              _animator.prepareItemDeletion(task, () async {
-                // Delete alarm if exists - same as TaskService
-                if (task.alarmId != null) {
-                  try {
-                    await Alarm.stop(task.alarmId!);
-                  } catch (e) {
-                    debugPrint('Error stopping task alarm: $e');
+            final taskSlug = task.slug;            try {
+              _animator.prepareItemDeletion(
+                task, 
+                () async {
+                  // Delete alarm if exists - same as TaskService
+                  if (task.alarmId != null) {
+                    try {
+                      await Alarm.stop(task.alarmId!);
+                    } catch (e) {
+                      debugPrint('Error stopping task alarm: $e');
+                    }
                   }
-                }
-                
-                // Delete task
-                if (taskSlug != null) {
-                  await ScheduleApiService().deleteTask(taskSlug);
-                }
-                
-                // Refresh data and notify parent
-                if (mounted) {
-                  await _fetchSchedule();
-                  widget.onShowSuccess?.call('Berhasil menghapus tugas');
                   
-                  setState(() {
-                    _isAnimating = false;
-                    _animatingItemSlug = null;
-                  });
-                }
-              });
+                  // Delete task
+                  if (taskSlug != null) {
+                    await ScheduleApiService().deleteTask(taskSlug);
+                  }
+                  
+                  // Refresh data and notify parent
+                  if (mounted) {
+                    await _fetchSchedule();
+                    widget.onShowSuccess?.call('Berhasil menghapus tugas');
+                  }
+                },
+                () {
+                  // Animation completion callback
+                  if (mounted) {
+                    setState(() {
+                      _isAnimating = false;
+                      _animatingItemSlug = null;
+                    });
+                  }
+                },
+              );
             } catch (e) {
               debugPrint('Error deleting task: $e');
               if (mounted) {
@@ -299,21 +298,8 @@ class _ScheduleListViewState extends State<ScheduleListView>
           },
         ),
       ),
-    );
-
-    if (isAnimating) {
-      return _animator.buildAnimatedItem(
-        task,
-        card,
-        onAnimationComplete: () {
-          setState(() {
-            if (_animatingItemSlug == task.slug) {
-              _isAnimating = false;
-              _animatingItemSlug = null;
-            }
-          });
-        },
-      );
+    );    if (isAnimating) {
+      return _animator.buildAnimatedItem(task, card);
     }
     
     return card;

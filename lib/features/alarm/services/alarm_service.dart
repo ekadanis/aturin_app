@@ -2,8 +2,8 @@ import 'package:alarm/alarm.dart';
 import 'package:flutter/material.dart';
 import 'dart:io' show Platform;
 import 'package:aturin_app/features/task/model/task_model.dart';
-import 'package:intl/intl.dart';
 import 'package:aturin_app/core/widgets/categories.dart';
+import 'package:aturin_app/core/utils/category_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AlarmService {
@@ -199,27 +199,8 @@ class AlarmService {
       return category;
     }
   }
-
   // Helper untuk mendapatkan CategoryOption dari string kategori
   CategoryOption getCategoryOption(String category) {
-    try {
-      for (var option in categories) {
-        if (option.name == category) {
-          return option;
-        }
-      }
-
-      final categoryName = getCategoryName(category);
-
-      for (var option in categories) {
-        if (option.name == categoryName) {
-          return option;
-        }
-      }
-
-      return categories[0];
-    } catch (_) {
-      return categories[0];
-    }
+    return CategoryHelper.getCategoryOptionFromString(category);
   }
 }

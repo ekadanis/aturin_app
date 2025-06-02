@@ -6,6 +6,7 @@ import '../../../../../../core/theme/app_theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:aturin_app/core/services/api/task/task_api_service.dart';
+import 'package:aturin_app/core/utils/category_helper.dart';
 
 @RoutePage()
 class TaskDetailScreen extends StatefulWidget {
@@ -95,10 +96,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   ? _task.description!
                   : 'Tidak ada deskripsi',
             ),
-            const SizedBox(height: 16),
-            _buildDetailField(
+            const SizedBox(height: 16),            _buildDetailField(
               'Kategori Tugas',
-              _getCategoryName(_task.category),
+              CategoryHelper.getCategoryOptionFromString(_task.category).name,
             ),
             const SizedBox(height: 16),
             _buildDetailField(
@@ -159,41 +159,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       ],
     );
   }
-
-  // Perbaiki fungsi _getCategoryName untuk menangani konversi kategori dengan lebih baik
-  String _getCategoryName(String category) {
-    try {
-      // Pastikan format string kategori sesuai dengan nama enum
-      final categoryString = category.toLowerCase();
-      final taskCategory = TaskCategory.values.firstWhere(
-        (e) => e.toString().split('.').last.toLowerCase() == categoryString,
-        orElse: () => TaskCategory.akademik,
-      );
-
-      switch (taskCategory) {
-        case TaskCategory.akademik:
-          return 'Akademik';
-        case TaskCategory.hiburan:
-          return 'Hiburan';
-        case TaskCategory.pekerjaan:
-          return 'Pekerjaan';
-        case TaskCategory.olahraga:
-          return 'Olahraga';
-        case TaskCategory.sosial:
-          return 'Sosial';
-        case TaskCategory.spiritual:
-          return 'Spiritual';
-        case TaskCategory.pribadi:
-          return 'Pribadi';
-        case TaskCategory.istirahat:
-          return 'Istirahat';
-      }
-    } catch (e) {
-      print('Error getting category name: ${e.toString()}');
-      return category;
-    }
-  }
-
   String _formatDurationToHourDotMinute(Duration duration) {
     final hours = duration.inHours;
     final minutes = duration.inMinutes % 60;

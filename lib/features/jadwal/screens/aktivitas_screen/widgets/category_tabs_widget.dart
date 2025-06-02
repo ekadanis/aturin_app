@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
-import 'package:aturin_app/core/widgets/categories.dart';
+import 'package:aturin_app/core/utils/category_helper.dart';
 
 class CategoryTabsWidget extends StatelessWidget {
   final String selectedCategory;
@@ -13,9 +13,10 @@ class CategoryTabsWidget extends StatelessWidget {
     required this.selectedCategory,
     required this.onCategoryChanged,
   });
-
   @override
   Widget build(BuildContext context) {
+    final availableCategories = CategoryHelper.getAllCategories();
+    
     return Container(
       height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -24,17 +25,16 @@ class CategoryTabsWidget extends StatelessWidget {
         physics: const BouncingScrollPhysics(),
         children: [
           _buildCategoryTab('Semua', true),
-          ...categories.map(
+          ...availableCategories.map(
             (category) => _buildCategoryTab(category.name, false),
           ),
         ],
       ),
     );
   }
-
   Widget _buildCategoryTab(String name, bool isAll) {
     final isSelected = selectedCategory == name;
-    final category = isAll ? null : categories.firstWhere((c) => c.name == name);
+    final category = isAll ? null : CategoryHelper.getCategoryOptionFromString(name);
     Color textColor;
     Color backgroundColor;
 

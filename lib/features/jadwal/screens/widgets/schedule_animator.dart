@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
-import 'package:aturin_app/features/task/model/task_model.dart';
 
 /// Schedule Animator - Following TaskAnimator pattern
 class ScheduleAnimator {
@@ -62,46 +60,41 @@ class ScheduleAnimator {
     _currentItem = item;
     _isCompletion = isCompleting;
   }
-
   /// Prepare item for deletion animation (both aktivitas and tasks)
-  void prepareItemDeletion(dynamic item, Future<void> Function() onDelete) {
+  void prepareItemDeletion(
+    dynamic item, 
+    Future<void> Function() onDelete,
+    VoidCallback onAnimationComplete,
+  ) {
     _currentItem = item;
     _isCompletion = false;
     
     // Start animation then execute delete
     _animationController.forward().then((_) async {
       await onDelete();
+      onAnimationComplete();
       _animationController.reset();
     });
   }
-
   /// Build animated item widget - following TaskAnimator pattern
   Widget buildAnimatedItem(
     dynamic item,
-    Widget child, {
-    required VoidCallback onAnimationComplete,
-  }) {
+    Widget child,
+  ) {
     switch (animationStyle.toLowerCase()) {
       case 'fade':
-        return _buildFadeAnimation(child, onAnimationComplete);
+        return _buildFadeAnimation(child);
       case 'slide':
-        return _buildSlideAnimation(child, onAnimationComplete);
+        return _buildSlideAnimation(child);
       case 'scale':
       default:
-        return _buildScaleAnimation(child, onAnimationComplete);
+        return _buildScaleAnimation(child);
     }
   }
-
-  Widget _buildScaleAnimation(Widget child, VoidCallback onAnimationComplete) {
+  Widget _buildScaleAnimation(Widget child) {
     return AnimatedBuilder(
       animation: _scaleAnimation,
       builder: (context, _) {
-        if (_scaleAnimation.isCompleted) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            onAnimationComplete();
-          });
-        }
-        
         return Transform.scale(
           scale: _scaleAnimation.value,
           child: Opacity(
@@ -113,16 +106,10 @@ class ScheduleAnimator {
     );
   }
 
-  Widget _buildFadeAnimation(Widget child, VoidCallback onAnimationComplete) {
+  Widget _buildFadeAnimation(Widget child) {
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, _) {
-        if (_fadeAnimation.isCompleted) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            onAnimationComplete();
-          });
-        }
-        
         return Opacity(
           opacity: _fadeAnimation.value,
           child: child,
@@ -131,16 +118,10 @@ class ScheduleAnimator {
     );
   }
 
-  Widget _buildSlideAnimation(Widget child, VoidCallback onAnimationComplete) {
+  Widget _buildSlideAnimation(Widget child) {
     return AnimatedBuilder(
       animation: _slideAnimation,
       builder: (context, _) {
-        if (_slideAnimation.isCompleted) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            onAnimationComplete();
-          });
-        }
-        
         return SlideTransition(
           position: _slideAnimation,
           child: Opacity(

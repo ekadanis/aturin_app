@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/utils/debouncer.dart';
 import 'package:sizer/sizer.dart';
 import 'package:aturin_app/core/services/api/task/task_api_service.dart';
+import 'package:aturin_app/core/utils/category_helper.dart';
 
 class TaskCard extends StatefulWidget {
   final Task task;
@@ -55,11 +56,9 @@ class _TaskCardState extends State<TaskCard> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    // Tentukan apakah card memiliki indikator terlambat atau alarm
+  Widget build(BuildContext context) {    // Tentukan apakah card memiliki indikator terlambat
     final bool hasLateIndicator =
         widget.task.isCompleted && widget.task.status == TaskStatus.late;
-    final bool hasAlarmIndicator = widget.task.isAlarmEnabled;
 
     return GestureDetector(
       onTap: () {
@@ -142,21 +141,15 @@ class _TaskCardState extends State<TaskCard> {
                           children: [
                             Row(
                               spacing: 0,
-                              children: [
-                                // badge category
+                              children: [                                // badge category
                                 _buildBadge(
                                   icon: SvgPicture.asset(
-                                    _getCategoryIconPath(widget.task.category),
+                                    CategoryHelper.getCategoryOptionFromString(widget.task.category).iconPath,
                                     width: 3.w,
                                     height: 3.w,
-                                  ),
-                                  label: _getCategoryName(widget.task.category),
-                                  bgColor: _getCategoryColor(
-                                    widget.task.category,
-                                  ).withAlpha(50),
-                                  textColor: _getCategoryColor(
-                                    widget.task.category,
-                                  ),
+                                  ),                                  label: CategoryHelper.getCategoryOptionFromString(widget.task.category).name,
+                                  bgColor: CategoryHelper.getCategoryOptionFromString(widget.task.category).backgroundColor,
+                                  textColor: CategoryHelper.getCategoryOptionFromString(widget.task.category).textColor,
                                 ),
                                 SizedBox(width: 1.5.w),
                                 // badge alarm
@@ -445,93 +438,6 @@ class _TaskCardState extends State<TaskCard> {
       ),
     );
   }
-
-  String _getCategoryIconPath(String category) {
-    try {
-      final taskCategory = TaskCategory.values.firstWhere(
-        (e) => e.name == category.toLowerCase(),
-      );
-      switch (taskCategory) {
-        case TaskCategory.akademik:
-          return 'assets/images/akademik.svg';
-        case TaskCategory.hiburan:
-          return 'assets/images/hiburan.svg';
-        case TaskCategory.pekerjaan:
-          return 'assets/images/pekerjaan.svg';
-        case TaskCategory.olahraga:
-          return 'assets/images/olahraga.svg';
-        case TaskCategory.sosial:
-          return 'assets/images/sosial.svg';
-        case TaskCategory.spiritual:
-          return 'assets/images/spiritual.svg';
-        case TaskCategory.pribadi:
-          return 'assets/images/pribadi.svg';
-        case TaskCategory.istirahat:
-          return 'assets/images/istirahat.svg';
-      }
-    } catch (_) {
-      return 'assets/images/akademik.svg';
-    }
-  }
-
-  String _getCategoryName(String category) {
-    try {
-      final taskCategory = TaskCategory.values.firstWhere(
-        (e) => e.toString() == 'TaskCategory.$category',
-      );
-
-      switch (taskCategory) {
-        case TaskCategory.akademik:
-          return 'Akademik';
-        case TaskCategory.hiburan:
-          return 'Hiburan';
-        case TaskCategory.pekerjaan:
-          return 'Pekerjaan';
-        case TaskCategory.olahraga:
-          return 'Olahraga';
-        case TaskCategory.sosial:
-          return 'Sosial';
-        case TaskCategory.spiritual:
-          return 'Spiritual';
-        case TaskCategory.pribadi:
-          return 'Pribadi';
-        case TaskCategory.istirahat:
-          return 'Istirahat';
-      }
-    } catch (_) {
-      return category;
-    }
-  }
-
-  Color _getCategoryColor(String category) {
-    try {
-      final taskCategory = TaskCategory.values.firstWhere(
-        (e) => e.name.toLowerCase() == category.toLowerCase(),
-      );
-
-      switch (taskCategory) {
-        case TaskCategory.akademik:
-          return const Color(0xFF3498DB);
-        case TaskCategory.hiburan:
-          return const Color(0xFF9A59B6);
-        case TaskCategory.pekerjaan:
-          return const Color(0xFF8D5C42);
-        case TaskCategory.olahraga:
-          return const Color(0xFFE74C3C);
-        case TaskCategory.sosial:
-          return const Color(0xFFE67E22);
-        case TaskCategory.spiritual:
-          return const Color(0xFF27AD60);
-        case TaskCategory.pribadi:
-          return const Color(0xFFF1C410);
-        case TaskCategory.istirahat:
-          return const Color(0xFF283593);
-      }
-    } catch (_) {
-      return const Color.fromARGB(255, 122, 40, 40);
-    }
-  }
-
   String _getStatusName(TaskStatus status, {Task? task}) {
     switch (status) {
       case TaskStatus.completed:

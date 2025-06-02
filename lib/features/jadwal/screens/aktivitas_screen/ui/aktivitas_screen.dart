@@ -17,6 +17,7 @@ import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:aturin_app/core/services/api/activities/activity_api_service.dart';
 import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:aturin_app/core/services/api/task/task_api_service.dart';
+import 'package:aturin_app/core/utils/category_helper.dart';
 
 @RoutePage()
 class AktivitasPage extends StatefulWidget {
@@ -306,14 +307,15 @@ class _AktivitasPageState extends State<AktivitasPage> {
                           }
                         }).toList();
                       }
-                      
-                      // Apply category filter
+                        // Apply category filter
                       final tasksList = availableTasks.where((t) {
                         try {
-                          final isCategory =
-                              selectedCategory == 'Semua' ||
-                              t.category == selectedCategory;
-                          return isCategory;
+                          if (selectedCategory == 'Semua') {
+                            return true;
+                          }
+                          // Konversi task category string ke CategoryOption name untuk perbandingan yang konsisten
+                          final categoryOption = CategoryHelper.getCategoryOptionFromString(t.category);
+                          return categoryOption.name == selectedCategory;
                         } catch (e) {
                           debugPrint('Error filtering tasks by category: $e');
                           return false;
