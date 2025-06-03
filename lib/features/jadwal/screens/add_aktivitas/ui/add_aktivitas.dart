@@ -259,6 +259,15 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
 
   @override
   Widget build(BuildContext context) {
+    final startDateTime = (startTime != null)
+        ? DateTime(
+            selectedDate.year,
+            selectedDate.month,
+            selectedDate.day,
+            startTime!.hour,
+            startTime!.minute,
+          )
+        : null;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -353,6 +362,7 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
                       isEnabled: isAlarmEnabled,
                       alarmDateTime: alarmDateTime,
                       selectedDate: selectedDate,
+                      maxDate: startDateTime ?? selectedDate,
                       startTime: startTime,
                       isEditing: widget.existingAktivitas != null, // Pass editing mode
                       onToggle: (value) {

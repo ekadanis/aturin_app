@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:aturin_app/core/widgets/categories.dart';
 import 'package:aturin_app/features/alarm/services/alarm_service.dart';
-import 'package:aturin_app/core/theme/app_theme.dart';
 
 class CategoryTag extends StatelessWidget {
   final String category;
@@ -25,7 +24,7 @@ class CategoryTag extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.7)),
+        border: Border.all(color: categoryOption.textColor.withOpacity(0.7)),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(

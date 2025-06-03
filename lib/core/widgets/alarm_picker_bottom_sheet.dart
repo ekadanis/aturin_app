@@ -10,6 +10,7 @@ Future<DateTime?> showCustomAlarmPickerBottomSheet(
   DateTime? initialDateTime,
   required DateTime selectedDate,
   required TimeOfDay startTime,
+  required DateTime maxDate, // Tambahkan parameter maxDate (deadline)
 }) async {
   final now = DateTime.now();
   
@@ -59,7 +60,7 @@ Future<DateTime?> showCustomAlarmPickerBottomSheet(
     barrierColor: Colors.white.withOpacity(0.7),
     builder: (context) {
       final nowTruncated = DateTime(now.year, now.month, now.day);
-      final maxDateTruncated = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+      final maxDateTruncated = DateTime(maxDate.year, maxDate.month, maxDate.day); // Ganti ke maxDate
 
       final maxDays = maxDateTruncated.difference(nowTruncated).inDays;
       final initialDayIndex = selectedAlarmDate.difference(nowTruncated).inDays;
