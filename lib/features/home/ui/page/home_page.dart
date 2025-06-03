@@ -6,7 +6,6 @@ import 'package:aturin_app/features/home/widget/timeline_widget.dart';
 import 'package:aturin_app/features/home/widget/activity_card.dart';
 import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
-import 'package:aturin_app/features/jadwal/screens/detail_task/ui/screens/task_detail_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:aturin_app/core/widgets/bottom_navbar.dart';

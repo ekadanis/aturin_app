@@ -7,8 +7,6 @@ import 'package:aturin_app/core/services/api/task/task_api_service.dart';
 import 'package:aturin_app/core/services/api/activities/activity_api_service.dart';
 
 class HomeService extends ChangeNotifier {
-
-  
   // API Services for today data
   final TaskApiService _taskApiService = TaskApiService();
   final ActivityApiService _activityApiService = ActivityApiService();
@@ -17,12 +15,18 @@ class HomeService extends ChangeNotifier {
   List<AktivitasModel> _aktivitas = [];
   Timer? _statusChecker;
 
-  // Cache dan throttling untuk optimasi performa
+  // Cache untuk optimasi performa
   List<Task>? _cachedTodayTasks;
   List<AktivitasModel>? _cachedTodayAktivitas;
-  DateTime _lastFetchTime = DateTime(1970);
+  
+  // Flags untuk mendeteksi perubahan
+  bool _tasksNeedRefresh = true;
+  bool _activitiesNeedRefresh = true;
+  bool _isLoading = false;
 
-  final Map<String, List<Task>> _cachedFilteredTasks = {};  // Getter that returns only today's tasks sorted by deadline
+  final Map<String, List<Task>> _cachedFilteredTasks = {};
+
+  // Getter that returns only today's tasks sorted by deadline
   List<Task> get todayTasks {
     // Gunakan cache jika tersedia
     if (_cachedTodayTasks != null) {
@@ -92,54 +96,101 @@ class HomeService extends ChangeNotifier {
   // Backward compatibility - alias for todayTasks
   List<Task> get tasks => todayTasks;
 
+  // Backward compatibility - alias for todayAktivitas
+  List<AktivitasModel> get aktivitas => todayAktivitas;
+
   // Getter for all tasks (unfiltered)
   List<Task> get allTasks => _tasks;
+  
+  // Getter for all activities (unfiltered)
+  List<AktivitasModel> get allAktivitas => _aktivitas;
+  
+  // Loading state getter
+  bool get isLoading => _isLoading;
+
   HomeService() {
     fetchData();
     startStatusChecker();
-  }  // Fetch both tasks and activities from the API
-  Future<void> fetchData() async {
-    // Throttling: Batasi fetch maksimal sekali tiap 2 detik
-    final now = DateTime.now();
-    if (now.difference(_lastFetchTime).inSeconds < 2 &&
-        _tasks.isNotEmpty &&
-        _aktivitas.isNotEmpty) {
-      debugPrint(
-        'Home: Using cached data (fetched ${now.difference(_lastFetchTime).inSeconds}s ago)',
-      );
+  }
+
+  // Fetch both tasks and activities from the API
+  Future<void> fetchData({bool force = false}) async {
+    // Skip jika tidak ada perubahan dan tidak di-force
+    if (!force && !_tasksNeedRefresh && !_activitiesNeedRefresh && !_isDataEmpty()) {
+      debugPrint('Home: No changes detected, skipping fetch');
       return;
     }
+
+    if (_isLoading) {
+      debugPrint('Home: Already loading, skipping fetch');
+      return;
+    }
+
+    _isLoading = true;
+    notifyListeners();
+
     try {
-      // Fetch today's uncompleted tasks from API
-      try {
-        _tasks = await _taskApiService.getTasksToday();
-        debugPrint('✅ HomeService: Fetched ${_tasks.length} uncompleted tasks today from API');
-      } catch (e) {
-        debugPrint('❌ HomeService: Error fetching today tasks from API: $e');
-        // Fallback to empty data
-        _tasks = [];
-      }      // Fetch today's activities from API
-      try {
-        _aktivitas = await _activityApiService.getTodayActivities();
-        debugPrint('✅ HomeService: Fetched ${_aktivitas.length} activities today from API');
-      } catch (e) {
-        debugPrint('❌ HomeService: Error fetching today activities from API: $e');
-        // No fallback, just use empty data
-        _aktivitas = [];
+      // Fetch tasks hanya jika perlu
+      if (_tasksNeedRefresh || _tasks.isEmpty || force) {
+        try {
+          _tasks = await _taskApiService.getTasksToday();
+          _tasksNeedRefresh = false;
+          _cachedTodayTasks = null; // Reset cache
+          debugPrint('✅ HomeService: Fetched ${_tasks.length} tasks from API');
+        } catch (e) {
+          debugPrint('❌ HomeService: Error fetching tasks: $e');
+          _tasks = [];
+        }
+      }
+
+      // Fetch activities hanya jika perlu
+      if (_activitiesNeedRefresh || _aktivitas.isEmpty || force) {
+        try {
+          _aktivitas = await _activityApiService.getTodayActivities();
+          _activitiesNeedRefresh = false;
+          _cachedTodayAktivitas = null; // Reset cache
+          debugPrint('✅ HomeService: Fetched ${_aktivitas.length} activities from API');
+        } catch (e) {
+          debugPrint('❌ HomeService: Error fetching activities: $e');
+          _aktivitas = [];
+        }
       }
 
       // Reset cache
-      _cachedTodayTasks = null;
-      _cachedTodayAktivitas = null;
-      _lastFetchTime = now;
-
-      notifyListeners();
+      _cachedFilteredTasks.clear();
+      
     } catch (e) {
-      debugPrint('Error fetching data: $e');
+      debugPrint('❌ HomeService: General error in fetchData: $e');
       _tasks = [];
       _aktivitas = [];
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
+  }
+
+  // Helper method to check if data is empty
+  bool _isDataEmpty() {
+    return _tasks.isEmpty && _aktivitas.isEmpty;
+  }
+
+  // Method untuk mark bahwa tasks perlu di-refresh
+  void markTasksForRefresh() {
+    _tasksNeedRefresh = true;
+    _cachedTodayTasks = null;
+    _cachedFilteredTasks.clear();
+  }
+
+  // Method untuk mark bahwa activities perlu di-refresh
+  void markActivitiesForRefresh() {
+    _activitiesNeedRefresh = true;
+    _cachedTodayAktivitas = null;
+  }
+
+  // Method untuk refresh kedua data
+  void markAllForRefresh() {
+    markTasksForRefresh();
+    markActivitiesForRefresh();
   }
 
   // Legacy method for backward compatibility
@@ -156,8 +207,13 @@ class HomeService extends ChangeNotifier {
   void startStatusChecker() {
     _statusChecker?.cancel();
     _statusChecker = Timer.periodic(
-      const Duration(minutes: 1),
-      (_) => fetchData(),
+      const Duration(minutes: 5), // Perbesar interval jadi 5 menit
+      (_) {
+        // Hanya check status jika tidak sedang loading
+        if (!_isLoading) {
+          fetchData();
+        }
+      },
     );
   }
 
@@ -184,11 +240,10 @@ class HomeService extends ChangeNotifier {
 
   // Force refresh untuk memastikan data terbaru
   Future<void> forceRefresh() async {
-    _cachedTodayTasks = null;
-    _cachedTodayAktivitas = null;
-    _lastFetchTime = DateTime(1970); // Reset waktu fetch terakhir
-    await fetchData();
+    markAllForRefresh();
+    await fetchData(force: true);
   }
+
   Future<void> toggleTaskCompletion(int? id) async {
     if (id == null) return;
 
@@ -237,6 +292,7 @@ class HomeService extends ChangeNotifier {
       }
     }
   }
+
   Future<void> toggleAlarm(int? id) async {
     if (id == null) return;
 
@@ -269,7 +325,9 @@ class HomeService extends ChangeNotifier {
       debugPrint('✅ HomeService: Alarm toggled locally');
       notifyListeners();
     }
-  }  Future<void> deleteTask(int taskId) async {
+  }
+
+  Future<void> deleteTask(int taskId) async {
     try {
       // Find task by ID
       final task = _tasks.where((t) => t.id == taskId).firstOrNull;
@@ -278,12 +336,13 @@ class HomeService extends ChangeNotifier {
         return;
       }
 
-      // Delete via API (this includes auto-refresh)
+      // Delete via API
       final result = await _taskApiService.deleteTask(task!.slug!);
       
       if (result.isSuccess) {
-        // Force refresh to get the latest data from API
-        await forceRefresh();
+        // Mark tasks for refresh dan fetch ulang
+        markTasksForRefresh();
+        await fetchData();
         
         debugPrint('✅ HomeService: Task deleted and data refreshed successfully');
       } else {
@@ -303,12 +362,13 @@ class HomeService extends ChangeNotifier {
         return;
       }
 
-      // Delete via API (this includes auto-refresh)
+      // Delete via API
       final success = await _activityApiService.deleteActivity(activity!.slug!);
       
       if (success) {
-        // Force refresh to get the latest data from API
-        await forceRefresh();
+        // Mark activities for refresh dan fetch ulang
+        markActivitiesForRefresh();
+        await fetchData();
         
         debugPrint('✅ HomeService: Activity deleted and data refreshed successfully');
       } else {
@@ -319,16 +379,21 @@ class HomeService extends ChangeNotifier {
     }
   }
 
-  // void updateFromBannerProfile(User user) {
-  //   _tasks = user.todayTasks ?? [];
-  //   _aktivitas = user.todayActivities ?? [];
+  // Method untuk dipanggil dari luar ketika ada perubahan
+  Future<void> onTaskChanged() async {
+    markTasksForRefresh();
+    await fetchData();
+  }
 
-  //   _cachedTodayTasks = null;
-  //   _cachedTodayAktivitas = null;
-  //   _lastFetchTime = DateTime.now();
+  Future<void> onActivityChanged() async {
+    markActivitiesForRefresh();
+    await fetchData();
+  }
 
-  //   notifyListeners();
-  // }
+  Future<void> onDataChanged() async {
+    markAllForRefresh();
+    await fetchData();
+  }
 
   @override
   void dispose() {

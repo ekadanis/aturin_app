@@ -153,7 +153,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                       if (confirm == true) {
                         final authService =
-                            AuthService(); // atau pakai provider jika ada
+                            AuthService();
                         final result = await authService.logout();
 
                         if (result.isSuccess) {

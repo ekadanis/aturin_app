@@ -10,6 +10,7 @@ import '../../../../../../routers/app_router.dart';
 import '../widgets/filter_tabs.dart';
 import '../widgets/task_list_view.dart';
 import '../../../../core/widgets/custom_snackbar_top.dart';
+import '../../model/task_model.dart';
 
 @RoutePage()
 class TaskListScreen extends StatefulWidget {
@@ -147,19 +148,58 @@ class _TaskListScreenState extends State<TaskListScreen>
                         _fetchOverdueCount();
                         // tampilkan snackbar jika perlu
                         showCustomTopSnackbar(context: context, message: message);
-                      },
-                      onTapTask: (task) {
-                        safeOnTap(() {
-                          context.router.push(TaskDetailRoute(task: task)).then((result) {
-                            if (result == true) {
-                              setState(() {});
-                              _fetchOverdueCount(); // reload countLateTask juga setelah edit
-                              showCustomTopSnackbar(
-                                context: context,
-                                message: 'Tugas berhasil diperbarui',
-                              );
+                      },                      onTapTask: (task) {
+                        safeOnTap(() async {
+                          // Get all tasks for the current filter to pass to TaskDetailListRoute
+                          final taskApiService = TaskApiService();
+                          List<Task> allTasks = [];
+                          int taskIndex = 0;
+                          
+                          try {
+                            if (_selectedFilter == 'Semua') {
+                              allTasks = await taskApiService.getAllTasks();
+                            } else if (_selectedFilter == 'Terlambat') {
+                              final data = await taskApiService.getTasksByStatus('terlambat');
+                              if (data != null && data['tasks'] != null) {
+                                allTasks = List<Task>.from(data['tasks'].map((e) => Task.fromMap(e)));
+                              }
+                            } else if (_selectedFilter == 'Belum Selesai') {
+                              final data = await taskApiService.getTasksByStatus('belum_selesai');
+                              if (data != null && data['tasks'] != null) {
+                                allTasks = List<Task>.from(data['tasks'].map((e) => Task.fromMap(e)));
+                              }
+                            } else if (_selectedFilter == 'Selesai') {
+                              final data = await taskApiService.getTasksByStatus('selesai');
+                              if (data != null && data['tasks'] != null) {
+                                allTasks = List<Task>.from(data['tasks'].map((e) => Task.fromMap(e)));
+                              }
                             }
-                          });
+                            
+                            // Find the index of the tapped task
+                            taskIndex = allTasks.indexWhere((t) => t.id == task.id);
+                            if (taskIndex == -1) taskIndex = 0;
+                            
+                          } catch (e) {
+                            // Fallback to single task if loading fails
+                            allTasks = [task];
+                            taskIndex = 0;
+                          }
+                          
+                          final result = await context.router.push(
+                            TaskDetailListRoute(
+                              tasks: allTasks,
+                              initialIndex: taskIndex,
+                            ),
+                          );
+                          
+                          if (result == true) {
+                            setState(() {});
+                            _fetchOverdueCount(); // reload countLateTask juga setelah edit
+                            showCustomTopSnackbar(
+                              context: context,
+                              message: 'Tugas berhasil diperbarui',
+                            );
+                          }
                         });
                       },
                     ),
