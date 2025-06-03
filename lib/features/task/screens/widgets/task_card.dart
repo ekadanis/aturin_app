@@ -1,4 +1,5 @@
 import 'package:aturin_app/core/widgets/confirm_dialog.dart';
+import 'package:aturin_app/features/jadwal/screens/detail_task/ui/screens/task_detail_list_screen.dart';
 import 'package:aturin_app/features/task/screens/ui/add_task_screen.dart';
 import 'package:aturin_app/features/task/screens/ui/task_detail_screen.dart';
 import 'package:flutter/material.dart';
@@ -62,22 +63,16 @@ class _TaskCardState extends State<TaskCard> {
   }
 
   @override
-  Widget build(BuildContext context) {    // Tentukan apakah card memiliki indikator terlambat
+  Widget build(BuildContext context) {
     final bool hasLateIndicator =
         widget.task.isCompleted && widget.task.status == TaskStatus.late;
 
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => TaskDetailScreen(task: widget.task),
-          ),
-        );
+        widget.onViewDetails();
       },
       child: Container(
         key: ValueKey(widget.task.id),
-        // Memastikan overflow konten dipotong sesuai border
         margin: EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 3.w),
         decoration: BoxDecoration(
           color: Colors.white,

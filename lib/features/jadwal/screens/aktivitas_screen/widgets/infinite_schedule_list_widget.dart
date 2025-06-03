@@ -294,7 +294,7 @@ class _InfiniteScheduleListWidgetState
   Widget _buildAnimatedTaskCard(Task task, List<Task> tasksForDate) {
     final isAnimating = _isAnimating && _animatingItem == task;
     
-    final taskCard = TaskCard(
+    final taskCard = TaskCardHomepage(
       task: task,
       onToggleCompletion: () {},
       onDelete: widget.onDeleteTask != null

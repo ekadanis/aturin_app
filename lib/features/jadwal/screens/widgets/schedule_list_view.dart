@@ -227,7 +227,8 @@ class _ScheduleListViewState extends State<ScheduleListView>
     Widget card = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Hero(
-        tag: 'task-${task.id}',        child: TaskCard(
+        tag: 'task-${task.id}',
+        child: TaskCardHomepage(
           task: task,
           currentFilter: widget.currentFilter,
           showCheckbox: false, // Schedule context doesn't support completion

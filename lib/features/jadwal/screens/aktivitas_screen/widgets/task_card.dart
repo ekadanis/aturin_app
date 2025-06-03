@@ -10,7 +10,7 @@ import 'package:aturin_app/core/utils/debouncer.dart';
 import 'package:sizer/sizer.dart';
 import 'package:aturin_app/core/utils/category_helper.dart';
 
-class TaskCard extends StatefulWidget {
+class TaskCardHomepage extends StatefulWidget {
   final Task task;
   final VoidCallback onToggleCompletion;
   final VoidCallback onDelete;
@@ -22,7 +22,7 @@ class TaskCard extends StatefulWidget {
   final bool showStatus;
   final EdgeInsetsGeometry? margin;
 
-  const TaskCard({
+  const TaskCardHomepage({
     Key? key,
     required this.task,
     required this.onToggleCompletion,
@@ -37,10 +37,10 @@ class TaskCard extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<TaskCard> createState() => _TaskCardState();
+  State<TaskCardHomepage> createState() => _TaskCardState();
 }
 
-class _TaskCardState extends State<TaskCard> {
+class _TaskCardState extends State<TaskCardHomepage> {
   // Throttle untuk mencegah multiple tap
   final _actionThrottle = Throttle(milliseconds: 500);
   

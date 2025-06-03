@@ -11,7 +11,6 @@ import 'package:aturin_app/features/onboarding/ui/onboarding_screen.dart';
 import 'package:aturin_app/features/animated_splash_screen/ui/animated_splash_screen.dart';
 import 'package:aturin_app/features/task/screens/ui/task_list_screen.dart';
 import 'package:aturin_app/features/task/screens/ui/add_task_screen.dart';
-import 'package:aturin_app/features/task/screens/ui/task_detail_screen.dart';
 import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:aturin_app/features/alarm/ui/screens/alarm_ringing_screen.dart';
 import 'package:alarm/alarm.dart';
@@ -65,12 +64,12 @@ class AppRouter extends RootStackRouter {
       transitionsBuilder: (_, __, ___, child) => child,
       duration: Duration.zero,
     ),
-    CustomRoute(
-      path: '/task/detail',
-      page: TaskDetailRoute.page,
-      transitionsBuilder: (_, __, ___, child) => child,
-      duration: Duration.zero,
-    ),
+    // CustomRoute(
+    //   path: '/task/detail',
+    //   page: TaskDetailRoute.page,
+    //   transitionsBuilder: (_, __, ___, child) => child,
+    //   duration: Duration.zero,
+    // ),
     CustomRoute(
       path: '/AlarmRinging',
       page: AlarmRingingRoute.page,

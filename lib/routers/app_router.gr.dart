@@ -484,26 +484,7 @@ class TaskDetailListRouteArgs {
       key.hashCode ^ const ListEquality().hash(tasks) ^ initialIndex.hashCode;
 }
 
-/// generated route for
-/// [TaskDetailScreen]
-class TaskDetailRoute extends PageRouteInfo<TaskDetailRouteArgs> {
-  TaskDetailRoute({Key? key, required Task task, List<PageRouteInfo>? children})
-    : super(
-        TaskDetailRoute.name,
-        args: TaskDetailRouteArgs(key: key, task: task),
-        initialChildren: children,
-      );
 
-  static const String name = 'TaskDetailRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<TaskDetailRouteArgs>();
-      return TaskDetailScreen(key: args.key, task: args.task);
-    },
-  );
-}
 
 class TaskDetailRouteArgs {
   const TaskDetailRouteArgs({this.key, required this.task});
