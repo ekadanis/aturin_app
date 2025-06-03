@@ -512,9 +512,13 @@ class ActivityApiService extends ChangeNotifier {
         print('  📍 Treating this as successful deletion since the goal is achieved');
       }
       print('====== ACTIVITY DELETE DEBUG END ======');      if (response.statusCode == 200 || response.statusCode == 204 || response.statusCode == 404) {
-        // Auto refresh data after successful deletion
+        // Auto refresh data after successful deletion with improved synchronization
         try {
+          print('🔄 Starting activity refresh after deletion...');
           await fetchActivities();
+          
+          // Small delay to ensure UI has time to process the changes
+          await Future.delayed(const Duration(milliseconds: 100));
           print('✅ Activities refreshed after deletion');
         } catch (e) {
           print('⚠️ Warning: Failed to refresh activities after deletion: $e');

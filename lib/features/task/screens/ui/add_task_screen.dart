@@ -18,8 +18,6 @@ import 'package:aturin_app/core/services/api/alarm/alarm_api_service.dart';
 import 'package:aturin_app/features/alarm/model/alarm.dart';
 import 'package:aturin_app/features/alarm/services/alarm_service.dart';
 import 'dart:async';
-import 'package:aturin_app/features/task/screens/ui/task_list_screen.dart';
-import 'package:provider/provider.dart';
 
 @RoutePage()
 class AddTaskScreen extends StatefulWidget {
@@ -361,10 +359,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
       if (result.isSuccess) {
         _showSuccessSnackbar(result.message);
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => TaskListScreen()),
-        );
+        _navigateToTaskList();
       } else {
         debugPrint('Task update/create failed:  {result.message}');
         _showErrorSnackbar(result.message);

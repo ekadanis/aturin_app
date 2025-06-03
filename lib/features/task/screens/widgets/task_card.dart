@@ -42,6 +42,12 @@ class TaskCard extends StatefulWidget {
 class _TaskCardState extends State<TaskCard> {
   // Throttle untuk mencegah multiple tap
   final _actionThrottle = Throttle(milliseconds: 500);
+  
+  // Check if task is completed
+  bool _isCompleted() {
+    return widget.task.isCompleted;
+  }
+  
   // Handler yang aman untuk onToggleCompletion
   void _handleToggleCompletion() {
     _actionThrottle.run(() {
@@ -248,10 +254,8 @@ class _TaskCardState extends State<TaskCard> {
                             ),
                         ],
                       ),
-                    ),
-
-                    // titik tiga, popup edit dan hapus
-                    if (widget.showPopupMenu)
+                    ),                    // titik tiga, popup edit dan hapus
+                    if (widget.showPopupMenu && !_isCompleted())
                       PopupMenuButton<String>(
                         offset: Offset(0, 1.h),
                         shape: RoundedRectangleBorder(

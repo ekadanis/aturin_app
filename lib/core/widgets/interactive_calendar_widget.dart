@@ -1,4 +1,5 @@
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
+import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,6 +9,7 @@ class InteractiveCalendarWidget extends StatelessWidget {
   final DateTime focusedDate;
   final CalendarFormat calendarFormat;
   final List<AktivitasModel> schedules;
+  final List<Task> tasks;
   final AnimationController viewTransitionController;
   final Animation<double> viewTransitionAnimation;
   final Function(DateTime, DateTime) onDateSelected;
@@ -19,18 +21,21 @@ class InteractiveCalendarWidget extends StatelessWidget {
     super.key,
     required this.selectedDate,
     required this.focusedDate,
-    required this.calendarFormat,
-    required this.schedules,
+    required this.calendarFormat,    required this.schedules,
+    required this.tasks,
     required this.viewTransitionController,
     required this.viewTransitionAnimation,
     required this.onDateSelected,
     required this.onPageChanged,
     required this.onFormatChanged,
     required this.onSwitchFormat,
-  });
-
-  @override
+  });  @override
   Widget build(BuildContext context) {
+    // Create a unique key based on schedules and tasks data to force rebuild when data changes
+    final activitiesData = schedules.map((s) => '${s.id}_${s.slug}').join(',');
+    final tasksData = tasks.map((t) => '${t.id}_${t.slug}').join(',');
+    final dataKey = ValueKey('cal_${schedules.length}_${tasks.length}_${activitiesData.hashCode}_${tasksData.hashCode}');
+    
     return GestureDetector(
       onVerticalDragUpdate: (details) {
         final delta = details.delta.dy;
@@ -56,9 +61,12 @@ class InteractiveCalendarWidget extends StatelessWidget {
         }
       },
       child: AnimatedBuilder(
-        animation: viewTransitionAnimation,
-        builder: (context, child) {
+        animation: viewTransitionAnimation,        builder: (context, child) {
+          // Force rebuild by logging current data state
+          print('🔄 TableCalendar rebuilding with ${schedules.length} activities and ${tasks.length} tasks');
+          
           return TableCalendar<AktivitasModel>(
+            key: dataKey, // Force rebuild when data changes
             firstDay: DateTime.utc(2020, 1, 1),
             lastDay: DateTime.utc(2030, 12, 31),
             focusedDay: focusedDate,
@@ -87,12 +95,45 @@ class InteractiveCalendarWidget extends StatelessWidget {
         },
       ),
     );
-  }
-
-  List<AktivitasModel> _getEventsForDay(DateTime day) {
-    return schedules
+  }  List<AktivitasModel> _getEventsForDay(DateTime day) {
+    // Get activities for this day
+    final activitiesForDay = schedules
         .where((schedule) => isSameDay(schedule.activityDate, day))
         .toList();
+    
+    // Check if there are UNCOMPLETED tasks for this day - filter out completed tasks
+    final hasUncompletedTasksForDay = tasks.any((task) => 
+        isSameDay(task.deadline, day) && !task.isCompleted);
+    
+    // Create list of events to show marker
+    final events = <AktivitasModel>[];
+    
+    // Add real activities
+    events.addAll(activitiesForDay);
+    
+    // If there are uncompleted tasks but no activities, create a dummy entry to show the marker
+    if (hasUncompletedTasksForDay && activitiesForDay.isEmpty) {
+      // Create a minimal dummy activity just to trigger marker display
+      final dummyActivity = AktivitasModel(
+        activityTitle: 'Tasks for ${day.day}/${day.month}',
+        activityDate: day,
+        activityStartTime: day,
+        activityCompleteTime: day,
+        activityCategory: ActivityCategory.akademik,
+      );
+      events.add(dummyActivity);
+    }
+    
+    // Debug logging for calendar markers - show for all days that should have markers
+    if (events.isNotEmpty || hasUncompletedTasksForDay) {
+      final completedTasksCount = tasks.where((task) => 
+          isSameDay(task.deadline, day) && task.isCompleted).length;
+      final uncompletedTasksCount = tasks.where((task) => 
+          isSameDay(task.deadline, day) && !task.isCompleted).length;
+      print('📅 Calendar marker for ${day.toString().split(' ')[0]}: activities=${activitiesForDay.length}, uncompleted_tasks=$uncompletedTasksCount, completed_tasks=$completedTasksCount, total_events=${events.length}');
+    }
+    
+    return events;
   }
 
   CalendarStyle _buildCalendarStyle() {
@@ -141,14 +182,17 @@ class InteractiveCalendarWidget extends StatelessWidget {
         fontSize: 14,
         fontWeight: FontWeight.w500,
         color: Colors.grey[400],
-      ),
-      markersMaxCount: 1,
-      markerDecoration: const BoxDecoration(
-        color: Color(0xFFFFC550),
+      ),      markersMaxCount: 1,
+      markerDecoration: BoxDecoration(
+        color: const Color(0xFFFFC550), // Yellow color for markers
         shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white,
+          width: 1,
+        ),
       ),
       markerMargin: const EdgeInsets.symmetric(horizontal: 1.5),
-      markerSizeScale: 0.2,
+      markerSizeScale: 0.25, // Make markers slightly bigger
       cellMargin: const EdgeInsets.all(4),
       cellPadding: EdgeInsets.zero,
     );

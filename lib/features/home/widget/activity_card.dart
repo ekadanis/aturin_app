@@ -1,4 +1,3 @@
-import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -19,13 +18,12 @@ class ActivityCard extends StatelessWidget {
     this.onEdit,
     this.onDelete,
   });
-
   String _getTypeLabel(AktivitasModel schedule) {
     if (schedule.slug != null) {
       final slugLower = schedule.slug!.toLowerCase();
       if (slugLower.contains('tugas')) {
         return 'Tugas';
-      } else if (slugLower.contains('aktivitas')) {
+      } else if (slugLower.contains('aktivitas') || slugLower.contains('activity')) {
         return 'Aktivitas';
       }
     }
@@ -35,6 +33,14 @@ class ActivityCard extends StatelessWidget {
       return 'Tugas';
     }
     return 'Aktivitas';
+  }
+  bool _isCompleted() {
+    // Check if activity is marked as completed
+    if (activity.slug != null) {
+      final slugLower = activity.slug!.toLowerCase();
+      return slugLower.contains('selesai') || slugLower.contains('completed');
+    }
+    return false;
   }
 
   String _getDurationText(AktivitasModel schedule) {
@@ -61,13 +67,10 @@ class ActivityCard extends StatelessWidget {
       (c) => c.name == activity.activityCategory.displayName,
       orElse: () => categories.first,
     );
-    final typeLabel = _getTypeLabel(activity);
+    // final typeLabel = _getTypeLabel(activity);
     final durationText = _getDurationText(activity);
     final hasAlarm = activity.alarm != null;
-    final typeIconPath =
-        typeLabel == 'Tugas'
-            ? 'assets/icons/task-list.svg'
-            : 'assets/icons/activity.svg';
+
 
     return GestureDetector(
       onTap: onTap,
@@ -95,8 +98,7 @@ class ActivityCard extends StatelessWidget {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                      children: [                        Row(
                           children: [
                             _buildBadge(
                               icon: SvgPicture.asset(
@@ -112,23 +114,8 @@ class ActivityCard extends StatelessWidget {
                               bgColor: category.backgroundColor,
                               textColor: category.textColor,
                             ),
-                            SizedBox(width: 1.5.w),
-                            _buildBadge(
-                              icon: SvgPicture.asset(
-                                typeIconPath,
-                                width: 3.w,
-                                height: 3.w,
-                                colorFilter: const ColorFilter.mode(
-                                  Color(0xFF5263F3),
-                                  BlendMode.srcIn,
-                                ),
-                              ),
-                              label: typeLabel,
-                              bgColor: const Color(0xFFDFEAFF),
-                              textColor: const Color(0xFF5263F3),
-                            ),
-                            SizedBox(width: 1.5.w),
-                            if (hasAlarm)
+                            if (hasAlarm) ...[
+                              SizedBox(width: 1.5.w),
                               _buildBadge(
                                 icon: SvgPicture.asset(
                                   'assets/icons/alarm.svg',
@@ -143,6 +130,7 @@ class ActivityCard extends StatelessWidget {
                                 bgColor: const Color(0xFFDFEAFF),
                                 textColor: const Color(0xFF5263F3),
                               ),
+                            ],
                           ],
                         ),
                         SizedBox(height: 0.7.h),
@@ -181,10 +169,8 @@ class ActivityCard extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-
-            // Menu button positioned in top right corner
-            if (onEdit != null || onDelete != null)
+            ),            // Menu button positioned in top right corner (hidden if completed)
+            if ((onEdit != null || onDelete != null) && !_isCompleted())
               Positioned(
                 top: 1.h,
                 right: 4.w,

@@ -1,5 +1,6 @@
+import 'package:aturin_app/core/widgets/empty_widget.dart';
 import 'package:aturin_app/features/home/services/home_service.dart';
-import 'package:aturin_app/features/home/widget/empty_task.dart';
+
 import 'package:aturin_app/features/home/widget/greeting_header.dart';
 import 'package:aturin_app/features/home/widget/timeline_widget.dart';
 import 'package:aturin_app/features/home/widget/activity_card.dart';
@@ -77,13 +78,17 @@ class _HomePageState extends State<HomePage> {
                         ),
                         const SizedBox(width: 8),
                         _buildSwitcherButton(TaskViewType.tugas, 'Tugas'),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
+                      ],                    ),
                     Expanded(
                       child:
                           items.isEmpty
-                              ? const Center(child: EmptyTask())
+                              ? Center(
+                                  child: EmptyWidget(
+                                    message: _selectedView == TaskViewType.tugas
+                                        ? 'Tidak ada tugas hari ini.'
+                                        : 'Tidak ada aktivitas hari ini.',
+                                  ),
+                                )
                               : ListView.builder(
                                 padding: EdgeInsets.all(6),
                                 itemCount: items.length + 1,

@@ -1,15 +1,18 @@
 import 'dart:async';
-import 'package:aturin_app/features/profile/models/user.dart';
 import 'package:flutter/material.dart';
-import 'package:aturin_app/features/task/database/task_database.dart';
 import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:aturin_app/features/alarm/model/alarm.dart';
-import 'package:aturin_app/features/jadwal/database/aktivitas_database.dart';
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
+import 'package:aturin_app/core/services/api/task/task_api_service.dart';
+import 'package:aturin_app/core/services/api/activities/activity_api_service.dart';
 
 class HomeService extends ChangeNotifier {
-  final taskDatabase = TaskDatabase();
-  final aktivitasDatabase = AktivitasDatabase();
+
+  
+  // API Services for today data
+  final TaskApiService _taskApiService = TaskApiService();
+  final ActivityApiService _activityApiService = ActivityApiService();
+  
   List<Task> _tasks = [];
   List<AktivitasModel> _aktivitas = [];
   Timer? _statusChecker;
@@ -94,7 +97,7 @@ class HomeService extends ChangeNotifier {
   HomeService() {
     fetchData();
     startStatusChecker();
-  } // Fetch both tasks and activities from the database
+  }  // Fetch both tasks and activities from the API
   Future<void> fetchData() async {
     // Throttling: Batasi fetch maksimal sekali tiap 2 detik
     final now = DateTime.now();
@@ -107,15 +110,23 @@ class HomeService extends ChangeNotifier {
       return;
     }
     try {
-      // SQLite disabled - using empty data for now
-      // TODO: Replace with API calls when available
-      // final taskResult = await taskDatabase.queryAll();
-      // _tasks = taskResult.map((row) => Task.fromMap(row)).toList();
-      _tasks = []; // Empty data since SQLite is disabled
-
-      // Fetch activities
-      final aktivitasResult = await aktivitasDatabase.queryAll();
-      _aktivitas = aktivitasResult.map((row) => AktivitasModel.fromMap(row)).toList();
+      // Fetch today's uncompleted tasks from API
+      try {
+        _tasks = await _taskApiService.getTasksToday();
+        debugPrint('✅ HomeService: Fetched ${_tasks.length} uncompleted tasks today from API');
+      } catch (e) {
+        debugPrint('❌ HomeService: Error fetching today tasks from API: $e');
+        // Fallback to empty data
+        _tasks = [];
+      }      // Fetch today's activities from API
+      try {
+        _aktivitas = await _activityApiService.getTodayActivities();
+        debugPrint('✅ HomeService: Fetched ${_aktivitas.length} activities today from API');
+      } catch (e) {
+        debugPrint('❌ HomeService: Error fetching today activities from API: $e');
+        // No fallback, just use empty data
+        _aktivitas = [];
+      }
 
       // Reset cache
       _cachedTodayTasks = null;
@@ -178,34 +189,54 @@ class HomeService extends ChangeNotifier {
     _lastFetchTime = DateTime(1970); // Reset waktu fetch terakhir
     await fetchData();
   }
-
   Future<void> toggleTaskCompletion(int? id) async {
     if (id == null) return;
 
     final index = _tasks.indexWhere((task) => task.id == id);
     if (index != -1) {
       final task = _tasks[index];
-      final now = DateTime.now();
-
-      // Toggle status antara selesai dan belum_selesai
-      final newStatus = task.isCompleted 
-          ? TaskDatabaseStatus.belumSelesai 
-          : TaskDatabaseStatus.selesai;
-
-      final updatedTask = task.copyWith(
-        taskStatus: newStatus,
-        completedAt: newStatus == TaskDatabaseStatus.selesai ? now : null,
-      );      await taskDatabase.update(updatedTask.toMap());
-      _tasks[index] = updatedTask;
       
-      // Reset cache untuk memaksa refresh tampilan
-      _cachedTodayTasks = null;
-      _cachedFilteredTasks.clear();
+      if (task.slug == null) {
+        debugPrint('❌ HomeService: Cannot toggle task completion - slug is null');
+        return;
+      }
 
-      notifyListeners();
+      try {
+        // Toggle status antara selesai dan belum_selesai
+        final newStatus = task.isCompleted ? 'belum_selesai' : 'selesai';
+
+        // Update via API
+        final result = await _taskApiService.updateTask(
+          slug: task.slug!,
+          status: newStatus,
+        );
+
+        if (result.isSuccess) {
+          // Update local data only if API call succeeds
+          final now = DateTime.now();
+          final updatedTask = task.copyWith(
+            taskStatus: task.isCompleted 
+                ? TaskDatabaseStatus.belumSelesai 
+                : TaskDatabaseStatus.selesai,
+            completedAt: !task.isCompleted ? now : null,
+          );
+
+          _tasks[index] = updatedTask;
+          
+          // Reset cache untuk memaksa refresh tampilan
+          _cachedTodayTasks = null;
+          _cachedFilteredTasks.clear();
+
+          debugPrint('✅ HomeService: Task completion toggled successfully');
+          notifyListeners();
+        } else {
+          debugPrint('❌ HomeService: Failed to toggle task completion via API: ${result.message}');
+        }
+      } catch (e) {
+        debugPrint('❌ HomeService: Error toggling task completion: $e');
+      }
     }
   }
-
   Future<void> toggleAlarm(int? id) async {
     if (id == null) return;
 
@@ -228,22 +259,75 @@ class HomeService extends ChangeNotifier {
         alarm: updatedAlarm,
       );
 
-      await taskDatabase.update(updatedTask.toMap());
+      // Update local data only (no database operations)
       _tasks[index] = updatedTask;
+      
+      // Reset cache
+      _cachedTodayTasks = null;
+      _cachedFilteredTasks.clear();
+      
+      debugPrint('✅ HomeService: Alarm toggled locally');
       notifyListeners();
     }
-  }
+  }  Future<void> deleteTask(int taskId) async {
+    try {
+      // Find task by ID
+      final task = _tasks.where((t) => t.id == taskId).firstOrNull;
+      if (task?.slug == null) {
+        debugPrint('❌ HomeService: Cannot delete task - slug is null for task ID: $taskId');
+        return;
+      }
 
-  Future<void> deleteTask(int taskId) async {
-    _tasks.removeWhere((task) => task.id == taskId);
-    notifyListeners();
-  }
+      // Delete via API (this includes auto-refresh)
+      final result = await _taskApiService.deleteTask(task!.slug!);
+      
+      if (result.isSuccess) {
+        // Remove from local data only if API call succeeds
+        _tasks.removeWhere((task) => task.id == taskId);
+        
+        // Reset cache
+        _cachedTodayTasks = null;
+        _cachedFilteredTasks.clear();
+        
+        // Small delay to ensure API service has completed its refresh
+        await Future.delayed(const Duration(milliseconds: 50));
+        
+        debugPrint('✅ HomeService: Task deleted successfully');
+        notifyListeners();
+      } else {
+        debugPrint('❌ HomeService: Failed to delete task via API: ${result.message}');
+      }
+    } catch (e) {
+      debugPrint('❌ HomeService: Error deleting task: $e');
+    }
+  }  Future<void> deleteActivity(int activityId) async {
+    try {
+      // Find activity by ID
+      final activity = _aktivitas.where((a) => a.id == activityId).firstOrNull;
+      if (activity?.slug == null) {
+        debugPrint('❌ HomeService: Cannot delete activity - slug is null for activity ID: $activityId');
+        return;
+      }
 
-  Future<void> deleteActivity(int activityId) async {
-    await aktivitasDatabase.delete(activityId);
-    _aktivitas.removeWhere((activity) => activity.id == activityId);
-    _cachedTodayAktivitas = null; // Reset cache
-    notifyListeners();
+      // Delete via API (this includes auto-refresh)
+      final success = await _activityApiService.deleteActivity(activity!.slug!);
+      
+      if (success) {
+        // Remove from local data only if API call succeeds
+        _aktivitas.removeWhere((activity) => activity.id == activityId);
+        _cachedTodayAktivitas = null; // Reset cache
+        
+        // Small delay to ensure API service has completed its refresh
+        await Future.delayed(const Duration(milliseconds: 50));
+        
+        debugPrint('✅ HomeService: Activity deleted successfully');
+        notifyListeners();
+      } else {
+        debugPrint('❌ HomeService: Failed to delete activity via API');
+      }
+    } catch (e) {
+      debugPrint('❌ HomeService: Error deleting activity: $e');
+    }
   }
 
   // void updateFromBannerProfile(User user) {

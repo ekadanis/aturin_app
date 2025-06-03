@@ -139,11 +139,10 @@ class _InfiniteScheduleListWidgetState
   DateTime _getDateForPage(int pageIndex) {
     final daysDifference = pageIndex - _initialPageIndex;
     return _baseDate.add(Duration(days: daysDifference));
-  }
-  List<AktivitasModel> _getSchedulesForDate(DateTime date) {
+  }  List<AktivitasModel> _getSchedulesForDate(DateTime date) {
     final normalizedDate = DateTime(date.year, date.month, date.day);
 
-    return widget.schedules.where((schedule) {
+    final filteredSchedules = widget.schedules.where((schedule) {
       final scheduleDate = DateTime(
         schedule.activityDate.year,
         schedule.activityDate.month,
@@ -161,12 +160,23 @@ class _InfiniteScheduleListWidgetState
 
       return categoryMatch && dateMatch;
     }).toList();
-  }
 
-  List<Task> _getTasksForDate(DateTime date) {
+    // Debug logging
+    print('📋 InfiniteScheduleList - Schedule filtering for ${date.toString().split(' ')[0]}:');
+    print('   Total schedules available: ${widget.schedules.length}');
+    print('   Selected category: ${widget.selectedCategory}');
+    print('   Filtered schedules: ${filteredSchedules.length}');
+    if (filteredSchedules.isNotEmpty) {
+      for (final schedule in filteredSchedules) {
+        print('   - ${schedule.activityTitle} (${schedule.activityCategory.displayName}) on ${schedule.activityDate.toString().split(' ')[0]}');
+      }
+    }
+
+    return filteredSchedules;
+  }  List<Task> _getTasksForDate(DateTime date) {
     final normalizedDate = DateTime(date.year, date.month, date.day);
 
-    return widget.tasks.where((task) {
+    final filteredTasks = widget.tasks.where((task) {
       final taskDate = DateTime(
         task.deadline.year,
         task.deadline.month,
@@ -184,6 +194,19 @@ class _InfiniteScheduleListWidgetState
 
       return categoryMatch && dateMatch;
     }).toList();
+
+    // Debug logging
+    print('📋 InfiniteScheduleList - Task filtering for ${date.toString().split(' ')[0]}:');
+    print('   Total tasks available: ${widget.tasks.length}');
+    print('   Selected category: ${widget.selectedCategory}');
+    print('   Filtered tasks: ${filteredTasks.length}');
+    if (filteredTasks.isNotEmpty) {
+      for (final task in filteredTasks) {
+        print('   - ${task.title} (${task.category}) deadline: ${task.deadline.toString().split(' ')[0]}');
+      }
+    }
+
+    return filteredTasks;
   }
 
   String _formatDateHeader(DateTime date) {
@@ -196,8 +219,18 @@ class _InfiniteScheduleListWidgetState
     final targetDate = DateTime(date.year, date.month, date.day);
     return targetDate.isAtSameMomentAs(today);
   }
-
   Widget _buildEmptyState() {
+    String message;
+    String subtitle;
+    
+    if (widget.selectedCategory == 'Semua') {
+      message = 'Tidak ada jadwal';
+      subtitle = 'Belum ada aktivitas atau tugas untuk hari ini';
+    } else {
+      message = 'Tidak ada jadwal';
+      subtitle = 'Belum ada aktivitas atau tugas kategori "${widget.selectedCategory}" untuk hari ini';
+    }
+    
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -207,7 +240,7 @@ class _InfiniteScheduleListWidgetState
             Icon(Icons.event_note, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              'Tidak ada jadwal',
+              message,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -216,7 +249,7 @@ class _InfiniteScheduleListWidgetState
             ),
             const SizedBox(height: 8),
             Text(
-              'Belum ada jadwal untuk hari ini',
+              subtitle,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 14,
                 color: Colors.grey[500],
@@ -415,12 +448,17 @@ class _InfiniteScheduleListWidgetState
                     color: const Color(0xFF5263F3),
                   ),
                 ),
-                const SizedBox(height: 16),
-
-                // Schedule list and tasks or empty state
+                const SizedBox(height: 16),                // Schedule list and tasks or empty state
                 if (schedulesForDate.isEmpty && tasksForDate.isEmpty)
                   _buildEmptyState()
-                else ...[                  // Display schedules first
+                else ...[
+                  // Debug logging
+                  () {
+                    print('📋 InfiniteScheduleList - Build: schedules=${schedulesForDate.length}, tasks=${tasksForDate.length} for ${date.toString().split(' ')[0]}');
+                    return const SizedBox.shrink();
+                  }(),
+                  
+                  // Display schedules first
                   ...schedulesForDate.map(
                     (schedule) => _buildAnimatedActivityCard(schedule, schedulesForDate),
                   ), 

@@ -68,8 +68,13 @@ class _TaskListViewState extends State<TaskListView>
         final data = await TaskApiService().getTasksByStatus('selesai');
         if (data != null && data['tasks'] != null) {
           tasks = List<Task>.from(data['tasks'].map((e) => Task.fromMap(e)));
-        }
+        }      }
+      
+      // Sort tasks according to priority order only for 'Semua' filter
+      if (widget.currentFilter == 'Semua') {
+        tasks.sort(_compareTasksByPriority);
       }
+      
       setState(() {
         _tasks = tasks;
         _isLoading = false;
@@ -80,6 +85,48 @@ class _TaskListViewState extends State<TaskListView>
         _isLoading = false;
       });
     }
+  }
+
+  // Task sorting method based on priority order:
+  // 1. Hari ini (Today)
+  // 2. ... hari lagi (Future tasks)
+  // 3. Terlambat (Overdue) 
+  // 4. Selesai (Completed)
+  int _compareTasksByPriority(Task a, Task b) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    
+    // Get priority for each task
+    final priorityA = _getTaskPriority(a, today);
+    final priorityB = _getTaskPriority(b, today);
+    
+    // Sort by priority first
+    if (priorityA != priorityB) {
+      return priorityA.compareTo(priorityB);
+    }
+    
+    // Within same priority, sort by deadline (earliest first)
+    return a.deadline.compareTo(b.deadline);
+  }
+  
+  int _getTaskPriority(Task task, DateTime today) {
+    // Completed tasks have lowest priority (4)
+    if (task.isCompleted) return 4;
+    
+    final taskDate = DateTime(
+      task.deadline.year, 
+      task.deadline.month, 
+      task.deadline.day
+    );
+    
+    // Today's tasks have highest priority (1)
+    if (taskDate.isAtSameMomentAs(today)) return 1;
+    
+    // Overdue tasks have priority 3
+    if (taskDate.isBefore(today)) return 3;
+    
+    // Future tasks have priority 2
+    return 2;
   }
 
   @override
@@ -180,8 +227,7 @@ class _TaskListViewState extends State<TaskListView>
                       await TaskApiService().updateTask(
                         slug: task.slug!,
                         status: newStatus,
-                      );
-                      // Update status di list lokal
+                      );                      // Update status di list lokal
                       setState(() {
                         final idx = _tasks.indexWhere((t) => t.id == task.id);
                         if (idx != -1) {
@@ -192,6 +238,12 @@ class _TaskListViewState extends State<TaskListView>
                                     : TaskDatabaseStatus.belumSelesai,
                           );
                         }
+                        
+                        // Re-sort tasks after status update if on 'Semua' filter
+                        if (widget.currentFilter == 'Semua') {
+                          _tasks.sort(_compareTasksByPriority);
+                        }
+                        
                         _isAnimating = false;
                         _animatingTaskId = null;
                       });

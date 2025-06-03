@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
+import 'package:aturin_app/features/task/model/task_model.dart';
 
 
 class CalendarSectionWidget extends StatefulWidget {
@@ -11,6 +12,7 @@ class CalendarSectionWidget extends StatefulWidget {
   final DateTime focusedDate;
   final CalendarFormat calendarFormat;
   final List<AktivitasModel> schedules;
+  final List<Task> tasks;
   final Function(DateTime, DateTime) onDateSelected;
   final Function(DateTime) onPageChanged;
   final Function(CalendarFormat) onFormatChanged;
@@ -21,6 +23,7 @@ class CalendarSectionWidget extends StatefulWidget {
     required this.focusedDate,
     required this.calendarFormat,
     required this.schedules,
+    this.tasks = const [],
     required this.onDateSelected,
     required this.onPageChanged,
     required this.onFormatChanged,
@@ -67,12 +70,12 @@ class _CalendarSectionWidgetState extends State<CalendarSectionWidget>
             viewTransitionAnimation: _viewTransitionAnimation,
             onNavigate: _navigatePeriod,
           ),
-          const SizedBox(height: 16),
-          InteractiveCalendarWidget(
+          const SizedBox(height: 16),          InteractiveCalendarWidget(
             selectedDate: widget.selectedDate,
             focusedDate: widget.focusedDate,
             calendarFormat: widget.calendarFormat,
             schedules: widget.schedules,
+            tasks: widget.tasks,
             viewTransitionController: _viewTransitionController,
             viewTransitionAnimation: _viewTransitionAnimation,
             onDateSelected: widget.onDateSelected,

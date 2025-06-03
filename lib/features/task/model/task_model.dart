@@ -65,7 +65,7 @@ enum TaskCategory {
   }
 }
 
-class Task {
+class Task{
   final int? id;
   final int? userId;
   final String title;

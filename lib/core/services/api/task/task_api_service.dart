@@ -152,8 +152,7 @@ class TaskApiService extends ChangeNotifier {
     } finally {
       _setLoading(false);
     }
-  }
-  Future<TaskResult> deleteTask(String slug) async {
+  }  Future<TaskResult> deleteTask(String slug) async {
     try {
       _setLoading(true);
       final headers = await _getHeaders();
@@ -176,9 +175,13 @@ class TaskApiService extends ChangeNotifier {
       
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 || response.statusCode == 204) {
-        // Auto refresh data after successful deletion
+        // Auto refresh data after successful deletion with improved synchronization
         try {
+          print('🔄 Starting task refresh after deletion...');
           await fetchTasks();
+          
+          // Small delay to ensure UI has time to process the changes
+          await Future.delayed(const Duration(milliseconds: 100));
           print('✅ Tasks refreshed after deletion');
         } catch (e) {
           print('⚠️ Warning: Failed to refresh tasks after deletion: $e');
