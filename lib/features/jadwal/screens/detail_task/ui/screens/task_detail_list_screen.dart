@@ -9,17 +9,15 @@ import '../widgets/task_detail_card.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:aturin_app/core/widgets/confirm_dialog.dart';
 import 'package:aturin_app/core/services/api/task/task_api_service.dart';
+import 'package:aturin_app/features/task/screens/ui/add_task_screen.dart';
 
 @RoutePage()
 class TaskDetailListScreen extends StatefulWidget {
   final List<Task>? tasks;
   final int? initialIndex;
-  
-  const TaskDetailListScreen({
-    Key? key, 
-    this.tasks, 
-    this.initialIndex,
-  }) : super(key: key);
+
+  const TaskDetailListScreen({Key? key, this.tasks, this.initialIndex})
+    : super(key: key);
 
   @override
   State<TaskDetailListScreen> createState() => _TaskDetailListScreenState();
@@ -49,7 +47,7 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
         });
       }
     });
-    
+
     _initializeTasks();
   }
 
@@ -72,9 +70,12 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
     });
 
     try {
-      final taskApiService = Provider.of<TaskApiService>(context, listen: false);
+      final taskApiService = Provider.of<TaskApiService>(
+        context,
+        listen: false,
+      );
       await taskApiService.fetchTasks();
-      
+
       setState(() {
         _tasks = taskApiService.tasks;
         _isLoading = false;
@@ -95,9 +96,7 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
 
   Widget _buildContent() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_error != null) {
@@ -105,11 +104,7 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               _error!,
@@ -134,11 +129,7 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.task_alt,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.task_alt, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               'Tidak ada tugas',
@@ -177,35 +168,43 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
   }
 
   Future<void> _handleEditTask() async {
-    if (_tasks.isEmpty) return;
-    
-    final currentTask = _tasks[_currentPageIndex];
-    // TODO: Navigate to edit task screen
-    print('Edit task: ${currentTask.title}');
+    await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => AddTaskScreen(
+                                   
+                                      // Anda bisa modifikasi AddTaskScreen untuk menerima alarm jika perlu
+                                    ),
+                              ),
+                            );
   }
 
   Future<void> _handleDeleteTask() async {
     if (_tasks.isEmpty) return;
-    
+
     final currentTask = _tasks[_currentPageIndex];
-    
+
     try {
-      final taskApiService = Provider.of<TaskApiService>(context, listen: false);
-      
+      final taskApiService = Provider.of<TaskApiService>(
+        context,
+        listen: false,
+      );
+
       if (currentTask.slug != null) {
         final result = await taskApiService.deleteTask(currentTask.slug!);
-        
+
         if (result.isSuccess) {
           // Remove task from local list
           setState(() {
             _tasks.removeAt(_currentPageIndex);
-            
+
             // Adjust current page index if needed
             if (_currentPageIndex >= _tasks.length && _tasks.isNotEmpty) {
               _currentPageIndex = _tasks.length - 1;
             }
           });
-          
+
           // Navigate back if no more tasks
           if (_tasks.isEmpty) {
             Navigator.pop(context);
@@ -219,15 +218,15 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
           }
         } else {
           // Show error message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result.message)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(result.message)));
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menghapus tugas: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal menghapus tugas: $e')));
     }
   }
 
@@ -272,12 +271,11 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
                           color: Colors.black,
                         ),
                       ),
-                    ],                  ),
+                    ],
+                  ),
 
                   // Task Cards with loading and error handling
-                  Expanded(
-                    child: _buildContent(),
-                  ),
+                  Expanded(child: _buildContent()),
 
                   const SizedBox(height: 64),
                 ],
@@ -343,17 +341,19 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
                       'assets/activitycategory/trash.svg',
                       width: 48,
                       height: 48,
-                    ),                    onPressed: () async {
+                    ),
+                    onPressed: () async {
                       showDialog(
                         context: context,
-                        builder: (context) => ConfirmDialog(
-                          isTask: true,
-                          onConfirm: () {
-                            // Handle delete task
-                            _handleDeleteTask();
-                            Navigator.pop(context); // Close dialog
-                          },
-                        ),
+                        builder:
+                            (context) => ConfirmDialog(
+                              isTask: true,
+                              onConfirm: () {
+                                // Handle delete task
+                                _handleDeleteTask();
+                                Navigator.pop(context); // Close dialog
+                              },
+                            ),
                       );
                     },
                   ),
