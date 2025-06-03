@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
-import 'package:aturin_app/features/alarm/services/alarm_service.dart';
+import 'package:aturin_app/core/services/api/profile/profile_service.dart';
 import 'package:animated_toggle_switch/animated_toggle_switch.dart'; // Added import
+import 'package:aturin_app/features/alarm/services/alarm_service.dart';
 
 class PengaturanCard extends StatefulWidget {
   final String title;
@@ -23,7 +24,8 @@ class _PengaturanCardState extends State<PengaturanCard> with SingleTickerProvid
   bool _isAlarmEnabled = false;
   bool _isLoading = false;
   bool _isAnimating = false;
-  final AlarmService _alarmService = AlarmService();
+  final ProfileService _profileService = ProfileService();
+  final AlarmService _alarmService = AlarmService(); // Tambah dependency
   late AnimationController _animationController;
   bool _nextValue = false;
   bool _pendingValueChange = false;
@@ -36,11 +38,9 @@ class _PengaturanCardState extends State<PengaturanCard> with SingleTickerProvid
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    
     _animationController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         if (_pendingValueChange) {
-          // Jika ada perubahan nilai tertunda, terapkan setelah animasi selesai
           setState(() {
             _isAlarmEnabled = _nextValue;
             _isAnimating = false;
@@ -64,13 +64,11 @@ class _PengaturanCardState extends State<PengaturanCard> with SingleTickerProvid
 
   Future<void> _loadAlarmStatus() async {
     setState(() => _isLoading = true);
-    
     try {
-      // Periksa status alarm global dari shared preferences
-      final isEnabled = await _alarmService.isGlobalAlarmEnabled();
+      final isEnabled = await _profileService.getGlobalAlarmStatus();
       if (mounted) {
         setState(() {
-          _isAlarmEnabled = isEnabled;
+          _isAlarmEnabled = isEnabled ?? false;
           _isLoading = false;
         });
       }
@@ -86,22 +84,14 @@ class _PengaturanCardState extends State<PengaturanCard> with SingleTickerProvid
 
   Future<void> _toggleGlobalAlarm(bool value) async {
     setState(() => _isLoading = true);
-    
     try {
-      // Simpan status alarm global
+      // Hanya panggil sinkronisasi ke AlarmService (sudah otomatis ke API dan lokal)
       await _alarmService.setGlobalAlarmEnabled(value);
-      
-      if (value) {
-        // Aktifkan semua alarm yang seharusnya aktif
-        // await taskService.enableAllAlarms();
-      } else {
-        // Nonaktifkan semua alarm
-        // await taskService.disableAllAlarms();
-      }
-      
+      // Ambil status terbaru dari API agar toggle benar-benar sesuai server
+      final latestStatus = await _profileService.getGlobalAlarmStatus();
       if (mounted) {
         setState(() {
-          _isAlarmEnabled = value;
+          _isAlarmEnabled = latestStatus ?? value;
           _isLoading = false;
         });
       }

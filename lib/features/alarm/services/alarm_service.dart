@@ -5,10 +5,12 @@ import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:aturin_app/core/widgets/categories.dart';
 import 'package:aturin_app/core/utils/category_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:aturin_app/core/services/api/profile/profile_service.dart';
 
 class AlarmService {
   bool _initialized = false;
   static const String _globalAlarmKey = 'global_alarm_enabled';
+  final ProfileService _profileService = ProfileService(); // Tambah dependency
 
   // Memastikan alarm package sudah diinisialisasi
   Future<void> ensureInitialized() async {
@@ -25,13 +27,46 @@ class AlarmService {
     return prefs.getBool(_globalAlarmKey) ?? true;
   }
 
-  // Mengatur status alarm global
+  // Mengatur status alarm global (sinkron ke API dan lokal)
   Future<void> setGlobalAlarmEnabled(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_globalAlarmKey, value);
-    debugPrint('Status alarm global diatur ke: $value');
+    final apiResult = await _profileService.switchGlobalAlarmStatus();
+    debugPrint('[AlarmService] Request setGlobalAlarmEnabled($value)');
+    if (apiResult != null && apiResult == value) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_globalAlarmKey, value);
+      debugPrint('[AlarmService] Status alarm global diatur ke: $value (sinkron dengan API)');
+      if (!value) {
+        // Jika global alarm dimatikan, cancel semua alarm lokal
+        final alarms = await getActiveAlarms();
+        for (final alarm in alarms) {
+          await Alarm.stop(alarm.id);
+          debugPrint('[AlarmService] Alarm lokal dengan id ${alarm.id} dinonaktifkan');
+        }
+        debugPrint('[AlarmService] Semua alarm lokal dinonaktifkan karena global alarm OFF');
+      } else {
+        // Jika global alarm diaktifkan, tampilkan status semua alarm lokal
+        final alarms = await getActiveAlarms();
+        debugPrint('[AlarmService] Status alarm lokal setelah global ON:');
+        for (final alarm in alarms) {
+          debugPrint('[AlarmService] Alarm id: ${alarm.id}, waktu: ${alarm.dateTime}, aktif: true');
+        }
+      }
+    } else {
+      debugPrint('[AlarmService] Gagal sinkron ke API atau status tidak sesuai.');
+    }
   }
 
+  // Sinkronisasi status alarm global dari API ke lokal
+  Future<void> syncGlobalAlarmStatusFromApi() async {
+    final apiStatus = await _profileService.getGlobalAlarmStatus();
+    if (apiStatus != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_globalAlarmKey, apiStatus);
+      debugPrint('Status alarm global lokal disinkronkan dari API: $apiStatus');
+    } else {
+      debugPrint('Gagal mengambil status alarm global dari API');
+    }
+  }
 
   // Mengatur alarm untuk aktivitas (umum, bukan hanya task)
   Future<void> setAlarm(
