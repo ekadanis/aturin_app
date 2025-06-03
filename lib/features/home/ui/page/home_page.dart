@@ -6,8 +6,7 @@ import 'package:aturin_app/features/home/widget/timeline_widget.dart';
 import 'package:aturin_app/features/home/widget/activity_card.dart';
 import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
-import 'package:aturin_app/features/task/screens/ui/task_detail_screen.dart';
-import 'package:aturin_app/features/jadwal/screens/detailactivity/ui/activity_detail_list.dart';
+import 'package:aturin_app/features/jadwal/screens/detail_task/ui/screens/task_detail_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:aturin_app/core/widgets/bottom_navbar.dart';
@@ -15,6 +14,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:sizer/sizer.dart';
+import 'package:aturin_app/routers/app_router.dart';
 
 @RoutePage()
 class HomePage extends StatefulWidget {
@@ -78,17 +78,19 @@ class _HomePageState extends State<HomePage> {
                         ),
                         const SizedBox(width: 8),
                         _buildSwitcherButton(TaskViewType.tugas, 'Tugas'),
-                      ],                    ),
+                      ],
+                    ),
                     Expanded(
                       child:
                           items.isEmpty
                               ? Center(
-                                  child: EmptyWidget(
-                                    message: _selectedView == TaskViewType.tugas
-                                        ? 'Tidak ada tugas hari ini.'
-                                        : 'Tidak ada aktivitas hari ini.',
-                                  ),
-                                )
+                                child: EmptyWidget(
+                                  message:
+                                      _selectedView == TaskViewType.tugas
+                                          ? 'Tidak ada tugas hari ini.'
+                                          : 'Tidak ada aktivitas hari ini.',
+                                ),
+                              )
                               : ListView.builder(
                                 padding: EdgeInsets.all(6),
                                 itemCount: items.length + 1,
@@ -143,17 +145,18 @@ class _HomePageState extends State<HomePage> {
                                               homeService.deleteTask(task.id!),
                                       onToggleAlarm:
                                           () =>
-                                              homeService.toggleAlarm(task.id!),
-                                      onViewDetails: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder:
-                                                (_) => TaskDetailScreen(
-                                                  task: task,
-                                                ),
+                                              homeService.toggleAlarm(task.id!),                                      onViewDetails: () async {
+                                        final result = await context.router.push(
+                                          TaskDetailListRoute(
+                                            tasks: items.whereType<Task>().toList(),
+                                            initialIndex: index,
                                           ),
                                         );
+
+                                        // Refresh data if task was modified/deleted
+                                        if (result == true && mounted) {
+                                          homeService.forceRefresh();
+                                        }
                                       },
                                       currentFilter: "today",
                                     );
@@ -162,25 +165,25 @@ class _HomePageState extends State<HomePage> {
                                   else {
                                     final activity =
                                         items[index] as AktivitasModel;
-
                                     return ActivityCard(
                                       activity: activity,
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder:
-                                                (_) => ActivityDetailListPage(
-                                                  activities:
-                                                      items
-                                                          .whereType<
-                                                            AktivitasModel
-                                                          >()
-                                                          .toList(),
-                                                  initialIndex: index,
-                                                ),
-                                          ),
-                                        );
+                                      onTap: () async {
+                                        final result = await context.router
+                                            .push(
+                                              ActivityDetailListRoute(
+                                                activities:
+                                                    items
+                                                        .whereType<
+                                                          AktivitasModel
+                                                        >()
+                                                        .toList(),
+                                                initialIndex: index,
+                                              ),
+                                            );
+                                        // Refresh data if activity was modified/deleted
+                                        if (result == true && mounted) {
+                                          homeService.forceRefresh();
+                                        }
                                       },
                                       onEdit: () {
                                         // TODO: Navigate to edit activity screen

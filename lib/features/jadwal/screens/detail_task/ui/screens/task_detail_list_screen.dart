@@ -7,7 +7,8 @@ import '../widgets/task_detail_card.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:aturin_app/core/widgets/confirm_dialog.dart';
 import 'package:aturin_app/core/services/api/task/task_api_service.dart';
-import 'package:aturin_app/features/task/screens/ui/add_task_screen.dart';
+import 'package:aturin_app/core/widgets/custom_snackbar_top.dart';
+import 'package:aturin_app/routers/app_router.dart';
 
 @RoutePage()
 class TaskDetailListScreen extends StatefulWidget {
@@ -164,21 +165,35 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
       },
     );
   }
-
   Future<void> _handleEditTask() async {
-  if (_tasks.isEmpty) return;
-  final currentTask = _tasks[_currentPageIndex];
-  await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => AddTaskScreen(
-        existingTask: currentTask, // <-- kirim task yang sedang dipilih
-      ),
-    ),
-  );
-}
-
-  Future<void> _handleDeleteTask() async {
+    if (_tasks.isEmpty) return;
+    final currentTask = _tasks[_currentPageIndex];
+    
+    final result = await context.router.push(
+      AddTaskRoute(existingTask: currentTask),
+    );
+    
+    if (result == true && mounted) {
+      // Refresh the current task data
+      if (currentTask.slug != null) {
+        try {
+          final taskApiService = Provider.of<TaskApiService>(
+            context,
+            listen: false,
+          );
+          final updatedTask = await taskApiService.getTaskBySlug(currentTask.slug!);
+          if (updatedTask != null) {
+            setState(() {
+              _tasks[_currentPageIndex] = updatedTask;
+            });
+          }
+        } catch (e) {
+          // If failed to get updated task, just refresh the list
+          _fetchTasksFromAPI();
+        }
+      }
+    }
+  }Future<void> _handleDeleteTask() async {
     if (_tasks.isEmpty) return;
 
     final currentTask = _tasks[_currentPageIndex];
@@ -190,6 +205,15 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
       );
 
       if (currentTask.slug != null) {
+        // Show loading indicator
+        if (mounted) {
+          showCustomTopSnackbar(
+            context: context,
+            message: 'Menghapus tugas...',
+            isError: false,
+          );
+        }
+
         final result = await taskApiService.deleteTask(currentTask.slug!);
 
         if (result.isSuccess) {
@@ -203,9 +227,17 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
             }
           });
 
-          // Navigate back if no more tasks
+          // Show success message
+          if (mounted) {
+            showCustomTopSnackbar(
+              context: context,
+              message: 'Tugas berhasil dihapus',
+              isError: false,
+            );
+          }          // Navigate back if no more tasks
           if (_tasks.isEmpty) {
-            Navigator.pop(context);
+            // Return true to indicate data changed, so parent can refresh
+            Navigator.pop(context, true);
           } else {
             // Animate to adjusted page
             _pageController.animateToPage(
@@ -216,15 +248,23 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
           }
         } else {
           // Show error message
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(result.message)));
+          if (mounted) {
+            showCustomTopSnackbar(
+              context: context,
+              message: result.message,
+              isError: true,
+            );
+          }
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Gagal menghapus tugas: $e')));
+      if (mounted) {
+        showCustomTopSnackbar(
+          context: context,
+          message: 'Gagal menghapus tugas: ${e.toString()}',
+          isError: true,
+        );
+      }
     }
   }
 
@@ -255,10 +295,9 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
                 children: [
                   // Header
                   Row(
-                    children: [
-                      IconButton(
+                    children: [                      IconButton(
                         icon: const Icon(Icons.arrow_back, color: Colors.black),
-                        onPressed: () => context.router.pop(),
+                        onPressed: () => context.router.pop(true), // Return true to indicate potential data changes
                       ),
                       const SizedBox(width: 16),
                       Text(

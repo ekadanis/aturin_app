@@ -66,6 +66,7 @@ class _ProfilePageState extends State<ProfilePage> {
       child: Scaffold(
         backgroundColor: AppTheme.lightBackgroundColor,
         appBar: AppBar(
+          automaticallyImplyLeading: false,
           title: Text(
             'Profil',
             style: GoogleFonts.plusJakartaSans(

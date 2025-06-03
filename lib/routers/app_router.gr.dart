@@ -423,18 +423,65 @@ class SplashRoute extends PageRouteInfo<void> {
 
 /// generated route for
 /// [TaskDetailListScreen]
-class TaskDetailListRoute extends PageRouteInfo<void> {
-  const TaskDetailListRoute({List<PageRouteInfo>? children})
-    : super(TaskDetailListRoute.name, initialChildren: children);
+class TaskDetailListRoute extends PageRouteInfo<TaskDetailListRouteArgs> {
+  TaskDetailListRoute({
+    Key? key,
+    List<Task>? tasks,
+    int? initialIndex,
+    List<PageRouteInfo>? children,
+  }) : super(
+         TaskDetailListRoute.name,
+         args: TaskDetailListRouteArgs(
+           key: key,
+           tasks: tasks,
+           initialIndex: initialIndex,
+         ),
+         initialChildren: children,
+       );
 
   static const String name = 'TaskDetailListRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const TaskDetailListScreen();
+      final args = data.argsAs<TaskDetailListRouteArgs>(
+        orElse: () => const TaskDetailListRouteArgs(),
+      );
+      return TaskDetailListScreen(
+        key: args.key,
+        tasks: args.tasks,
+        initialIndex: args.initialIndex,
+      );
     },
   );
+}
+
+class TaskDetailListRouteArgs {
+  const TaskDetailListRouteArgs({this.key, this.tasks, this.initialIndex});
+
+  final Key? key;
+
+  final List<Task>? tasks;
+
+  final int? initialIndex;
+
+  @override
+  String toString() {
+    return 'TaskDetailListRouteArgs{key: $key, tasks: $tasks, initialIndex: $initialIndex}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! TaskDetailListRouteArgs) return false;
+    return key == other.key &&
+        const ListEquality().equals(tasks, other.tasks) &&
+        initialIndex == other.initialIndex;
+  }
+
+  @override
+  int get hashCode =>
+      key.hashCode ^ const ListEquality().hash(tasks) ^ initialIndex.hashCode;
 }
 
 /// generated route for

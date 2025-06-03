@@ -346,7 +346,7 @@ class TaskService extends ChangeNotifier {
   }
 
   String? validateDeadline(DateTime? deadline) {
-    if (deadline == null) return 'Deadline wajib diisi';
+    if (deadline == null) return 'Batas waktu wajib diisi';
     return null;
   }
 
@@ -492,7 +492,7 @@ class TaskService extends ChangeNotifier {
             task.id!,
             task.alarmDateTime!,
             'Tugas: ${task.title}',
-            'Deadline: ${task.deadline.toString()}',
+            'Batas waktu : ${task.deadline.toString()}',
           );
           count++;
           changes = true;

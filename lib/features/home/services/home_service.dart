@@ -282,25 +282,19 @@ class HomeService extends ChangeNotifier {
       final result = await _taskApiService.deleteTask(task!.slug!);
       
       if (result.isSuccess) {
-        // Remove from local data only if API call succeeds
-        _tasks.removeWhere((task) => task.id == taskId);
+        // Force refresh to get the latest data from API
+        await forceRefresh();
         
-        // Reset cache
-        _cachedTodayTasks = null;
-        _cachedFilteredTasks.clear();
-        
-        // Small delay to ensure API service has completed its refresh
-        await Future.delayed(const Duration(milliseconds: 50));
-        
-        debugPrint('✅ HomeService: Task deleted successfully');
-        notifyListeners();
+        debugPrint('✅ HomeService: Task deleted and data refreshed successfully');
       } else {
         debugPrint('❌ HomeService: Failed to delete task via API: ${result.message}');
       }
     } catch (e) {
       debugPrint('❌ HomeService: Error deleting task: $e');
     }
-  }  Future<void> deleteActivity(int activityId) async {
+  }
+  
+  Future<void> deleteActivity(int activityId) async {
     try {
       // Find activity by ID
       final activity = _aktivitas.where((a) => a.id == activityId).firstOrNull;
@@ -313,15 +307,10 @@ class HomeService extends ChangeNotifier {
       final success = await _activityApiService.deleteActivity(activity!.slug!);
       
       if (success) {
-        // Remove from local data only if API call succeeds
-        _aktivitas.removeWhere((activity) => activity.id == activityId);
-        _cachedTodayAktivitas = null; // Reset cache
+        // Force refresh to get the latest data from API
+        await forceRefresh();
         
-        // Small delay to ensure API service has completed its refresh
-        await Future.delayed(const Duration(milliseconds: 50));
-        
-        debugPrint('✅ HomeService: Activity deleted successfully');
-        notifyListeners();
+        debugPrint('✅ HomeService: Activity deleted and data refreshed successfully');
       } else {
         debugPrint('❌ HomeService: Failed to delete activity via API');
       }

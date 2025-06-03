@@ -1,9 +1,11 @@
 import 'package:aturin_app/core/services/api/profile/profile_service.dart';
 import 'package:aturin_app/features/profile/models/user.dart';
 import 'package:aturin_app/features/profile/ui/profile_page.dart';
+import 'package:aturin_app/routers/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
+import 'package:auto_route/auto_route.dart';
 
 class GreetingHeader extends StatefulWidget implements PreferredSizeWidget {
   const GreetingHeader({super.key});
@@ -91,16 +93,13 @@ class _GreetingHeaderState extends State<GreetingHeader> {
                 // Avatar dan dot hijau dengan ukuran lebih kecil
                 GestureDetector(
                   onTap: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ProfilePage()),
-                    );
-                    
+                    final result = await context.router.push(const ProfileRoute());
                     // Refresh jika ada perubahan dari ProfilePage
                     if (result != null) {
                       _loadUser();
                     }
                   },
+                  
                   child: Stack(
                     children: [
                       CircleAvatar(

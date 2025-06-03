@@ -233,9 +233,7 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
               ? 'Aktivitas berhasil diperbarui'
               : 'Aktivitas berhasil ditambahkan',
           isError: false,
-        );
-
-        // Small delay to show the snackbar before navigation
+        );        // Small delay to show the snackbar before navigation
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
             context.router.pushAndPopUntil(
@@ -269,13 +267,10 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
           )
         : null;
     return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
+      canPop: false,      onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        context.router.pushAndPopUntil(
-          const AktivitasRoute(),
-          predicate: (_) => false,
-        );
+        // Return false to indicate no data changes when going back without saving
+        context.router.pop(false);
         return;
       },
       child: Scaffold(

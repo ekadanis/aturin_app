@@ -65,7 +65,7 @@ class AlarmPicker extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              '*Pilih deadline terlebih dahulu untuk mengaktifkan alarm',
+              '*Pilih batas waktu terlebih dahulu untuk mengaktifkan alarm',
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 10,
                 color: Colors.red,

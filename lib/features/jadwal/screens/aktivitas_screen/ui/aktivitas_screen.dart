@@ -225,8 +225,9 @@ class _AktivitasPageState extends State<AktivitasPage> {
   }
 
   /// Get the appropriate task data for calendar based on selected date
-  /// Uses local cache untuk smooth transitions - NO FETCHING
+  /// UPDATED: Always use fresh data from taskApiService untuk avoid stale cache after delete
   List<Task> _getTasksForCalendar() {
+    final taskApiService = Provider.of<TaskApiService>(context, listen: false);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final selectedDay = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
@@ -234,13 +235,14 @@ class _AktivitasPageState extends State<AktivitasPage> {
     print('🗓️ Calendar data request for ${selectedDate.toString().split(' ')[0]}:');
     
     if (selectedDay.isAtSameMomentAs(today)) {
-      // For today: use cached uncompleted tasks
-      print('   📅 Calendar showing TODAY data: ${_uncompletedTasksToday.length} uncompleted tasks (from cache)');
-      return _uncompletedTasksToday;
+      // For today: filter uncompleted tasks from taskApiService.tasks (fresh data)
+      final uncompletedTasksToday = taskApiService.tasks.where((task) => !task.isCompleted).toList();
+      print('   📅 Calendar showing TODAY data: ${uncompletedTasksToday.length} uncompleted tasks (from fresh taskApiService)');
+      return uncompletedTasksToday;
     } else {
-      // For other dates: filter uncompleted tasks from cached all tasks
-      final uncompletedTasks = _allTasks.where((task) => !task.isCompleted).toList();
-      print('   📅 Calendar showing OTHER DATE data: ${uncompletedTasks.length} uncompleted tasks (filtered from ${_allTasks.length} cached)');
+      // For other dates: filter uncompleted tasks from fresh taskApiService.tasks
+      final uncompletedTasks = taskApiService.tasks.where((task) => !task.isCompleted).toList();
+      print('   📅 Calendar showing OTHER DATE data: ${uncompletedTasks.length} uncompleted tasks (filtered from ${taskApiService.tasks.length} fresh)');
       return uncompletedTasks;
     }
   }
@@ -524,8 +526,17 @@ class _AktivitasPageState extends State<AktivitasPage> {
             );
 
             if (!mounted) return;
-
+            
             if (success) {
+              // Immediately update activityApiService cache untuk instant UI update
+              activityApiService.activities.removeWhere((a) => a.slug == aktivitas.slug);
+              
+              // Trigger UI rebuild immediately
+              setState(() {});
+              
+              // Background refresh untuk sync dengan server (optional)
+              _refreshDataInBackground();
+
               showCustomTopSnackbar(
                 context: context,
                 message: 'Aktivitas berhasil dihapus',
@@ -597,10 +608,26 @@ class _AktivitasPageState extends State<AktivitasPage> {
             final result = await taskApiService.deleteTask(task.slug!);
 
             if (!mounted) return;
-
+            
             if (result.isSuccess) {
-              // Force refresh data
-              await _refreshData();
+              print('🗑️ Task delete success - immediately fetching fresh data');
+              
+              // Don't update cache manually - fetch fresh data from server instead
+              print('🔄 Fetching fresh data from server after delete...');
+              
+              // Force immediate refresh from server untuk memastikan data terbaru
+              await taskApiService.fetchUncompletedTasksToday();
+              
+              print('✅ Fresh data fetched:');
+              print('   taskApiService.tasks: ${taskApiService.tasks.length}');
+              print('   Current tasks: ${taskApiService.tasks.map((t) => '${t.slug}:"${t.title}"').join(', ')}');
+              
+              // Update local cache dengan data fresh
+              _uncompletedTasksToday = List.from(taskApiService.tasks);
+              _lastDataFetch = DateTime.now();
+              
+              // Trigger UI rebuild immediately dengan data fresh
+              setState(() {});
 
               showCustomTopSnackbar(
                 context: context,

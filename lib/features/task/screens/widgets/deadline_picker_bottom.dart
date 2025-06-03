@@ -206,7 +206,7 @@ Future<DateTime?> showDeadlinePickerBottomSheet(BuildContext context) async {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text(
-                      'Waktu sudah lewat, deadline diatur ke sekarang',
+                      'Waktu sudah lewat, batas waktu diatur ke sekarang',
                     ),
                     backgroundColor: Colors.orange,
                   ),

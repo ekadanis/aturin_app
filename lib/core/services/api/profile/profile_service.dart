@@ -10,10 +10,12 @@ class ProfileService extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   User? _currentUser;
+  bool? _isGlobalAlarmEnabled;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   User? get currentUser => _currentUser;
+  bool? get isGlobalAlarmEnabled => _isGlobalAlarmEnabled;
 
   void _setLoading(bool value) {
     _isLoading = value;
@@ -221,6 +223,104 @@ class ProfileService extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('getBannerProfile: Exception caught: $e');
+      _setError("Terjadi kesalahan: $e");
+      return null;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool?> getGlobalAlarmStatus() async {
+    try {
+      _setLoading(true);
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        _setError("Token tidak ditemukan.");
+        _setLoading(false);
+        return null;
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/profile/alarmGlobal'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      debugPrint('Global alarm status response status: ${response.statusCode}');
+      debugPrint('Global alarm status response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        if (responseData == null || responseData['data'] == null) {
+          _setError('Data status alarm global tidak valid dari server');
+          _setLoading(false);
+          return null;
+        }
+
+        final isEnabled = responseData['data']['is_global_alarm_enabled'] as bool;
+        _isGlobalAlarmEnabled = isEnabled;
+        notifyListeners();
+        return isEnabled;
+      } else {
+        _setError("Gagal mengambil status alarm global (Status: ${response.statusCode})");
+        return null;
+      }
+    } catch (e) {
+      _setError("Terjadi kesalahan: $e");
+      return null;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool?> switchGlobalAlarmStatus() async {
+    try {
+      _setLoading(true);
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        _setError("Token tidak ditemukan.");
+        _setLoading(false);
+        return null;
+      }
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/profile/alarmGlobal'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      debugPrint('Switch global alarm response status: ${response.statusCode}');
+      debugPrint('Switch global alarm response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        if (responseData == null || responseData['data'] == null) {
+          _setError('Data status alarm global tidak valid dari server');
+          _setLoading(false);
+          return null;
+        }
+
+        final isEnabled = responseData['data']['is_global_alarm_enabled'] as bool;
+        _isGlobalAlarmEnabled = isEnabled;
+        notifyListeners();
+        return isEnabled;
+      } else {
+        _setError("Gagal mengubah status alarm global (Status: ${response.statusCode})");
+        return null;
+      }
+    } catch (e) {
       _setError("Terjadi kesalahan: $e");
       return null;
     } finally {
