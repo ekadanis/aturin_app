@@ -1,4 +1,5 @@
 import 'package:aturin_app/core/services/api/profile/user_provider.dart';
+import 'package:aturin_app/features/no_internet/ui/no_internet_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -51,13 +52,15 @@ Future<void> _initializeApp() async {
     debugPrint('Connectivity service initialized successfully');
 
     await initializeDateFormatting('id_ID', null);
-    debugPrint('Date formatting initialized for id_ID locale');    // Initialize the app with AppInitializer
+    debugPrint(
+      'Date formatting initialized for id_ID locale',
+    ); // Initialize the app with AppInitializer
     final appInitializer = AppInitializer(appRouter);
     await appInitializer.initialize();
 
     // Setup alarm manager
     appInitializer.alarmManager.setAppCreator(() => const MyApp());
-    
+
     // Navigasi awal akan diatur oleh AutoRoute berdasarkan initial route
   } catch (e) {
     debugPrint('Failed to initialize app: $e');
@@ -75,7 +78,8 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(      providers: [
+    return MultiProvider(
+      providers: [
         ChangeNotifierProvider<ConnectivityService>.value(
           value: connectivityService,
         ),
@@ -102,11 +106,22 @@ class _MyAppState extends State<MyApp> {
       ],
       child: Sizer(
         builder: (context, orientation, deviceType) {
-          return MaterialApp.router(
-            title: 'Aturin',
-            theme: AppTheme.lightTheme,
-            debugShowCheckedModeBanner: false,
-            routerConfig: appRouter.config(),
+          return Consumer<ConnectivityService>(
+            builder: (context, connectivity, _) {
+              if (!connectivity.isConnected) {
+                return const MaterialApp(
+                  debugShowCheckedModeBanner: false,
+                  home: NoInternetScreen(),
+                );
+              }
+
+              return MaterialApp.router(
+                title: 'Aturin',
+                theme: AppTheme.lightTheme,
+                debugShowCheckedModeBanner: false,
+                routerConfig: appRouter.config(),
+              );
+            },
           );
         },
       ),
