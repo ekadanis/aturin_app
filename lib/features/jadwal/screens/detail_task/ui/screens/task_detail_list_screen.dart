@@ -168,17 +168,17 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
   }
 
   Future<void> _handleEditTask() async {
-    await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) => AddTaskScreen(
-                                   
-                                      // Anda bisa modifikasi AddTaskScreen untuk menerima alarm jika perlu
-                                    ),
-                              ),
-                            );
-  }
+  if (_tasks.isEmpty) return;
+  final currentTask = _tasks[_currentPageIndex];
+  await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => AddTaskScreen(
+        existingTask: currentTask, // <-- kirim task yang sedang dipilih
+      ),
+    ),
+  );
+}
 
   Future<void> _handleDeleteTask() async {
     if (_tasks.isEmpty) return;
