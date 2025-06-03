@@ -74,7 +74,8 @@ class TaskDetailCard extends StatelessWidget {
         width: width,
         child: OverflowBox(
           maxHeight: height,
-          minHeight: height,          child: Card(
+          minHeight: height,
+          child: Card(
             elevation: isSelected ? 8 : 0,
             margin: EdgeInsets.zero,
             clipBehavior: Clip.antiAlias,
@@ -111,11 +112,12 @@ class TaskDetailCard extends StatelessWidget {
                               color: Colors.white,
                               height: 1.2,
                             ),
+                            softWrap: true,
                             maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                            overflow: TextOverflow.visible,
                           ),
 
-                          const SizedBox(height: 16),                          // Chips Row
+                          const SizedBox(height: 12), // Chips Row
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: Row(
@@ -125,7 +127,7 @@ class TaskDetailCard extends StatelessWidget {
                                   iconPath: categoryDetails.iconChip,
                                   label: categoryDetails.name,
                                   foregroundColor: categoryDetails.color,
-                                  backgroundColor: categoryDetails.color.withOpacity(0.15),
+                                  backgroundColor: categoryDetails.bgColor,
                                 ),
 
                                 SizedBox(width: 3.w),
@@ -135,16 +137,19 @@ class TaskDetailCard extends StatelessWidget {
                                   iconPath: 'assets/icons/task-list.svg',
                                   label: 'Tugas',
                                   foregroundColor: Color(0xFF5263F3),
-                                  backgroundColor: Color(0xFF5263F3).withOpacity(0.15),
+                                  backgroundColor: Color(0xFFDFEAFF),
                                 ),
 
                                 // Alarm Chip (if enabled)
                                 if (task.isAlarmEnabled) ...[
                                   SizedBox(width: 3.w),
                                   CustomChip(
-                                    iconPath: 'assets/activitycategory/chipicon/alarm2.svg',
+                                    iconPath:
+                                        'assets/activitycategory/chipicon/alarm2.svg',
                                     foregroundColor: Color(0xFF5263F3),
-                                    backgroundColor: Color(0xFF5263F3).withOpacity(0.15),
+                                    backgroundColor: Color(
+                                      0xFFDFEAFF,
+                                    ),
                                   ),
                                 ],
                               ],
@@ -170,6 +175,9 @@ class TaskDetailCard extends StatelessWidget {
                           'Status',
                           _getStatusText(task),
                           _getStatusColor(task),
+                          task.isCompleted
+                              ? Color(0xFF3DA755)
+                              : Color(0xFFCC6D00),
                         ),
                         const SizedBox(height: 16),
                         // Other Detail Rows
@@ -190,9 +198,12 @@ class TaskDetailCard extends StatelessWidget {
                           const SizedBox(height: 16),
                           _buildDetailRow(
                             'Deskripsi',
-                            task.description!.length > 15
-                                ? '${task.description!.substring(0, 15)}...'
-                                : task.description!,
+                            '',
+                            categoryDetails.color,
+                          ),
+                          const SizedBox(height: 12),
+                          _buildDescriptionContainer(
+                            task.description!,
                             categoryDetails.color,
                           ),
                         ],
@@ -210,7 +221,12 @@ class TaskDetailCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusRow(String label, String value, Color statusColor) {
+  Widget _buildStatusRow(
+    String label,
+    String value,
+    Color statusColor,
+    Color textColor,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -232,7 +248,7 @@ class TaskDetailCard extends StatelessWidget {
             value,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 14,
-              color: Colors.white,
+              color: textColor,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -265,6 +281,30 @@ class TaskDetailCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-      ],    );
+      ],
+    );
+  }
+
+  Widget _buildDescriptionContainer(String description, Color categoryColor) {
+    return Container(
+      padding: EdgeInsets.all(2.w),
+      width: double.infinity,
+      height: 15.h,
+      decoration: BoxDecoration(
+        border: Border.all(color: categoryColor, width: 0.5.w),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        description,
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 16,
+          color: categoryColor,
+          fontWeight: FontWeight.w500,
+        ),
+        
+      ),
+    );
+
+    // Isi (fill
   }
 }
