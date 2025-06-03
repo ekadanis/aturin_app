@@ -124,16 +124,22 @@ class InteractiveCalendarWidget extends StatelessWidget {
       events.add(dummyActivity);
     }
     
-    // Debug logging for calendar markers - show for all days that should have markers
-    if (events.isNotEmpty || hasUncompletedTasksForDay) {
-      final completedTasksCount = tasks.where((task) => 
-          isSameDay(task.deadline, day) && task.isCompleted).length;
-      final uncompletedTasksCount = tasks.where((task) => 
-          isSameDay(task.deadline, day) && !task.isCompleted).length;
-      print('📅 Calendar marker for ${day.toString().split(' ')[0]}: activities=${activitiesForDay.length}, uncompleted_tasks=$uncompletedTasksCount, completed_tasks=$completedTasksCount, total_events=${events.length}');
-    }
+    // Enhanced debug logging - show current state
+    final dateStr = '${day.day}/${day.month}/${day.year}';
+    final completedTasksCount = tasks.where((task) => 
+        isSameDay(task.deadline, day) && task.isCompleted).length;
+    final uncompletedTasksCount = tasks.where((task) =>
+        isSameDay(task.deadline, day) && !task.isCompleted).length;
     
-    return events;
+    if (events.isNotEmpty || uncompletedTasksCount > 0 || completedTasksCount > 0) {
+      print('📅 Calendar marker for $dateStr:');
+      print('   📝 Activities: ${activitiesForDay.length}');
+      print('   ✅ Completed tasks: $completedTasksCount');
+      print('   ⏳ Uncompleted tasks: $uncompletedTasksCount');
+      print('   🔵 Will show marker: ${events.isNotEmpty}');
+      print('   📊 Total events returned: ${events.length}');
+    }
+      return events;
   }
 
   CalendarStyle _buildCalendarStyle() {

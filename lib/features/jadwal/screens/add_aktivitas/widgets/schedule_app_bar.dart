@@ -18,7 +18,7 @@ class ScheduleAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AppBar(
       title: Text(
-        isEditMode ? 'Edit Aktivitas' : 'Tambah Aktivitas',
+        isEditMode ? 'Ubah Aktivitas' : 'Tambah Aktivitas',
         style: GoogleFonts.plusJakartaSans(
           fontSize: 18,
           fontWeight: FontWeight.w600,

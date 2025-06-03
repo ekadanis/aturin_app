@@ -27,13 +27,14 @@ enum TaskViewType { tugas, aktivitas }
 
 class _HomePageState extends State<HomePage> {
   late HomeService homeService;
-  TaskViewType _selectedView = TaskViewType.tugas;
-
-  @override
+  TaskViewType _selectedView = TaskViewType.tugas;  @override
   void initState() {
     super.initState();
+    debugPrint('🏠 HomePage: initState() called');
     homeService = Provider.of<HomeService>(context, listen: false);
-    homeService.fetchData();
+    // Note: fetchData() is already called by DataPrefetchGuard before navigation
+    // so we don't need to call it again here to avoid duplicate API calls
+    debugPrint('🏠 HomePage: Skipping fetchData() - already called by DataPrefetchGuard');
   }
 
   @override
@@ -67,18 +68,18 @@ class _HomePageState extends State<HomePage> {
                       'assets/images/home_head1.png',
                       width: 100.w,
                       fit: BoxFit.contain,
-                    ),
-                    SizedBox(height: 2.h),
+                    ),                    SizedBox(height: 2.h),
                     Row(
                       children: [
                         _buildSwitcherButton(
                           TaskViewType.aktivitas,
                           'Aktivitas',
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 12),
                         _buildSwitcherButton(TaskViewType.tugas, 'Tugas'),
                       ],
                     ),
+                    const SizedBox(height: 16),
                     Expanded(
                       child:
                           items.isEmpty

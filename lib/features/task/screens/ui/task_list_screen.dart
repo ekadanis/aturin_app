@@ -194,11 +194,7 @@ class _TaskListScreenState extends State<TaskListScreen>
                           
                           if (result == true) {
                             setState(() {});
-                            _fetchOverdueCount(); // reload countLateTask juga setelah edit
-                            showCustomTopSnackbar(
-                              context: context,
-                              message: 'Tugas berhasil diperbarui',
-                            );
+                            _fetchOverdueCount();
                           }
                         });
                       },

@@ -480,7 +480,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      title: Text(widget.existingTask != null ? 'Edit Tugas' : 'Tambah Tugas'),
+      title: Text(widget.existingTask != null ? 'Ubah Tugas' : 'Tambah Tugas'),
       elevation: 0,
       scrolledUnderElevation: 0,
       backgroundColor: Colors.white,

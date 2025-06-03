@@ -12,17 +12,14 @@ class CategoryTabsWidget extends StatelessWidget {
     super.key,
     required this.selectedCategory,
     required this.onCategoryChanged,
-  });
-  @override
+  });  @override
   Widget build(BuildContext context) {
     final availableCategories = CategoryHelper.getAllCategories();
     
-    return Container(
-      height: 50,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      child: Row(
         children: [
           _buildCategoryTab('Semua', true),
           ...availableCategories.map(
@@ -31,8 +28,7 @@ class CategoryTabsWidget extends StatelessWidget {
         ],
       ),
     );
-  }
-  Widget _buildCategoryTab(String name, bool isAll) {
+  }  Widget _buildCategoryTab(String name, bool isAll) {
     final isSelected = selectedCategory == name;
     final category = isAll ? null : CategoryHelper.getCategoryOptionFromString(name);
     Color textColor;
@@ -54,12 +50,13 @@ class CategoryTabsWidget extends StatelessWidget {
       }
     }
 
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
       child: GestureDetector(
         onTap: () => onCategoryChanged(name),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          height: 50,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(12),
@@ -75,16 +72,14 @@ class CategoryTabsWidget extends StatelessWidget {
                   colorFilter: ColorFilter.mode(textColor, BlendMode.srcIn),
                 ),
                 const SizedBox(width: 4),
-              ],
-              Text(
+              ],              Text(
                 name,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: textColor,
                 ),
-              ),
-            ],
+              ),],
           ),
         ),
       ),

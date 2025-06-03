@@ -93,6 +93,17 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
     super.dispose();
   }
 
+  // Check if current task is completed
+  bool get _isCurrentTaskCompleted {
+    if (_tasks.isEmpty) return false;
+    final currentTask = _tasks[_currentPageIndex];
+    // Assuming the task has a status field or isCompleted field
+    // Adjust this based on your Task model structure
+    return currentTask.status == 'selesai' || 
+           currentTask.status == 'completed' ||
+           currentTask.isCompleted == true;
+  }
+
   Widget _buildContent() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -165,8 +176,10 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
       },
     );
   }
+
   Future<void> _handleEditTask() async {
-    if (_tasks.isEmpty) return;
+    if (_tasks.isEmpty || _isCurrentTaskCompleted) return;
+    
     final currentTask = _tasks[_currentPageIndex];
     
     final result = await context.router.push(
@@ -193,8 +206,10 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
         }
       }
     }
-  }Future<void> _handleDeleteTask() async {
-    if (_tasks.isEmpty) return;
+  }
+
+  Future<void> _handleDeleteTask() async {
+    if (_tasks.isEmpty || _isCurrentTaskCompleted) return;
 
     final currentTask = _tasks[_currentPageIndex];
 
@@ -234,7 +249,9 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
               message: 'Tugas berhasil dihapus',
               isError: false,
             );
-          }          // Navigate back if no more tasks
+          }
+          
+          // Navigate back if no more tasks
           if (_tasks.isEmpty) {
             // Return true to indicate data changed, so parent can refresh
             Navigator.pop(context, true);
@@ -295,7 +312,8 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
                 children: [
                   // Header
                   Row(
-                    children: [                      IconButton(
+                    children: [
+                      IconButton(
                         icon: const Icon(Icons.arrow_back, color: Colors.black),
                         onPressed: () => context.router.pop(true), // Return true to indicate potential data changes
                       ),
@@ -321,83 +339,81 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
           ),
 
           // Action Buttons
-          Positioned(
-            bottom: 36,
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Edit Button
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
-                    borderRadius: BorderRadius.circular(60),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        spreadRadius: 3,
-                        blurRadius: 8,
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
-                    icon: SvgPicture.asset(
-                      'assets/activitycategory/edit-pencil.svg',
-                      width: 48,
-                      height: 48,
-                    ),
-                    onPressed: () {
-                      // Handle edit
-                      _handleEditTask();
-                    },
-                  ),
-                ),
-
-                const SizedBox(width: 64),
-
-                // Delete Button
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFDECEC),
-                    borderRadius: BorderRadius.circular(60),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        spreadRadius: 3,
-                        blurRadius: 8,
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
-                    icon: SvgPicture.asset(
-                      'assets/activitycategory/trash.svg',
-                      width: 48,
-                      height: 48,
-                    ),
-                    onPressed: () async {
-                      showDialog(
-                        context: context,
-                        builder:
-                            (context) => ConfirmDialog(
-                              isTask: true,
-                              onConfirm: () {
-                                // Handle delete task
-                                _handleDeleteTask();
-                                Navigator.pop(context); // Close dialog
-                              },
-                            ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
+          // Action Buttons (Hidden if task is completed)
+if (!_isCurrentTaskCompleted)
+  Positioned(
+    bottom: 36,
+    left: 0,
+    right: 0,
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Edit Button
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F5F5),
+            borderRadius: BorderRadius.circular(60),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                spreadRadius: 3,
+                blurRadius: 8,
+              ),
+            ],
           ),
+          child: IconButton(
+            icon: SvgPicture.asset(
+              'assets/activitycategory/edit-pencil.svg',
+              width: 48,
+              height: 48,
+            ),
+            onPressed: _handleEditTask,
+          ),
+        ),
+
+        const SizedBox(width: 64),
+
+        // Delete Button
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: const Color(0xFFFDECEC),
+            borderRadius: BorderRadius.circular(60),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                spreadRadius: 3,
+                blurRadius: 8,
+              ),
+            ],
+          ),
+          child: IconButton(
+            icon: SvgPicture.asset(
+              'assets/activitycategory/trash.svg',
+              width: 48,
+              height: 48,
+            ),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => ConfirmDialog(
+                  isTask: true,
+                  onConfirm: () {
+                    _handleDeleteTask();
+                    Navigator.pop(context);
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    ),
+  ),
+
         ],
       ),
     );

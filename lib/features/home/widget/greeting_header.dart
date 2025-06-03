@@ -1,11 +1,12 @@
 import 'package:aturin_app/core/services/api/profile/profile_service.dart';
 import 'package:aturin_app/features/profile/models/user.dart';
-import 'package:aturin_app/features/profile/ui/profile_page.dart';
+import 'package:aturin_app/features/home/services/home_service.dart';
 import 'package:aturin_app/routers/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:provider/provider.dart';
 
 class GreetingHeader extends StatefulWidget implements PreferredSizeWidget {
   const GreetingHeader({super.key});
@@ -154,12 +155,11 @@ class _GreetingHeaderState extends State<GreetingHeader> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 3),
-                      // Jumlah tugas + aktivitas hari ini
-                      Builder(
-                        builder: (context) {
-                          final activityCount = user.todayActivities ?? 0;
-                          final taskCount = user.todayTasks ?? 0;
+                      const SizedBox(height: 3),                      // Jumlah tugas + aktivitas hari ini - REAL TIME
+                      Consumer<HomeService>(
+                        builder: (context, homeService, child) {
+                          final activityCount = homeService.getTodayActivitiesCount();
+                          final taskCount = homeService.getTodayTasksCount();
 
                           return RichText(
                             text: TextSpan(
