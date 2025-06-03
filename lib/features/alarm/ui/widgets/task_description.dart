@@ -18,7 +18,7 @@ class TaskDescription extends StatelessWidget {
     return Column(
       children: [
         Text(
-          "Satu tugas beres, Satu beban hilang!",
+          "Satu hal beres, Satu beban pun hilang!",
           style: GoogleFonts.plusJakartaSans(
             fontSize: screenWidth * 0.038, // Setara dengan 3.8.w
             fontWeight: FontWeight.w500,
@@ -33,7 +33,7 @@ class TaskDescription extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              '"',
+              '',
               style: GoogleFonts.plusJakartaSans(
                 fontSize: screenWidth * 0.05, // Setara dengan 5.w
                 color: AppTheme.primaryColor,
@@ -53,7 +53,7 @@ class TaskDescription extends StatelessWidget {
               ),
             ),
             Text(
-              '"',
+              '',
               style: GoogleFonts.plusJakartaSans(
                 fontSize: screenWidth * 0.05, // Setara dengan 5.w
                 color: AppTheme.primaryColor,

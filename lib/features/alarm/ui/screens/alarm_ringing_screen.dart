@@ -100,13 +100,13 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen> {
 
     final taskName = _task?.title.isNotEmpty == true
         ? _task!.title
-        : (_aktivitas?.activityTitle.isNotEmpty == true ? _aktivitas!.activityTitle : 'Waktunya mengerjakan tugas/aktivitas!');
+        : (_aktivitas?.activityTitle.isNotEmpty == true ? _aktivitas!.activityTitle : 'Anda memiliki pengingat');
 
     final category = _task != null
         ? _alarmService.getCategoryName(_task?.category ?? 'akademik')
         : _aktivitas != null
             ? _aktivitas!.activityCategory.displayName
-            : _alarmService.getCategoryName('akademik');
+            : null;
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
@@ -142,7 +142,9 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen> {
                       children: [
                         TaskDescription(taskName: taskName),
                         SizedBox(height: screenHeight * 0.01),
-                        CategoryTag(category: category),
+                        if (category != null && category.toString().trim().isNotEmpty) ...[
+                          CategoryTag(category: category),
+                        ],
                         if (_aktivitas != null) ...[
                           SizedBox(height: screenHeight * 0.01),
                           // Optionally show more aktivitas info here
