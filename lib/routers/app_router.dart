@@ -23,7 +23,6 @@ import 'package:aturin_app/features/auth/login/ui/login_page.dart';
 import 'package:aturin_app/features/auth/register/ui/register_page.dart';
 import 'package:aturin_app/features/no_internet/ui/no_internet_screen.dart';
 
-
 part 'app_router.gr.dart';
 
 @AutoRouterConfig()
@@ -32,7 +31,8 @@ class AppRouter extends RootStackRouter {
 
   @override
   RouteType get defaultRouteType =>
-      RouteType.material(enablePredictiveBackGesture: true);  @override
+      RouteType.material(enablePredictiveBackGesture: true);
+  @override
   List<AutoRoute> get routes => [
     AutoRoute(path: '/splash', page: SplashRoute.page, initial: true),
     AutoRoute(path: '/onboarding', page: OnboardingRoute.page),
@@ -100,12 +100,14 @@ class AppRouter extends RootStackRouter {
       page: ActivityDetailListRoute.page,
       transitionsBuilder: (_, __, ___, child) => child,
       duration: Duration.zero,
-    ),       CustomRoute(
+    ),
+    CustomRoute(
       path: '/aktivitas/task-detail',
       page: TaskDetailListRoute.page,
       transitionsBuilder: (_, __, ___, child) => child,
       duration: Duration.zero,
-    ),    CustomRoute(
+    ),
+    CustomRoute(
       path: '/no-internet',
       page: NoInternetRoute.page,
       transitionsBuilder: (_, __, ___, child) => child,
