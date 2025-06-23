@@ -1,6 +1,4 @@
-import 'package:aturin_app/core/services/api/profile/profile_service.dart';
-import 'package:aturin_app/features/profile/models/user.dart';
-import 'package:aturin_app/features/home/services/home_service.dart';
+import 'package:aturin_app/core/providers/global_state_service.dart';
 import 'package:aturin_app/routers/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -19,67 +17,124 @@ class GreetingHeader extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _GreetingHeaderState extends State<GreetingHeader> {
-  Future<User?>? _userFuture;
-
   @override
   void initState() {
     super.initState();
-    _loadUser();
-  }
-
-  void _loadUser() {
-    setState(() {
-      _userFuture = _getLoggedInUser();
+    // Trigger initial data load without waiting
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final globalState = Provider.of<GlobalStateService>(context, listen: false);
+      globalState.getUser(); // Load user data if not cached
     });
-  }
-
-  Future<User?> _getLoggedInUser() async {
-    try {
-      final profileService = ProfileService();
-      final user = await profileService.getBannerProfile();
-
-      if (user != null) {
-        return user;
-      } else {
-        debugPrint('User data tidak ditemukan dari getBannerProfile.');
-        return null;
-      }
-    } catch (e) {
-      debugPrint('Error getting logged in user via banner profile: $e');
-      return null;
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<User?>(
-      future: _userFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return PreferredSize(
-            preferredSize: const Size.fromHeight(65),
-            child: Center(
-              child: CircularProgressIndicator(color: AppTheme.primaryColor),
+    return Consumer<GlobalStateService>(
+      builder: (context, globalState, child) {
+        final user = globalState.currentUser;
+        
+        // Show fallback UI while data is loading for the first time
+        if (user == null && globalState.isLoadingUser) {
+          return AppBar(
+            backgroundColor: AppTheme.lightBackgroundColor,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            automaticallyImplyLeading: false,
+            toolbarHeight: 65,
+            title: Padding(
+              padding: const EdgeInsets.only(top: 16.0),
+              child: Row(
+                children: [
+                  // Placeholder avatar
+                  CircleAvatar(
+                    backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                    radius: 28,
+                    child: Icon(
+                      Icons.person,
+                      color: AppTheme.primaryColor.withOpacity(0.5),
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  // Placeholder text
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          height: 16,
+                          width: 120,
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          height: 14,
+                          width: 180,
+                          decoration: BoxDecoration(
+                            color: AppTheme.lightTextColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
-        } else if (snapshot.hasError ||
-            !snapshot.hasData ||
-            snapshot.data == null) {
-          return PreferredSize(
-            preferredSize: const Size.fromHeight(65),
-            child: Center(
-              child: Text(
-                "Gagal memuat data user",
-                style: GoogleFonts.plusJakartaSans(
-                  color: AppTheme.lightTextColor,
-                ),
+        }
+        
+        // Show error state or default user
+        if (user == null) {
+          return AppBar(
+            backgroundColor: AppTheme.lightBackgroundColor,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            automaticallyImplyLeading: false,
+            toolbarHeight: 65,
+            title: Padding(
+              padding: const EdgeInsets.only(top: 16.0),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    backgroundImage: const AssetImage('assets/avatars/profile1.jpg'),
+                    radius: 28,
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hai, User!',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 14,
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Hari ini: (${globalState.todayActivitiesCount}) aktivitas, (${globalState.todayTasksCount}) tugas',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 14,
+                            color: AppTheme.lightTextColor,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           );
         }
 
-        final user = snapshot.data!;
-
+        // Normal state with user data
         return AppBar(
           backgroundColor: AppTheme.lightBackgroundColor,
           elevation: 0,
@@ -97,7 +152,7 @@ class _GreetingHeaderState extends State<GreetingHeader> {
                     final result = await context.router.push(const ProfileRoute());
                     // Refresh jika ada perubahan dari ProfilePage
                     if (result != null) {
-                      _loadUser();
+                      globalState.onUserChanged();
                     }
                   },
                   
@@ -155,59 +210,53 @@ class _GreetingHeaderState extends State<GreetingHeader> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 3),                      // Jumlah tugas + aktivitas hari ini - REAL TIME
-                      Consumer<HomeService>(
-                        builder: (context, homeService, child) {
-                          final activityCount = homeService.getTodayActivitiesCount();
-                          final taskCount = homeService.getTodayTasksCount();
-
-                          return RichText(
-                            text: TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: 'Hari ini: ',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 14,
-                                    color: AppTheme.lightTextColor,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: '($activityCount)',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 14,
-                                    color: AppTheme.dangerColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: ' aktivitas, ',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 14,
-                                    color: AppTheme.lightTextColor,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: '($taskCount)',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 14,
-                                    color: AppTheme.dangerColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: ' tugas',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 14,
-                                    color: AppTheme.lightTextColor,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ],
+                      const SizedBox(height: 3),
+                      // Jumlah tugas + aktivitas hari ini - REAL TIME dari GlobalStateService
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'Hari ini: ',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 14,
+                                color: AppTheme.lightTextColor,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
-                          );
-                        },
+                            TextSpan(
+                              text: '(${globalState.todayActivitiesCount})',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 14,
+                                color: AppTheme.dangerColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            TextSpan(
+                              text: ' aktivitas, ',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 14,
+                                color: AppTheme.lightTextColor,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            TextSpan(
+                              text: '(${globalState.todayTasksCount})',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 14,
+                                color: AppTheme.dangerColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            TextSpan(
+                              text: ' tugas',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 14,
+                                color: AppTheme.lightTextColor,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),

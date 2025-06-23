@@ -16,6 +16,7 @@ import 'package:aturin_app/core/widgets/custom_snackbar_top.dart';
 import 'package:aturin_app/core/services/api/activities/activity_api_service.dart';
 import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:aturin_app/core/services/api/task/task_api_service.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 @RoutePage()
 class AktivitasPage extends StatefulWidget {
@@ -28,15 +29,9 @@ class AktivitasPage extends StatefulWidget {
 class _AktivitasPageState extends State<AktivitasPage> {
   String selectedCategory = 'Semua';
   late DateTime selectedDate;
-  late DateTime focusedDate;
-  CalendarFormat calendarFormat = CalendarFormat.week;
+  late DateTime focusedDate;  CalendarFormat calendarFormat = CalendarFormat.week;
   bool _isInitialLoading = true;
-  Timer? _dateChangeDebouncer;
-
-  // Local cache for smooth transitions
-  List<Task> _allTasks = [];
-  List<Task> _uncompletedTasksToday = [];
-  DateTime? _lastDataFetch;
+  Timer? _debounceTimer; // Add debounce timer variable
 
   // Force calendar rebuild counter - increment after delete operations
   int _calendarRebuildCounter = 0;
@@ -52,17 +47,10 @@ class _AktivitasPageState extends State<AktivitasPage> {
     Future.microtask(() => _refreshData());
   }
 
-  @override
-  void dispose() {
-    _dateChangeDebouncer?.cancel();
-    super.dispose();
-  }
-
   Future<void> _refreshData() async {
     if (!mounted) return;
 
     try {
-      // Set loading state
       setState(() {
         _isInitialLoading = true;
       });
@@ -76,44 +64,12 @@ class _AktivitasPageState extends State<AktivitasPage> {
         listen: false,
       );
 
-      // Fetch activities data
-      await activityApiService.fetchActivities().timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          debugPrint('Activities fetch timeout, continuing with cached data');
-        },
-      );
-
-      // Fetch ALL tasks once untuk caching
-      await taskApiService.fetchTasks().timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          debugPrint('All tasks fetch timeout, continuing with cached data');
-        },
-      );
-
-      // Cache all tasks locally
-      _allTasks = List.from(taskApiService.tasks);
-
-      // Fetch uncompleted tasks today untuk cache
-      await taskApiService.fetchUncompletedTasksToday().timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          debugPrint(
-            'Uncompleted tasks today fetch timeout, continuing with cached data',
-          );
-        },
-      );
-
-      // Cache uncompleted today tasks
-      _uncompletedTasksToday = List.from(taskApiService.tasks);
-
-      // Mark last fetch time
-      _lastDataFetch = DateTime.now();
-
-      print('📦 Data cached successfully:');
-      print('   All tasks: ${_allTasks.length}');
-      print('   Uncompleted today: ${_uncompletedTasksToday.length}');
+      // Fetch all data without timeout restrictions for better responsiveness
+      await Future.wait([
+        activityApiService.fetchActivities(),
+        taskApiService.fetchTasks(),
+        taskApiService.fetchUncompletedTasksToday(),
+      ]);
     } catch (e) {
       debugPrint('Error during data refresh: $e');
       if (mounted) {
@@ -130,128 +86,55 @@ class _AktivitasPageState extends State<AktivitasPage> {
         });
       }
     }
-  }
-
-  /// Smooth date transition without any API calls - uses only cached data
-  void _onDateChanged(DateTime newDate) {
+  }  /// Real-time date change with instant response for calendar taps
+  /// Ultra-fast debouncing only for rapid swipe scenarios
+  Future<void> _onDateChanged(DateTime newDate) async {
     if (!mounted) return;
 
-    // Cancel any pending background refresh
-    _dateChangeDebouncer?.cancel();
+    // Cancel previous debounce timer to prevent stale updates
+    _debounceTimer?.cancel();
 
-    print(
-      '📅 Date changed to ${newDate.toString().split(' ')[0]} - INSTANT transition using cached data',
-    );
-
-    // Immediate UI update with cached data - NO async operations
+    // Immediately update selected date for instant UI response
     setState(() {
       selectedDate = newDate;
+      // Force immediate calendar rebuild for instant dot synchronization
+      _calendarRebuildCounter++;
     });
 
-    // Schedule background refresh if cache is stale (> 5 minutes)
-    if (_lastDataFetch != null &&
-        DateTime.now().difference(_lastDataFetch!).inMinutes > 5) {
-      _dateChangeDebouncer = Timer(const Duration(milliseconds: 500), () {
-        _refreshDataInBackground();
-      });
-    }
-  }
-
-  /// Background data refresh tanpa loading indicator
-  Future<void> _refreshDataInBackground() async {
-    if (!mounted) return;
-
-    try {
-      final taskApiService = Provider.of<TaskApiService>(
-        context,
-        listen: false,
-      );
-      final activityApiService = Provider.of<ActivityApiService>(
-        context,
-        listen: false,
-      );
-
-      // Silent refresh tanpa loading indicator
-      await Future.wait([
-        activityApiService.fetchActivities(),
-        taskApiService.fetchTasks(),
-      ]);
-
-      // Update local cache untuk all tasks
-      _allTasks = List.from(taskApiService.tasks);
-
-      // Fetch uncompleted tasks today untuk cache
-      await taskApiService.fetchUncompletedTasksToday();
-      _uncompletedTasksToday = List.from(taskApiService.tasks);
-      _lastDataFetch = DateTime.now();
-
-      print('🔄 Background refresh completed');
-      print('   All tasks cached: ${_allTasks.length}');
-      print('   Uncompleted today cached: ${_uncompletedTasksToday.length}');
-
-      // Trigger UI rebuild untuk update calendar markers
-      if (mounted) {
-        setState(() {});
-      }
-    } catch (e) {
-      debugPrint('Background refresh error: $e');
-    }
-  }
-
-  /// Force refresh current date data - useful after task completion/status changes
-  Future<void> _forceRefreshCurrentDate() async {
-    if (!mounted) return;
-
-    final taskApiService = Provider.of<TaskApiService>(context, listen: false);
-    final activityApiService = Provider.of<ActivityApiService>(
-      context,
-      listen: false,
-    );
-
-    try {
-      // Show brief loading
-      setState(() {
-        _isInitialLoading = true;
-      });
-
-      // Force refresh activities
-      await activityApiService.fetchActivities();
-
-      // Force refresh tasks based on current selected date
+    // For calendar dot taps: No debounce needed - instant data fetch
+    // For rapid swiping: Use minimal 20ms debounce to prevent excessive API calls
+    final debounceDelay = Duration(milliseconds: 20); // Reduced from 50ms to 20ms
+    
+    _debounceTimer = Timer(debounceDelay, () async {
+      if (!mounted || selectedDate != newDate) return; // Check if date is still current
+      
+      final taskApiService = Provider.of<TaskApiService>(context, listen: false);
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
-      final selectedDay = DateTime(
-        selectedDate.year,
-        selectedDate.month,
-        selectedDate.day,
-      );
+      final selectedDay = DateTime(newDate.year, newDate.month, newDate.day);
 
-      if (selectedDay.isAtSameMomentAs(today)) {
-        // For today, fetch uncompleted tasks only
-        await taskApiService.fetchUncompletedTasksToday();
-      } else {
-        // For other dates, fetch all tasks
-        await taskApiService.fetchTasks();
-      }
+      try {
+        if (selectedDay.isAtSameMomentAs(today)) {
+          // For today, fetch uncompleted tasks
+          await taskApiService.fetchUncompletedTasksToday();
+        } else {
+          // For other dates, fetch all tasks
+          await taskApiService.fetchTasks();
+        }
 
-      // Force UI rebuild
-      if (mounted) {
-        setState(() {
-          _isInitialLoading = false;
-        });
+        // Final calendar rebuild after data fetch (only if date hasn't changed)
+        if (mounted && selectedDate == newDate) {
+          setState(() {
+            _calendarRebuildCounter++;
+          });
+        }
+      } catch (e) {
+        debugPrint('Error fetching data for date change: $e');
       }
-    } catch (e) {
-      debugPrint('Error force refreshing data: $e');
-      if (mounted) {
-        setState(() {
-          _isInitialLoading = false;
-        });
-      }
-    }
+    });
   }
 
-  /// Get the appropriate task data for calendar based on selected date
-  /// UPDATED: Always use fresh data from taskApiService untuk avoid stale cache after delete
+  /// Get fresh task data for calendar - always from API service
   List<Task> _getTasksForCalendar() {
     final taskApiService = Provider.of<TaskApiService>(context, listen: false);
     final now = DateTime.now();
@@ -262,26 +145,12 @@ class _AktivitasPageState extends State<AktivitasPage> {
       selectedDate.day,
     );
 
-    print(
-      '🗓️ Calendar data request for ${selectedDate.toString().split(' ')[0]}:',
-    );
-
     if (selectedDay.isAtSameMomentAs(today)) {
-      // For today: filter uncompleted tasks from taskApiService.tasks (fresh data)
-      final uncompletedTasksToday =
-          taskApiService.tasks.where((task) => !task.isCompleted).toList();
-      print(
-        '   📅 Calendar showing TODAY data: ${uncompletedTasksToday.length} uncompleted tasks (from fresh taskApiService)',
-      );
-      return uncompletedTasksToday;
+      // For today: return uncompleted tasks
+      return taskApiService.tasks.where((task) => !task.isCompleted).toList();
     } else {
-      // For other dates: filter uncompleted tasks from fresh taskApiService.tasks
-      final uncompletedTasks =
-          taskApiService.tasks.where((task) => !task.isCompleted).toList();
-      print(
-        '   📅 Calendar showing OTHER DATE data: ${uncompletedTasks.length} uncompleted tasks (filtered from ${taskApiService.tasks.length} fresh)',
-      );
-      return uncompletedTasks;
+      // For other dates: return uncompleted tasks
+      return taskApiService.tasks.where((task) => !task.isCompleted).toList();
     }
   }
 
@@ -319,7 +188,9 @@ class _AktivitasPageState extends State<AktivitasPage> {
                     ),
                   ],
                 ),
-              ),              // Category Tabs
+              ),
+
+              // Category Tabs
               Transform.translate(
                 offset: const Offset(0, -8),
                 child: CategoryTabsWidget(
@@ -337,22 +208,12 @@ class _AktivitasPageState extends State<AktivitasPage> {
               // Calendar
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 2),
-                child: Consumer2<ActivityApiService, TaskApiService>(
-                  builder: (context, activityApiService, taskApiService, _) {
-                    // Create a unique key based on the data to force rebuild when data changes
-                    // Include rebuild counter to force calendar rebuild after deletions
-                    final activitiesHash =
-                        activityApiService.activities
-                            .map((a) => '${a.id}_${a.slug}')
-                            .join(',')
-                            .hashCode;
-                    final tasksHash =
-                        taskApiService.tasks
-                            .map((t) => '${t.id}_${t.slug}')
-                            .join(',')
-                            .hashCode;
+                child: Consumer2<ActivityApiService, TaskApiService>(                  builder: (context, activityApiService, taskApiService, _) {
+                    // Create stable key for calendar - only rebuild when data actually changes
+                    final activitiesHash = activityApiService.activities.length;
+                    final tasksHash = taskApiService.tasks.length;
                     final calendarKey = ValueKey(
-                      'calendar_${activityApiService.activities.length}_${taskApiService.tasks.length}_${activitiesHash}_${tasksHash}_${_calendarRebuildCounter}_${DateTime.now().millisecondsSinceEpoch}',
+                      'calendar_${activitiesHash}_${tasksHash}_${_calendarRebuildCounter}',
                     );
 
                     return CalendarSectionWidget(
@@ -387,95 +248,30 @@ class _AktivitasPageState extends State<AktivitasPage> {
 
               // Schedule List
               Expanded(
-                child: Consumer2<ActivityApiService, TaskApiService>(
-                  builder: (context, activityApiService, taskApiService, _) {
-                    try {
-                      if (_isInitialLoading) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      // Handle ActivityApiService loading state
-                      if (activityApiService.isLoading &&
-                          activityApiService.activities.isEmpty) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      // Handle ActivityApiService error state
-                      if (activityApiService.error != null &&
-                          activityApiService.activities.isEmpty) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                size: 64,
-                                color: Colors.grey[400],
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Gagal memuat aktivitas',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                activityApiService.error!,
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 14,
-                                  color: Colors.grey[500],
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: _refreshData,
-                                child: const Text('Coba Lagi'),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      // RACE CONDITION FIX: Send properly filtered data to InfiniteScheduleListWidget
-                      // Use filtered task data to ensure consistency between calendar and schedule list
-                      final aktivitasList = activityApiService.activities;
-                      final tasksList =
-                          _getTasksForCalendar(); // Use same filtered data as calendar
-
-                      return RefreshIndicator(
-                        onRefresh: _refreshData,
-                        child: InfiniteScheduleListWidget(
-                          tasks: tasksList,
-                          schedules: aktivitasList,
-                          selectedCategory: selectedCategory,
-                          selectedDate: selectedDate,
-                          onDateChanged: (date) {
-                            _onDateChanged(date);
-                          },
-                          onEditSchedule:
-                              (aktivitas) => _editActivity(aktivitas),
-                          onDeleteSchedule:
-                              (aktivitas) => _deleteActivity(aktivitas),
-                          onEditTask: (task) => _editTask(task),
-                          onDeleteTask: (task) => _deleteTask(task),
-                          onShowSuccess: (message) {
-                            // Force refresh current date data immediately to avoid stale data
-                            _forceRefreshCurrentDate();
-                            // Show snackbar
-                            showCustomTopSnackbar(
-                              context: context,
-                              message: message,
-                              isError: false,
-                            );
-                          },
+                child: Consumer2<ActivityApiService, TaskApiService>(                  builder: (context, activityApiService, taskApiService, _) {
+                    if (_isInitialLoading) {
+                      return Center(
+                        child: LoadingAnimationWidget.staggeredDotsWave(
+                          color: AppTheme.primaryColor,
+                          size: 50,
                         ),
                       );
-                    } catch (e) {
-                      debugPrint('Error in Consumer2 builder: $e');
+                    }
+
+                    // Handle ActivityApiService loading state
+                    if (activityApiService.isLoading &&
+                        activityApiService.activities.isEmpty) {
+                      return Center(
+                        child: LoadingAnimationWidget.staggeredDotsWave(
+                          color: AppTheme.primaryColor,
+                          size: 50,
+                        ),
+                      );
+                    }
+
+                    // Handle ActivityApiService error state
+                    if (activityApiService.error != null &&
+                        activityApiService.activities.isEmpty) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -487,7 +283,7 @@ class _AktivitasPageState extends State<AktivitasPage> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'Terjadi kesalahan',
+                              'Gagal memuat aktivitas',
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -496,21 +292,48 @@ class _AktivitasPageState extends State<AktivitasPage> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Silakan coba refresh halaman',
+                              activityApiService.error!,
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 14,
                                 color: Colors.grey[500],
                               ),
+                              textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: _refreshData,
-                              child: const Text('Refresh'),
+                              child: const Text('Coba Lagi'),
                             ),
                           ],
                         ),
                       );
                     }
+
+                    return RefreshIndicator(
+                      onRefresh: _refreshData,
+                      child: InfiniteScheduleListWidget(
+                        tasks: _getTasksForCalendar(),
+                        schedules: activityApiService.activities,
+                        selectedCategory: selectedCategory,
+                        selectedDate: selectedDate,
+                        onDateChanged: (date) {
+                          _onDateChanged(date);
+                        },
+                        onEditSchedule: (aktivitas) => _editActivity(aktivitas),
+                        onDeleteSchedule: (aktivitas) => _deleteActivity(aktivitas),
+                        onEditTask: (task) => _editTask(task),
+                        onDeleteTask: (task) => _deleteTask(task),
+                        onShowSuccess: (message) {
+                          // Refresh data immediately after any operation
+                          _refreshData();
+                          showCustomTopSnackbar(
+                            context: context,
+                            message: message,
+                            isError: false,
+                          );
+                        },
+                      ),
+                    );
                   },
                 ),
               ),
@@ -533,186 +356,156 @@ class _AktivitasPageState extends State<AktivitasPage> {
   void _deleteActivity(AktivitasModel aktivitas) {
     showDialog(
       context: context,
-      builder:
-          (dialogContext) => ConfirmDialog(
-            iconPath: 'assets/activitycategory/trash-round-tipis.svg',
-            title: 'Hapus Aktivitas',
-            description: 'Yakin nih kamu mau hapus aktivitas ini?',
-            confirmText: 'Hapus',
-            cancelText: 'Batal',
-            isTask: false,
-            onConfirm: () async {
-              Navigator.of(dialogContext).pop();
+      builder: (dialogContext) => ConfirmDialog(
+        iconPath: 'assets/activitycategory/trash-round-tipis.svg',
+        title: 'Hapus Aktivitas',
+        description: 'Yakin nih kamu mau hapus aktivitas ini?',
+        confirmText: 'Hapus',
+        cancelText: 'Batal',
+        isTask: false,
+        onConfirm: () async {
+          Navigator.of(dialogContext).pop();
 
-              try {
-                // Validasi slug
-                if (aktivitas.slug == null || aktivitas.slug!.isEmpty) {
-                  if (mounted) {
-                    showCustomTopSnackbar(
-                      context: context,
-                      message:
-                          'Tidak dapat menghapus aktivitas: data tidak lengkap',
-                      isError: true,
-                    );
-                  }
-                  return;
-                }
-
-                final activityApiService = Provider.of<ActivityApiService>(
-                  context,
-                  listen: false,
+          try {
+            if (aktivitas.slug == null || aktivitas.slug!.isEmpty) {
+              if (mounted) {
+                showCustomTopSnackbar(
+                  context: context,
+                  message: 'Tidak dapat menghapus aktivitas: data tidak lengkap',
+                  isError: true,
                 );
-
-                // Show loading indicator
-                if (mounted) {
-                  showCustomTopSnackbar(
-                    context: context,
-                    message: 'Menghapus aktivitas...',
-                    isError: false,
-                  );
-                }
-
-                final success = await activityApiService.deleteActivity(
-                  aktivitas.slug!,
-                );
-
-                if (!mounted) return;
-                if (success) {
-                  // Immediately update activityApiService cache untuk instant UI update
-                  activityApiService.activities.removeWhere(
-                    (a) => a.slug == aktivitas.slug,
-                  );
-
-                  // Force calendar rebuild by incrementing counter and triggering setState
-                  _calendarRebuildCounter++;
-                  setState(() {});
-
-                  // Background refresh untuk sync dengan server (optional)
-                  _refreshDataInBackground();
-
-                  showCustomTopSnackbar(
-                    context: context,
-                    message: 'Aktivitas berhasil dihapus',
-                    isError: false,
-                  );
-                } else {
-                  showCustomTopSnackbar(
-                    context: context,
-                    message: 'Gagal menghapus aktivitas',
-                    isError: true,
-                  );
-                }
-              } catch (e) {
-                debugPrint('Error deleting aktivitas: $e');
-
-                if (mounted) {
-                  showCustomTopSnackbar(
-                    context: context,
-                    message: 'Gagal menghapus aktivitas: ${e.toString()}',
-                    isError: true,
-                  );
-                }
               }
-            },
-          ),
+              return;
+            }
+
+            final activityApiService = Provider.of<ActivityApiService>(
+              context,
+              listen: false,
+            );
+
+            if (mounted) {
+              showCustomTopSnackbar(
+                context: context,
+                message: 'Menghapus aktivitas...',
+                isError: false,
+              );
+            }
+
+            final success = await activityApiService.deleteActivity(
+              aktivitas.slug!,
+            );
+
+            if (!mounted) return;
+            if (success) {
+              // Force calendar rebuild and refresh data
+              _calendarRebuildCounter++;
+              _refreshData();
+
+              showCustomTopSnackbar(
+                context: context,
+                message: 'Aktivitas berhasil dihapus',
+                isError: false,
+              );
+            } else {
+              showCustomTopSnackbar(
+                context: context,
+                message: 'Gagal menghapus aktivitas',
+                isError: true,
+              );
+            }
+          } catch (e) {
+            debugPrint('Error deleting aktivitas: $e');
+            if (mounted) {
+              showCustomTopSnackbar(
+                context: context,
+                message: 'Gagal menghapus aktivitas: ${e.toString()}',
+                isError: true,
+              );
+            }
+          }
+        },
+      ),
     );
   }
 
   void _deleteTask(Task task) {
     showDialog(
       context: context,
-      builder:
-          (dialogContext) => ConfirmDialog(
-            iconPath: 'assets/activitycategory/trash-round-tipis.svg',
-            title: 'Hapus Tugas',
-            description: 'Yakin nih kamu mau hapus tugas ini?',
-            confirmText: 'Hapus',
-            cancelText: 'Batal',
-            isTask: true,
-            onConfirm: () async {
-              Navigator.of(dialogContext).pop();
+      builder: (dialogContext) => ConfirmDialog(
+        iconPath: 'assets/activitycategory/trash-round-tipis.svg',
+        title: 'Hapus Tugas',
+        description: 'Yakin nih kamu mau hapus tugas ini?',
+        confirmText: 'Hapus',
+        cancelText: 'Batal',
+        isTask: true,
+        onConfirm: () async {
+          Navigator.of(dialogContext).pop();
 
-              try {
-                // Validasi slug
-                if (task.slug == null || task.slug!.isEmpty) {
-                  if (mounted) {
-                    showCustomTopSnackbar(
-                      context: context,
-                      message:
-                          'Tidak dapat menghapus tugas: data tidak lengkap',
-                      isError: true,
-                    );
-                  }
-                  return;
-                }
-
-                final taskApiService = Provider.of<TaskApiService>(
-                  context,
-                  listen: false,
+          try {
+            if (task.slug == null || task.slug!.isEmpty) {
+              if (mounted) {
+                showCustomTopSnackbar(
+                  context: context,
+                  message: 'Tidak dapat menghapus tugas: data tidak lengkap',
+                  isError: true,
                 );
-
-                // Show loading indicator
-                if (mounted) {
-                  showCustomTopSnackbar(
-                    context: context,
-                    message: 'Menghapus tugas...',
-                    isError: false,
-                  );
-                }
-
-                final result = await taskApiService.deleteTask(task.slug!);
-
-                if (!mounted) return;
-                if (result.isSuccess) {
-                  print(
-                    '🗑️ Task delete success - immediately fetching fresh data',
-                  );
-
-                  // Don't update cache manually - fetch fresh data from server instead
-                  print('🔄 Fetching fresh data from server after delete...');
-
-                  // Force immediate refresh from server untuk memastikan data terbaru
-                  await taskApiService.fetchUncompletedTasksToday();
-
-                  print('✅ Fresh data fetched:');
-                  print(
-                    '   taskApiService.tasks: ${taskApiService.tasks.length}',
-                  );
-                  print(
-                    '   Current tasks: ${taskApiService.tasks.map((t) => '${t.slug}:"${t.title}"').join(', ')}',
-                  );
-
-                  // Update local cache dengan data fresh
-                  _uncompletedTasksToday = List.from(taskApiService.tasks);
-                  _lastDataFetch = DateTime.now();
-
-                  // Force calendar rebuild by incrementing counter and triggering setState
-                  _calendarRebuildCounter++;
-                  setState(() {});
-
-                  showCustomTopSnackbar(
-                    context: context,
-                    message: 'Tugas berhasil dihapus',
-                    isError: false,
-                  );
-                } else {
-                  showCustomTopSnackbar(
-                    context: context,
-                    message: result.message,
-                    isError: true,
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  showCustomTopSnackbar(
-                    context: context,
-                    message: 'Gagal menghapus tugas: ${e.toString()}',
-                    isError: true,
-                  );
-                }
               }
-            },
-          ),
+              return;
+            }
+
+            final taskApiService = Provider.of<TaskApiService>(
+              context,
+              listen: false,
+            );
+
+            if (mounted) {
+              showCustomTopSnackbar(
+                context: context,
+                message: 'Menghapus tugas...',
+                isError: false,
+              );
+            }
+
+            final result = await taskApiService.deleteTask(task.slug!);
+
+            if (!mounted) return;
+            if (result.isSuccess) {
+              // Immediately fetch fresh data
+              await taskApiService.fetchUncompletedTasksToday();
+              
+              // Force calendar rebuild
+              _calendarRebuildCounter++;
+              setState(() {});
+
+              showCustomTopSnackbar(
+                context: context,
+                message: 'Tugas berhasil dihapus',
+                isError: false,
+              );
+            } else {
+              showCustomTopSnackbar(
+                context: context,
+                message: result.message,
+                isError: true,
+              );
+            }
+          } catch (e) {
+            if (mounted) {
+              showCustomTopSnackbar(
+                context: context,
+                message: 'Gagal menghapus tugas: ${e.toString()}',
+                isError: true,
+              );
+            }          }
+        },
+      ),
     );
+  }
+
+  @override
+  void dispose() {
+    // Cancel debounce timer to prevent memory leaks
+    _debounceTimer?.cancel();
+    super.dispose();
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:aturin_app/features/profile/models/user.dart';
+import 'package:aturin_app/features/profile/models/user_model.dart';
 import 'package:aturin_app/core/services/api/profile/profile_service.dart';
 import 'package:aturin_app/features/profile/widgets/profile_avatar_edit.dart';
 import 'package:aturin_app/features/profile/widgets/profile_text_field.dart';
@@ -135,7 +135,14 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                 onSubmitted: () => _saveChanges(shouldPop: false),
                 maxChar: 20,
                 onEditPressed: () {},
-              ),            ],
+              ),
+              const SizedBox(height: 20),
+              ProfileTextField(
+                label: 'Email',
+                value: widget.user.email,
+                editable: false,
+              ),
+            ],
           ),
         ),
       ),

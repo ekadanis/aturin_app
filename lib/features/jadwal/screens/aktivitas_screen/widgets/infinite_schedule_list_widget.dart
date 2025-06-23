@@ -107,9 +107,7 @@ class _InfiniteScheduleListWidgetState
     _pageController.dispose();
     _animator.dispose();
     super.dispose();
-  }
-
-  void _animateToDate(DateTime targetDate) {
+  }  void _animateToDate(DateTime targetDate) {
     if (!_pageController.hasClients) return;
 
     final normalizedDate = DateTime(
@@ -121,18 +119,23 @@ class _InfiniteScheduleListWidgetState
     final daysDifference = normalizedDate.difference(_baseDate).inDays;
     final targetPageIndex = _initialPageIndex + daysDifference;
 
+    // Cancel any ongoing animation to prevent conflicts
     _isPageChanging = true;
-
+    
+    // Use very quick animation (100ms) for visual feedback while maintaining sync
+    // Fast enough to prevent dots/page mismatch but gives slide sensation
     _pageController
         .animateToPage(
           targetPageIndex,
-          duration: const Duration(milliseconds: 600),
-          curve: Curves.easeInOutCubic,
+          duration: const Duration(milliseconds: 100), // Quick slide animation
+          curve: Curves.easeOutQuart, // Sharp but smooth curve
         )
         .then((_) {
-          Future.delayed(const Duration(milliseconds: 100), () {
+          // Reset flag after animation completes
+          if (mounted) {
             _isPageChanging = false;
-          });
+            _currentPageIndex = targetPageIndex;
+          }
         });
   }
 

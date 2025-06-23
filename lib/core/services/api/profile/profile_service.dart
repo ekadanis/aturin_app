@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:aturin_app/features/profile/models/user.dart';
+import 'package:aturin_app/features/profile/models/user_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileService extends ChangeNotifier {
@@ -68,7 +68,7 @@ class ProfileService extends ChangeNotifier {
           name: userData['name'],
           email: userData['email'],
           avatar: userData['avatar'] ?? 'assets/avatars/profile1.jpg',
-          slug: userData['slug'] ?? _generateSlug(userData['name']),
+          slug: userData['slug'] ??  '',
           createdAt:
               userData['created_at'] != null
                   ? DateTime.tryParse(userData['created_at'])
@@ -136,11 +136,9 @@ class ProfileService extends ChangeNotifier {
           name: userData['name'],
           email: '', // atau gunakan default / kosong jika tidak tersedia
           avatar: userData['avatar'] ?? 'assets/avatars/profile1.jpg',
-          slug: userData['slug'] ?? _generateSlug(userData['name']),
+          slug: userData['slug'] ??  '',
           createdAt: DateTime.tryParse(userData['created_at'] ?? ''),
           updatedAt: DateTime.tryParse(userData['updated_at'] ?? ''),
-          todayActivities: null,
-          todayTasks: null,
         );
 
         _currentUser = user;
@@ -205,11 +203,9 @@ class ProfileService extends ChangeNotifier {
           name: userData['name'],
           email: userData['email'] ?? '',
           avatar: userData['avatar'] ?? 'assets/avatars/profile1.jpg',
-          slug: userData['slug'] ?? _generateSlug(userData['name']),
+          slug: userData['slug'] ??  '',
           createdAt: null,
           updatedAt: null,
-          todayActivities: data['today_activities'],
-          todayTasks: data['today_tasks'],
         );
 
         debugPrint('getBannerProfile: User berhasil dibuat: ${user.name}');
@@ -328,12 +324,4 @@ class ProfileService extends ChangeNotifier {
     }
   }
 
-  String _generateSlug(String name) {
-    return name
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9\s-]'), '') // Remove special characters
-        .replaceAll(RegExp(r'\s+'), '-') // Replace spaces with hyphens
-        .replaceAll(RegExp(r'-+'), '-') // Replace multiple hyphens with single
-        .replaceAll(RegExp(r'^-|-$'), ''); // Remove leading/trailing hyphens
-  }
 }

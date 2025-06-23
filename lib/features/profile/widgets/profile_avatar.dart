@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:aturin_app/features/profile/services/profile_service.dart';
-import 'package:aturin_app/features/profile/models/user.dart';
+import 'package:aturin_app/core/services/api/profile/profile_service.dart';
+import 'package:aturin_app/features/profile/models/user_model.dart';
 
 class ProfileAvatar extends StatelessWidget {
   const ProfileAvatar({super.key});
@@ -8,7 +8,7 @@ class ProfileAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<User?>(
-      future: ProfileService().getUser(),
+      future: ProfileService().me(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildPlaceholder();

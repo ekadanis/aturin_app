@@ -2,8 +2,8 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
-import 'package:aturin_app/features/home/services/home_service.dart' as home;
 import 'package:aturin_app/core/services/api/task/task_api_service.dart';
+import 'package:aturin_app/core/providers/global_state_service.dart';
 
 /// Router guard yang memastikan data diambil sebelum navigasi selesai
 class DataPrefetchGuard extends AutoRouteGuard {
@@ -26,10 +26,9 @@ class DataPrefetchGuard extends AutoRouteGuard {
     final context = router.navigatorKey.currentContext;
     
     if (context != null) {
-      try {
-        if (resolver.route.name == 'HomeRoute') {
-          await Provider.of<home.HomeService>(context, listen: false)
-              .fetchData()
+      try {        if (resolver.route.name == 'HomeRoute') {
+          final globalStateService = Provider.of<GlobalStateService>(context, listen: false);
+          await globalStateService.refreshAllData()
               .timeout(
                 const Duration(seconds: 3),
                 onTimeout: () {
@@ -62,10 +61,9 @@ class DataPrefetchGuard extends AutoRouteGuard {
     if (context == null) return;
     
     Future.microtask(() async {
-      try {
-        if (routeName == 'HomeRoute') {
-          await Provider.of<home.HomeService>(context, listen: false)
-              .fetchData()
+      try {        if (routeName == 'HomeRoute') {
+          final globalStateService = Provider.of<GlobalStateService>(context, listen: false);
+          await globalStateService.refreshAllData()
               .timeout(const Duration(seconds: 5));
         } else if (routeName == 'TaskListRoute') {
           await TaskApiService()

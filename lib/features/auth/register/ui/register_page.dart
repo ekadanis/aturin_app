@@ -1,5 +1,4 @@
 import 'package:aturin_app/core/theme/app_theme.dart';
-import 'package:aturin_app/features/auth/login/ui/login_page.dart';
 import 'package:aturin_app/features/auth/register/widgets/login_link_widget.dart';
 import 'package:aturin_app/features/auth/register/widgets/register_app_bar_widget.dart';
 import 'package:aturin_app/features/auth/register/widgets/register_form_widget.dart';

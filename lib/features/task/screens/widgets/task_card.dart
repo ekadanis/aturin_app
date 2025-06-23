@@ -1,8 +1,7 @@
 import 'package:aturin_app/core/widgets/confirm_dialog.dart';
-import 'package:aturin_app/features/jadwal/screens/detail_task/ui/screens/task_detail_list_screen.dart';
 import 'package:aturin_app/features/task/screens/ui/add_task_screen.dart';
-import 'package:aturin_app/features/task/screens/ui/task_detail_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../model/task_model.dart';
 import '../../../../../../core/theme/app_theme.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -48,11 +47,36 @@ class _TaskCardState extends State<TaskCard> {
   bool _isCompleted() {
     return widget.task.isCompleted;
   }
-  
-  // Handler yang aman untuk onToggleCompletion
-  void _handleToggleCompletion() {
-    _actionThrottle.run(() {
-      widget.onToggleCompletion();
+    // Handler yang aman untuk onToggleCompletion dengan provider pattern
+  void _handleToggleCompletion() async {
+    _actionThrottle.run(() async {
+      try {
+        final taskApiService = Provider.of<TaskApiService>(
+          context,
+          listen: false,
+        );
+        
+        // Toggle completion status through provider service
+        final newStatus = widget.task.isCompleted ? 'belum_selesai' : 'selesai';
+        final result = await taskApiService.updateTask(
+          slug: widget.task.slug!,
+          status: newStatus,
+        );
+        
+        if (result.isSuccess) {
+          // Refresh tasks through provider
+          await taskApiService.fetchTasks();
+        }
+        // Also call the original callback for parent widget compatibility
+        widget.onToggleCompletion();      } catch (e) {
+        // Handle error and fall back to original callback
+        // Log error in debug mode only
+        assert(() {
+          print('Error toggling task completion: $e');
+          return true;
+        }());
+        widget.onToggleCompletion();
+      }
     });
   }
 
@@ -260,33 +284,35 @@ class _TaskCardState extends State<TaskCard> {
                             width: 1.5,
                           ),
                         ),
-                        color: const Color.fromARGB(255, 249, 251, 255),
-                        onSelected: (value) async {
+                        color: const Color.fromARGB(255, 249, 251, 255),                        onSelected: (value) async {
                           if (value == 'edit') {
-                            // Ambil data task terbaru dari API
-                            final latestTask =
-                                widget.task.slug != null
-                                    ? await TaskApiService().getTaskBySlug(
-                                      widget.task.slug!,
-                                    )
-                                    : null;
-                            final result = await Navigator.push(
+                            // Use TaskApiService from provider
+                            final taskApiService = Provider.of<TaskApiService>(
                               context,
+                              listen: false,
+                            );
+                            
+                            // Store context to avoid async gap warning
+                            final navigator = Navigator.of(context);
+                            
+                            // Get latest task data from provider service
+                            final latestTask = widget.task.slug != null
+                                ? await taskApiService.getTaskBySlug(
+                                    widget.task.slug!,
+                                  )
+                                : null;
+                            
+                            final result = await navigator.push(
                               MaterialPageRoute(
-                                builder:
-                                    (_) => AddTaskScreen(
-                                      existingTask: latestTask ?? widget.task,
-                                      // Anda bisa modifikasi AddTaskScreen untuk menerima alarm jika perlu
-                                    ),
+                                builder: (_) => AddTaskScreen(
+                                  existingTask: latestTask ?? widget.task,
+                                ),
                               ),
                             );
+                            
                             if (result == true) {
-                              final updatedTask = widget.task.id;
-                              if (updatedTask != null) {
-                                setState(() {
-                                  // update jika perlu
-                                });
-                              }
+                              // Refresh tasks through provider
+                              await taskApiService.fetchTasks();
                             }
                           } else if (value == 'delete') {
                             // Tampilkan DeletePopup

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:aturin_app/features/profile/services/profile_service.dart';
+import 'package:aturin_app/core/services/api/profile/profile_service.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
 
 class EditUsernameDialog extends StatefulWidget {
@@ -8,6 +8,7 @@ class EditUsernameDialog extends StatefulWidget {
   final int userId;
   final void Function(String newUsername) onUsernameUpdated;
   final ProfileService profileService;
+  final String currentAvatar; // Menambahkan properti avatar
 
   const EditUsernameDialog({
     super.key,
@@ -15,6 +16,7 @@ class EditUsernameDialog extends StatefulWidget {
     required this.userId,
     required this.onUsernameUpdated,
     required this.profileService,
+    required this.currentAvatar, // Membutuhkan avatar saat inisialisasi
   });
 
   @override
@@ -62,14 +64,24 @@ class _EditUsernameDialogState extends State<EditUsernameDialog> {
       });
     } else {
       try {
-        // Use the profileService passed from the parent widget
-        await widget.profileService.changeUsername(widget.userId, newUsername);
-        
-        // Call the callback with the new username
-        widget.onUsernameUpdated(newUsername);
-        
-        if (mounted) {
-          Navigator.pop(context);
+        // Gunakan editProfile dari API ProfileService
+        final updatedUser = await widget.profileService.editProfile(
+          newUsername,
+          widget.currentAvatar, // Menggunakan avatar yang ada
+        );
+
+        if (updatedUser != null) {
+          // Call the callback with the new username
+          widget.onUsernameUpdated(newUsername);
+
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        } else {
+          setState(() {
+            _isError = true;
+            _errorMessage = 'Gagal mengubah nama. Coba lagi.';
+          });
         }
       } catch (e) {
         setState(() {

@@ -7,8 +7,6 @@ class User {
   final String slug;
   final DateTime? createdAt;
   final DateTime? updatedAt;
-  final int? todayActivities;
-  final int? todayTasks;
   final bool is_global_enabled;
 
   User({
@@ -20,8 +18,6 @@ class User {
     required this.slug,
     this.createdAt,
     this.updatedAt,
-    this.todayActivities,
-    this.todayTasks,
     final this.is_global_enabled = true,
   });
 
@@ -35,8 +31,6 @@ class User {
       'slug': slug,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
-      'today_activities': todayActivities,
-      'today_tasks': todayTasks,
     };
   }
 
@@ -50,8 +44,6 @@ class User {
       slug: map['slug'] ?? '',
       createdAt: map['created_at'] != null ? DateTime.tryParse(map['created_at']) : null,
       updatedAt: map['updated_at'] != null ? DateTime.tryParse(map['updated_at']) : null,
-      todayActivities: map['today_activities'],
-      todayTasks: map['today_tasks'],
     );
   }
 
@@ -65,8 +57,6 @@ class User {
       slug: json['slug'] ?? '',
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
       updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at']) : null,
-      todayActivities: json['today_activities'],
-      todayTasks: json['today_tasks'],
     );
   }
 
@@ -79,8 +69,6 @@ class User {
       'slug': slug,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
-      'today_activities': todayActivities,
-      'today_tasks': todayTasks,
     };
   }
 
@@ -94,8 +82,6 @@ class User {
       slug: slug,
       createdAt: createdAt,
       updatedAt: updatedAt,
-      todayActivities: todayActivities,
-      todayTasks: todayTasks,
     );
   }
 
@@ -130,8 +116,6 @@ class User {
       slug: slug ?? this.slug,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      todayActivities: todayActivities ?? this.todayActivities,
-      todayTasks: todayTasks ?? this.todayTasks,
     );
   }
 }

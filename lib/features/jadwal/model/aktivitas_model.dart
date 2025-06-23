@@ -1,5 +1,5 @@
 import 'package:aturin_app/features/alarm/model/alarm.dart';
-import 'package:aturin_app/features/profile/models/user.dart';
+import 'package:aturin_app/features/profile/models/user_model.dart';
 
 enum ActivityCategory {
   akademik,

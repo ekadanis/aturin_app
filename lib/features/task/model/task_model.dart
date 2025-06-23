@@ -1,4 +1,4 @@
-import 'package:aturin_app/features/profile/models/user.dart';
+import 'package:aturin_app/features/profile/models/user_model.dart';
 import 'package:aturin_app/features/alarm/model/alarm.dart';
 
 enum TaskStatus { completed, late, today, tomorrow, upcoming }

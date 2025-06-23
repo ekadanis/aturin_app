@@ -1,5 +1,8 @@
 import 'package:aturin_app/core/widgets/empty_widget.dart';
 import 'package:aturin_app/features/home/services/home_service.dart';
+import 'package:aturin_app/core/providers/global_state_service.dart';
+import 'package:aturin_app/features/task/services/task_service.dart';
+import 'package:aturin_app/core/services/api/activities/activity_api_service.dart';
 
 import 'package:aturin_app/features/home/widget/greeting_header.dart';
 import 'package:aturin_app/features/home/widget/timeline_widget.dart';
@@ -27,14 +30,17 @@ enum TaskViewType { tugas, aktivitas }
 
 class _HomePageState extends State<HomePage> {
   late HomeService homeService;
-  TaskViewType _selectedView = TaskViewType.tugas;  @override
+  TaskViewType _selectedView = TaskViewType.tugas;
+  @override
   void initState() {
     super.initState();
     debugPrint('🏠 HomePage: initState() called');
     homeService = Provider.of<HomeService>(context, listen: false);
     // Note: fetchData() is already called by DataPrefetchGuard before navigation
     // so we don't need to call it again here to avoid duplicate API calls
-    debugPrint('🏠 HomePage: Skipping fetchData() - already called by DataPrefetchGuard');
+    debugPrint(
+      '🏠 HomePage: Skipping fetchData() - already called by DataPrefetchGuard',
+    );
   }
 
   @override
@@ -48,14 +54,29 @@ class _HomePageState extends State<HomePage> {
         appBar: GreetingHeader(),
         // Mengaktifkan extendBody agar body dapat memperluas hingga di bawah bottom navigation bar
         extendBody: true,
-        bottomNavigationBar: const BottomNavbar(currentIndex: 0),
-        body: Consumer<HomeService>(
-          builder: (context, homeService, _) {
-            // Get the appropriate data based on selected view
+        bottomNavigationBar: const BottomNavbar(currentIndex: 0),        body: Consumer4<
+          GlobalStateService,
+          HomeService,
+          TaskService,
+          ActivityApiService
+        >(
+          builder: (
+            context,
+            globalState,
+            homeService,
+            taskService,
+            activityService,
+            _,
+          ) {
+            // Get data from GlobalStateService
+            final allTasks = globalState.allTasks;
+            final allActivities = globalState.allActivities;
+
+            // Use HomeService to compute today's data
             final items =
                 _selectedView == TaskViewType.tugas
-                    ? homeService.todayTasks
-                    : homeService.todayAktivitas;
+                    ? homeService.getTodayTasks(allTasks)
+                    : homeService.getTodayActivities(allActivities);
 
             return SafeArea(
               bottom: false, // Menghilangkan padding bawah
@@ -68,7 +89,8 @@ class _HomePageState extends State<HomePage> {
                       'assets/images/home_head1.png',
                       width: 100.w,
                       fit: BoxFit.contain,
-                    ),                    SizedBox(height: 2.h),
+                    ),
+                    SizedBox(height: 2.h),
                     Row(
                       children: [
                         _buildSwitcherButton(
@@ -136,26 +158,35 @@ class _HomePageState extends State<HomePage> {
                                       task: task,
                                       index: index,
                                       isLast: isLast,
-                                      previousIsFlagged: previousIsFlagged,
-                                      onToggleCompletion:
-                                          () => homeService
-                                              .toggleTaskCompletion(task.id!),
-                                      onDelete:
-                                          () =>
-                                              homeService.deleteTask(task.id!),
-                                      onToggleAlarm:
-                                          () =>
-                                              homeService.toggleAlarm(task.id!),                                      onViewDetails: () async {
+                                      previousIsFlagged: previousIsFlagged,                                      onToggleCompletion: () async {
+                                        final success = await taskService.toggleTaskCompletion(task.slug);
+                                        if (success) {
+                                          globalState.onTasksChanged();
+                                        }
+                                      },
+                                      onDelete: () async {
+                                        await taskService.deleteTask(
+                                          task.slug!,
+                                        );
+                                        globalState.onTasksChanged();
+                                      },                                      onToggleAlarm: () async {
+                                        final success = await taskService.toggleTaskAlarmStatus(task.slug!);
+                                        if (success) {
+                                          globalState.onTasksChanged();
+                                        }
+                                      },
+                                      onViewDetails: () async {
                                         final result = await context.router.push(
                                           TaskDetailListRoute(
-                                            tasks: items.whereType<Task>().toList(),
+                                            tasks:
+                                                items
+                                                    .whereType<Task>()
+                                                    .toList(),
                                             initialIndex: index,
                                           ),
-                                        );
-
-                                        // Refresh data if task was modified/deleted
+                                        ); // Refresh data if task was modified/deleted
                                         if (result == true && mounted) {
-                                          homeService.forceRefresh();
+                                          globalState.onTasksChanged();
                                         }
                                       },
                                       currentFilter: "today",
@@ -168,30 +199,28 @@ class _HomePageState extends State<HomePage> {
                                     return ActivityCard(
                                       activity: activity,
                                       onTap: () async {
-                                        final result = await context.router
-                                            .push(
-                                              ActivityDetailListRoute(
-                                                activities:
-                                                    items
-                                                        .whereType<
-                                                          AktivitasModel
-                                                        >()
-                                                        .toList(),
-                                                initialIndex: index,
-                                              ),
-                                            );
-                                        // Refresh data if activity was modified/deleted
+                                        final result = await context.router.push(
+                                          ActivityDetailListRoute(
+                                            activities:
+                                                items
+                                                    .whereType<AktivitasModel>()
+                                                    .toList(),
+                                            initialIndex: index,
+                                          ),
+                                        ); // Refresh data if activity was modified/deleted
                                         if (result == true && mounted) {
-                                          homeService.forceRefresh();
+                                          globalState.onActivitiesChanged();
                                         }
                                       },
                                       onEdit: () {
                                         // TODO: Navigate to edit activity screen
                                       },
-                                      onDelete:
-                                          () => homeService.deleteActivity(
-                                            activity.id!,
-                                          ),
+                                      onDelete: () async {
+                                        await activityService.deleteActivity(
+                                          activity.id!.toString(),
+                                        );
+                                        globalState.onActivitiesChanged();
+                                      },
                                     );
                                   }
                                 },

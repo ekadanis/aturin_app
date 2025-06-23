@@ -1,13 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:aturin_app/features/profile/models/user.dart';
-import 'package:aturin_app/features/profile/services/profile_service.dart';
+import 'package:aturin_app/features/profile/models/user_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService extends ChangeNotifier {
   static const String baseUrl = 'https://aturin-app.com/api/v1';
-  final ProfileService _profileService = ProfileService();
 
   bool _isLoading = false;
   String? _errorMessage;

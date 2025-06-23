@@ -31,10 +31,8 @@ class InteractiveCalendarWidget extends StatelessWidget {
     required this.onSwitchFormat,
   });  @override
   Widget build(BuildContext context) {
-    // Create a unique key based on schedules and tasks data to force rebuild when data changes
-    final activitiesData = schedules.map((s) => '${s.id}_${s.slug}').join(',');
-    final tasksData = tasks.map((t) => '${t.id}_${t.slug}').join(',');
-    final dataKey = ValueKey('cal_${schedules.length}_${tasks.length}_${activitiesData.hashCode}_${tasksData.hashCode}');
+    // Create a stable key based on data length only - avoid excessive rebuilds
+    final dataKey = ValueKey('cal_${schedules.length}_${tasks.length}');
     
     return GestureDetector(
       onVerticalDragUpdate: (details) {
@@ -59,12 +57,9 @@ class InteractiveCalendarWidget extends StatelessWidget {
             viewTransitionController.reverse();
           }
         }
-      },
-      child: AnimatedBuilder(
-        animation: viewTransitionAnimation,        builder: (context, child) {
-          // Force rebuild by logging current data state
-          print('🔄 TableCalendar rebuilding with ${schedules.length} activities and ${tasks.length} tasks');
-          
+      },      child: AnimatedBuilder(
+        animation: viewTransitionAnimation,
+        builder: (context, child) {
           return TableCalendar<AktivitasModel>(
             key: dataKey, // Force rebuild when data changes
             firstDay: DateTime.utc(2020, 1, 1),
@@ -120,26 +115,10 @@ class InteractiveCalendarWidget extends StatelessWidget {
         activityStartTime: day,
         activityCompleteTime: day,
         activityCategory: ActivityCategory.akademik,
-      );
-      events.add(dummyActivity);
+      );      events.add(dummyActivity);
     }
     
-    // Enhanced debug logging - show current state
-    final dateStr = '${day.day}/${day.month}/${day.year}';
-    final completedTasksCount = tasks.where((task) => 
-        isSameDay(task.deadline, day) && task.isCompleted).length;
-    final uncompletedTasksCount = tasks.where((task) =>
-        isSameDay(task.deadline, day) && !task.isCompleted).length;
-    
-    if (events.isNotEmpty || uncompletedTasksCount > 0 || completedTasksCount > 0) {
-      print('📅 Calendar marker for $dateStr:');
-      print('   📝 Activities: ${activitiesForDay.length}');
-      print('   ✅ Completed tasks: $completedTasksCount');
-      print('   ⏳ Uncompleted tasks: $uncompletedTasksCount');
-      print('   🔵 Will show marker: ${events.isNotEmpty}');
-      print('   📊 Total events returned: ${events.length}');
-    }
-      return events;
+    return events;
   }
 
   CalendarStyle _buildCalendarStyle() {

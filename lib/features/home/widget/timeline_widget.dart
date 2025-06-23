@@ -2,7 +2,6 @@ import 'package:aturin_app/features/task/screens/widgets/task_card.dart';
 import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:flutter/material.dart';
 import 'package:timelines_plus/timelines_plus.dart';
-import 'package:aturin_app/core/theme/app_theme.dart';
 
 class TimelineWidget extends StatelessWidget {
   const TimelineWidget({

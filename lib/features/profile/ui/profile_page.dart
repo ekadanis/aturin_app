@@ -1,7 +1,7 @@
 import 'package:aturin_app/core/services/api/auth/auth_service.dart';
 import 'package:aturin_app/core/services/api/profile/profile_service.dart';
 import 'package:flutter/material.dart';
-import 'package:aturin_app/features/profile/models/user.dart';
+import 'package:aturin_app/features/profile/models/user_model.dart';
 import 'package:aturin_app/features/profile/widgets/profile_card.dart';
 import 'package:aturin_app/features/profile/ui/profile_edit_page.dart';
 import 'package:aturin_app/features/profile/widgets/pengaturan_card.dart';

@@ -5,7 +5,7 @@ import 'package:collection/collection.dart';
 import 'package:aturin_app/features/home/ui/page/home_page.dart';
 import 'package:aturin_app/features/profile/ui/profile_page.dart';
 import 'package:aturin_app/features/profile/ui/profile_edit_page.dart';
-import 'package:aturin_app/features/profile/models/user.dart';
+import 'package:aturin_app/features/profile/models/user_model.dart';
 import 'package:aturin_app/features/jadwal/screens/detail_task/ui/screens/task_detail_list_screen.dart';
 import 'package:aturin_app/features/onboarding/ui/onboarding_screen.dart';
 import 'package:aturin_app/features/animated_splash_screen/ui/animated_splash_screen.dart';
