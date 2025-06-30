@@ -21,6 +21,11 @@ class _BottomNavbarState extends State<BottomNavbar>
   final _navigationThrottle = Throttle(milliseconds: 800);
   bool _isRotated = false;
 
+  @override
+  void initState() {
+    super.initState();
+  }
+
   void _handleNavigation(BuildContext context, int index) {
     if (index == widget.currentIndex) return;
 
@@ -57,218 +62,283 @@ class _BottomNavbarState extends State<BottomNavbar>
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    const double fabSize = 56;
-    const double navBarHeight = 73;
-    final double totalHeight = _isRotated ? 140 : navBarHeight;
-
-    return Stack(
-      children: [
-        if (_isRotated)
-          Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-              child: Container(color: Colors.transparent),
+  Widget _buildFloatingFABWithTooltip({
+    required VoidCallback onTap,
+    required String iconPath,
+    required bool isVisible,
+    required String tooltipText,
+  }) {
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 300),
+      opacity: isVisible ? 1.0 : 0.0,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Tooltip
+          AnimatedOpacity(
+            duration: const Duration(milliseconds: 200),
+            opacity: isVisible ? 1.0 : 0.0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black87,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Text(
+                tooltipText,
+                style: GoogleFonts.plusJakartaSans(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
-        Container(
-          height: totalHeight,
-          decoration: const BoxDecoration(
-            color: Colors.transparent, // Ubah sesuai warna yang diinginkan
+          const SizedBox(height: 8),
+          // FAB
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppTheme.primaryColor,
+                  AppTheme.primaryColor.withOpacity(0.8),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(30),
+                splashColor: Colors.white.withOpacity(0.3),
+                onTap: isVisible ? onTap : null,
+                child: Center(
+                  child: _buildSvgIcon(
+                    iconPath,
+                    AppTheme.buttonBackgroundColor,
+                  ),
+                ),
+              ),
+            ),
           ),
-          child: Stack(
-            alignment: Alignment.bottomCenter,
-            clipBehavior: Clip.none,
-            children: [
-              // Navigation Bar
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: navBarHeight,
-                child: IgnorePointer(
-                  ignoring: _isRotated,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          blurRadius: 4.0,
-                          color: AppTheme.lightSecondaryTextColor.withOpacity(
-                            0.1,
-                          ),
-                          offset: const Offset(0, -2),
-                          spreadRadius: 0,
-                        ),
-                      ],
-                    ),
-                    child: NavigationBarTheme(
-                      data: NavigationBarThemeData(
-                        elevation: 10,
-                        labelPadding: const EdgeInsets.only(top: 0),
-                        backgroundColor: AppTheme.lightCardColor,
-                        indicatorColor: Colors.transparent,
-                        labelTextStyle: WidgetStateProperty.resolveWith((
-                          states,
-                        ) {
-                          final isSelected = states.contains(
-                            WidgetState.selected,
-                          );
-                          return GoogleFonts.plusJakartaSans(
-                            fontStyle: FontStyle.normal,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                            color:
-                                isSelected
-                                    ? AppTheme.primaryColor
-                                    : AppTheme.buttonBackgroundColor,
-                          );
-                        }),
-                        iconTheme: WidgetStateProperty.resolveWith((states) {
-                          final isSelected = states.contains(
-                            WidgetState.selected,
-                          );
-                          return IconThemeData(
-                            color:
-                                isSelected
-                                    ? AppTheme.primaryColor
-                                    : AppTheme.buttonBackgroundColor,
-                          );
-                        }),
-                      ),
-                      child: NavigationBar(
-                        selectedIndex: widget.currentIndex,
-                        onDestinationSelected:
-                            (index) => _handleNavigation(context, index),
-                        destinations: [
-                          NavigationDestination(
-                            icon: _buildSvgIcon(
-                              'assets/icons/home-simple.svg',
-                              AppTheme.buttonBackgroundColor,
-                            ),
-                            selectedIcon: _buildSvgIcon(
-                              'assets/icons/home-simple.svg',
-                              AppTheme.primaryColor,
-                            ),
-                            label: 'Beranda',
-                          ),
-                          NavigationDestination(
-                            icon: _buildSvgIcon(
-                              'assets/icons/calendaro.svg',
-                              AppTheme.buttonBackgroundColor,
-                            ),
-                            selectedIcon: _buildSvgIcon(
-                              'assets/icons/calendaro.svg',
-                              AppTheme.primaryColor,
-                            ),
-                            label: 'Jadwal',
-                          ),
-                          NavigationDestination(
-                            icon: _buildSvgIcon(
-                              'assets/icons/task-list.svg',
-                              AppTheme.buttonBackgroundColor,
-                            ),
-                            selectedIcon: _buildSvgIcon(
-                              'assets/icons/task-list.svg',
-                              AppTheme.primaryColor,
-                            ),
-                            label: 'Tugas',
-                          ),
-                          NavigationDestination(
-                            icon: _buildSvgIcon(
-                              'assets/icons/profile-circle.svg',
-                              AppTheme.buttonBackgroundColor,
-                            ),
-                            selectedIcon: _buildSvgIcon(
-                              'assets/icons/profile-circle.svg',
-                              AppTheme.primaryColor,
-                            ),
-                            label: 'Profil',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+        ],
+      ),
+    );
+  }
 
-              // FAB Kiri
-              Positioned(
-                bottom: navBarHeight + 22,
-                left:
-                    MediaQuery.of(context).size.width / 2 - (fabSize / 2) - 40,
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 300),
-                  opacity: _isRotated ? 1 : 0,
-                  curve: Curves.easeInOut,
-                  child: AnimatedSlide(
-                    offset: _isRotated ? Offset.zero : const Offset(0.5, 0.5),
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeInOut,
-                    child: FloatingActionButton(
-                      heroTag: 'leftFab',
-                      mini: true,
-                      elevation: 6,
-                      onPressed: () {
-                        _navigationThrottle.run(() {
-                          context.router.push(AddAktivitasRoute());
-                          setState(() => _isRotated = false);
-                        });
-                      },
-                      backgroundColor: AppTheme.primaryColor,
-                      shape: const CircleBorder(),
-                      child: _buildSvgIcon(
-                        'assets/activitycategory/chipicon/aktivitas.svg',
-                        AppTheme.buttonBackgroundColor,
-                      ),
-                    ),
-                  ),
-                ),
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    return Stack(
+      children: [
+        // Backdrop barrier saat FAB aktif
+        if (_isRotated)
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _isRotated = false;
+                });
+              },
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                child: Container(color: Colors.black.withOpacity(0.1)),
               ),
-
-              // FAB Kanan
-              Positioned(
-                bottom: navBarHeight + 22,
-                left:
-                    MediaQuery.of(context).size.width / 2 - (fabSize / 2) + 46,
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 300),
-                  opacity: _isRotated ? 1 : 0,
-                  curve: Curves.easeInOut,
-                  child: AnimatedSlide(
-                    offset: _isRotated ? Offset.zero : const Offset(-0.5, 0.5),
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeInOut,
-                    child: FloatingActionButton(
-                      heroTag: 'rightFab',
-                      mini: true,
-                      elevation: 6,
-                      onPressed: () {
-                        _navigationThrottle.run(() {
-                          context.router.push(AddTaskRoute());
-                          setState(() => _isRotated = false);
-                        });
-                      },
-                      backgroundColor: AppTheme.primaryColor,
-                      shape: const CircleBorder(),
-                      child: _buildSvgIcon(
-                        'assets/icons/task-list.svg',
-                        AppTheme.buttonBackgroundColor,
-                      ),
-                    ),
-                  ),
+            ),
+          ),
+        
+        // Bottom Navigation Bar
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: Container(
+            height: kBottomNavigationBarHeight + 16,
+            decoration: BoxDecoration(
+              color: AppTheme.lightCardColor,
+              boxShadow: [
+                BoxShadow(
+                  blurRadius: 4.0,
+                  color: AppTheme.lightSecondaryTextColor.withOpacity(0.1),
+                  offset: const Offset(0, -2),
+                  spreadRadius: 0,
                 ),
+              ],
+            ),
+            child: NavigationBarTheme(
+              data: NavigationBarThemeData(
+                elevation: 0,
+                labelPadding: const EdgeInsets.only(top: 0),
+                backgroundColor: Colors.transparent,
+                indicatorColor: Colors.transparent,
+                labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                  final isSelected = states.contains(WidgetState.selected);
+                  return GoogleFonts.plusJakartaSans(
+                    fontStyle: FontStyle.normal,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    color: isSelected
+                        ? AppTheme.primaryColor
+                        : AppTheme.buttonBackgroundColor,
+                  );
+                }),
+                iconTheme: WidgetStateProperty.resolveWith((states) {
+                  final isSelected = states.contains(WidgetState.selected);
+                  return IconThemeData(
+                    color: isSelected
+                        ? AppTheme.primaryColor
+                        : AppTheme.buttonBackgroundColor,
+                  );
+                }),
               ),
-
-              // FAB Utama
-              Positioned(
-                bottom: navBarHeight - 30,
-                left: MediaQuery.of(context).size.width / 2 - (fabSize / 2),
-                child: FloatingActionButton(
-                  elevation: 6,
-                  onPressed: () => setState(() => _isRotated = !_isRotated),
-                  backgroundColor: AppTheme.primaryColor,
-                  shape: const CircleBorder(),
+              child: NavigationBar(
+                selectedIndex: widget.currentIndex,
+                onDestinationSelected: (index) => _handleNavigation(context, index),
+                destinations: [
+                  NavigationDestination(
+                    icon: _buildSvgIcon(
+                      'assets/icons/home-simple.svg',
+                      AppTheme.buttonBackgroundColor,
+                    ),
+                    selectedIcon: _buildSvgIcon(
+                      'assets/icons/home-simple.svg',
+                      AppTheme.primaryColor,
+                    ),
+                    label: 'Beranda',
+                  ),
+                  NavigationDestination(
+                    icon: _buildSvgIcon(
+                      'assets/icons/calendaro.svg',
+                      AppTheme.buttonBackgroundColor,
+                    ),
+                    selectedIcon: _buildSvgIcon(
+                      'assets/icons/calendaro.svg',
+                      AppTheme.primaryColor,
+                    ),
+                    label: 'Jadwal',
+                  ),
+                  NavigationDestination(
+                    icon: _buildSvgIcon(
+                      'assets/icons/task-list.svg',
+                      AppTheme.buttonBackgroundColor,
+                    ),
+                    selectedIcon: _buildSvgIcon(
+                      'assets/icons/task-list.svg',
+                      AppTheme.primaryColor,
+                    ),
+                    label: 'Tugas',
+                  ),
+                  NavigationDestination(
+                    icon: _buildSvgIcon(
+                      'assets/icons/profile-circle.svg',
+                      AppTheme.buttonBackgroundColor,
+                    ),
+                    selectedIcon: _buildSvgIcon(
+                      'assets/icons/profile-circle.svg',
+                      AppTheme.primaryColor,
+                    ),
+                    label: 'Profil',
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        
+        // FAB Kiri (Aktivitas) - Benar-benar melayang di luar navbar
+        AnimatedPositioned(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          left: _isRotated ? screenWidth * 0.25 - 2 : screenWidth * 0.5 - 2,
+          bottom: kBottomNavigationBarHeight + 50, // Di atas navbar
+          child: _buildFloatingFABWithTooltip(
+            onTap: () {
+              print('DEBUG: FAB Kiri di-tap - navigasi ke Aktivitas');
+              context.router.push(AddAktivitasRoute());
+              setState(() {
+                _isRotated = false;
+              });
+            },
+            iconPath: 'assets/icons/activity.svg',
+            isVisible: _isRotated,
+            tooltipText: 'Aktivitas',
+          ),
+        ),
+        
+        // FAB Kanan (Tugas) - Benar-benar melayang di luar navbar
+        AnimatedPositioned(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          right: _isRotated ? screenWidth * 0.25 - 2 : screenWidth * 0.5 - 2,
+          bottom: kBottomNavigationBarHeight + 50,
+          child: _buildFloatingFABWithTooltip(
+            onTap: () {
+              print('DEBUG: FAB Kanan di-tap - navigasi ke Tugas');
+              context.router.push(AddTaskRoute());
+              setState(() {
+                _isRotated = false;
+              });
+            },
+            iconPath: 'assets/icons/task-list.svg',
+            isVisible: _isRotated,
+            tooltipText: 'Tugas',
+          ),
+        ),
+        
+        // FAB Utama (Tengah) - Overlap dengan navbar
+        Positioned(
+          left: screenWidth * 0.5 - 35,
+          bottom: kBottomNavigationBarHeight - 16,
+          child: Container(
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppTheme.primaryColor,
+                  AppTheme.primaryColor.withOpacity(0.8),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withOpacity(0.4),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(35),
+                onTap: () {
+                  setState(() {
+                    _isRotated = !_isRotated;
+                  });
+                },
+                child: Center(
                   child: AnimatedRotation(
                     turns: _isRotated ? 0.125 : 0,
                     duration: const Duration(milliseconds: 300),
@@ -280,7 +350,7 @@ class _BottomNavbarState extends State<BottomNavbar>
                   ),
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ],

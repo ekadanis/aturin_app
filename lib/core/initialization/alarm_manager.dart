@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:alarm/alarm.dart';
 import 'package:aturin_app/features/alarm/ui/screens/alarm_ringing_screen.dart';
 import 'package:aturin_app/routers/app_router.dart';
-import 'package:sizer/sizer.dart'; // Import sizer untuk inisialisasi
+import 'package:sizer/sizer.dart';
 
 typedef AppCreator = Widget Function();
 

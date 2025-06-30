@@ -36,9 +36,8 @@ class ConfirmPasswordFieldWidget extends StatelessWidget {
         style: GoogleFonts.plusJakartaSans(
           fontSize: 14.sp,
           color: AppTheme.lightTextColor,
-        ),
-        decoration: InputDecoration(
-          hintText: "****************",
+        ),        decoration: InputDecoration(
+          hintText: "Minimal 8 karakter",
           hintStyle: GoogleFonts.plusJakartaSans(
             fontSize: 13.sp,
             color: AppTheme.lightSecondaryTextColor,

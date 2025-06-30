@@ -25,14 +25,10 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   Future<User?>? _userFuture;
-  // final prefs = await SharedPreferences.getInstance();
-  //     final token = prefs.getString('token');
 
   @override
   void initState() {
     super.initState();
-
-    // Jalankan me() setelah build pertama selesai
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadUser();
     });
@@ -40,7 +36,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _loadUser() {
     final profileService = Provider.of<ProfileService>(context, listen: false);
-
     final newUserFuture = profileService.me();
     setState(() {
       _userFuture = newUserFuture;
@@ -49,22 +44,22 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    // Mendapatkan tinggi bottom navigation untuk padding scroll
+    final bottomNavHeight = kBottomNavigationBarHeight;
+
     return PopScope(
-      //Menggunakan PopScope agar ketika user ada di profile page dan menekan tombol back,
-      //maka ia akan kembali ke halaman home page
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-
         context.router.pushAndPopUntil(
           const HomeRoute(),
           predicate: (_) => false,
         );
-
         return;
       },
       child: Scaffold(
         backgroundColor: AppTheme.lightBackgroundColor,
+        extendBody: true,
         appBar: AppBar(
           automaticallyImplyLeading: false,
           title: Text(
@@ -90,7 +85,7 @@ class _ProfilePageState extends State<ProfilePage> {
             } else if (snapshot.hasError) {
               return Center(
                 child: Text(
-                  'Error: ${snapshot.error}',
+                  'Error: {snapshot.error}',
                   style: GoogleFonts.plusJakartaSans(
                     color: AppTheme.lightTextColor,
                   ),
@@ -109,70 +104,64 @@ class _ProfilePageState extends State<ProfilePage> {
 
             User user = snapshot.data!;
 
-            return SingleChildScrollView(
-              child: Column(
-                children: [
-                  Container(
-                    color: AppTheme.lightBackgroundColor,
-                    padding: const EdgeInsets.all(16),
-                    child: ProfileCard(
+            return SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Bisa tambahkan header image/profile di sini jika ingin konsisten dengan HomePage
+                    SizedBox(height: 2),
+                    ProfileCard(
                       user: user,
                       onEdit: () => _navigateToEditPage(context, user),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      left: 16,
-                      right: 16,
-                      top: 16,
-                      bottom: 4,
-                    ),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Pengaturan',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.lightTextColor,
-                          fontSize: 16,
-                        ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Pengaturan',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.lightTextColor,
+                        fontSize: 16,
                       ),
                     ),
-                  ),
-                  PengaturanCard(
-                    title: 'Alarm',
-                    description: 'Atur Alarm kamu',
-                  ),
-
-                  LogoutButton(
-                    onPressed: () async {
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (context) => const ConfirmExitDialog(),
-                      );
-
-                      if (confirm == true) {
-                        final authService =
-                            AuthService();
-                        final result = await authService.logout();
-
-                        if (result.isSuccess) {
-                          if (context.mounted) {
-                            context.router.replaceAll([const LoginRoute()]);
-                          }
-                        } else {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(result.message ?? 'Logout gagal'),
-                              ),
-                            );
+                    const SizedBox(height: 8),
+                    PengaturanCard(
+                      title: 'Alarm',
+                      description: 'Atur Alarm kamu',
+                    ),
+                    const SizedBox(height: 8),
+                    LogoutButton(
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => const ConfirmExitDialog(),
+                        );
+                        if (confirm == true) {
+                          final authService = AuthService();
+                          final result = await authService.logout();
+                          if (result.isSuccess) {
+                            if (context.mounted) {
+                              context.router.replaceAll([const LoginRoute()]);
+                            }
+                          } else {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(result.message.isNotEmpty ? result.message : 'Logout gagal'),
+                                ),
+                              );
+                            }
                           }
                         }
-                      }
-                    },
-                  ),
-                ],
+                      },
+                    ),
+                    // Spacer agar konten tidak ketutupan bottom nav
+                    const Spacer(),
+                    SizedBox(height: bottomNavHeight + 24),
+                  ],
+                ),
               ),
             );
           },
@@ -186,7 +175,6 @@ class _ProfilePageState extends State<ProfilePage> {
       context,
       MaterialPageRoute(builder: (context) => ProfileEditPage(user: user)),
     );
-
     if (result == true) {
       _loadUser();
     }

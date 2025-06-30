@@ -156,6 +156,8 @@ class _AktivitasPageState extends State<AktivitasPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Mendapatkan tinggi bottom navigation untuk padding scroll
+    final bottomNavHeight = kBottomNavigationBarHeight;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -167,180 +169,176 @@ class _AktivitasPageState extends State<AktivitasPage> {
       },
       child: Scaffold(
         backgroundColor: AppTheme.lightBackgroundColor,
+        extendBody: true,
+        bottomNavigationBar: const BottomNavbar(currentIndex: 1),
         body: SafeArea(
-          child: Column(
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
-                ),
-                child: Row(
-                  children: [
-                    Text(
-                      'Jadwal',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.lightTextColor,
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4, // Sudah ada padding luar, cukup kecilkan
+                    vertical: 16,
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Jadwal',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.lightTextColor,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-
-              // Category Tabs
-              Transform.translate(
-                offset: const Offset(0, -8),
-                child: CategoryTabsWidget(
-                  selectedCategory: selectedCategory,
-                  onCategoryChanged: (category) {
-                    setState(() {
-                      selectedCategory = category;
-                    });
-                  },
+                // Category Tabs
+                Transform.translate(
+                  offset: const Offset(0, -8),
+                  child: CategoryTabsWidget(
+                    selectedCategory: selectedCategory,
+                    onCategoryChanged: (category) {
+                      setState(() {
+                        selectedCategory = category;
+                      });
+                    },
+                  ),
                 ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // Calendar
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 2),
-                child: Consumer2<ActivityApiService, TaskApiService>(                  builder: (context, activityApiService, taskApiService, _) {
-                    // Create stable key for calendar - only rebuild when data actually changes
-                    final activitiesHash = activityApiService.activities.length;
-                    final tasksHash = taskApiService.tasks.length;
-                    final calendarKey = ValueKey(
-                      'calendar_${activitiesHash}_${tasksHash}_${_calendarRebuildCounter}',
-                    );
-
-                    return CalendarSectionWidget(
-                      key: calendarKey,
-                      selectedDate: selectedDate,
-                      focusedDate: focusedDate,
-                      calendarFormat: calendarFormat,
-                      schedules: activityApiService.activities,
-                      tasks: _getTasksForCalendar(),
-                      onDateSelected: (selectedDay, focusedDay) {
-                        setState(() {
-                          focusedDate = focusedDay;
-                        });
-                        _onDateChanged(selectedDay);
-                      },
-                      onFormatChanged: (format) {
-                        setState(() {
-                          calendarFormat = format;
-                        });
-                      },
-                      onPageChanged: (focusedDay) {
-                        setState(() {
-                          focusedDate = focusedDay;
-                        });
-                      },
-                    );
-                  },
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // Schedule List
-              Expanded(
-                child: Consumer2<ActivityApiService, TaskApiService>(                  builder: (context, activityApiService, taskApiService, _) {
-                    if (_isInitialLoading) {
-                      return Center(
-                        child: LoadingAnimationWidget.staggeredDotsWave(
-                          color: AppTheme.primaryColor,
-                          size: 50,
-                        ),
+                const SizedBox(height: 20),
+                // Calendar
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  child: Consumer2<ActivityApiService, TaskApiService>(
+                    builder: (context, activityApiService, taskApiService, _) {
+                      final activitiesHash = activityApiService.activities.length;
+                      final tasksHash = taskApiService.tasks.length;
+                      final calendarKey = ValueKey(
+                        'calendar_${activitiesHash}_${tasksHash}_${_calendarRebuildCounter}',
                       );
-                    }
-
-                    // Handle ActivityApiService loading state
-                    if (activityApiService.isLoading &&
-                        activityApiService.activities.isEmpty) {
-                      return Center(
-                        child: LoadingAnimationWidget.staggeredDotsWave(
-                          color: AppTheme.primaryColor,
-                          size: 50,
-                        ),
-                      );
-                    }
-
-                    // Handle ActivityApiService error state
-                    if (activityApiService.error != null &&
-                        activityApiService.activities.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              size: 64,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Gagal memuat aktivitas',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              activityApiService.error!,
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 14,
-                                color: Colors.grey[500],
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _refreshData,
-                              child: const Text('Coba Lagi'),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-
-                    return RefreshIndicator(
-                      onRefresh: _refreshData,
-                      child: InfiniteScheduleListWidget(
-                        tasks: _getTasksForCalendar(),
-                        schedules: activityApiService.activities,
-                        selectedCategory: selectedCategory,
+                      return CalendarSectionWidget(
+                        key: calendarKey,
                         selectedDate: selectedDate,
-                        onDateChanged: (date) {
-                          _onDateChanged(date);
+                        focusedDate: focusedDate,
+                        calendarFormat: calendarFormat,
+                        schedules: activityApiService.activities,
+                        tasks: _getTasksForCalendar(),
+                        onDateSelected: (selectedDay, focusedDay) {
+                          setState(() {
+                            focusedDate = focusedDay;
+                          });
+                          _onDateChanged(selectedDay);
                         },
-                        onEditSchedule: (aktivitas) => _editActivity(aktivitas),
-                        onDeleteSchedule: (aktivitas) => _deleteActivity(aktivitas),
-                        onEditTask: (task) => _editTask(task),
-                        onDeleteTask: (task) => _deleteTask(task),
-                        onShowSuccess: (message) {
-                          // Refresh data immediately after any operation
-                          _refreshData();
-                          showCustomTopSnackbar(
-                            context: context,
-                            message: message,
-                            isError: false,
-                          );
+                        onFormatChanged: (format) {
+                          setState(() {
+                            calendarFormat = format;
+                          });
                         },
-                      ),
-                    );
-                  },
+                        onPageChanged: (focusedDay) {
+                          setState(() {
+                            focusedDate = focusedDay;
+                          });
+                        },
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 20),
+                // Schedule List
+                Expanded(
+                  child: Consumer2<ActivityApiService, TaskApiService>(
+                    builder: (context, activityApiService, taskApiService, _) {
+                      if (_isInitialLoading) {
+                        return Center(
+                          child: LoadingAnimationWidget.staggeredDotsWave(
+                            color: AppTheme.primaryColor,
+                            size: 50,
+                          ),
+                        );
+                      }
+                      if (activityApiService.isLoading &&
+                          activityApiService.activities.isEmpty) {
+                        return Center(
+                          child: LoadingAnimationWidget.staggeredDotsWave(
+                            color: AppTheme.primaryColor,
+                            size: 50,
+                          ),
+                        );
+                      }
+                      if (activityApiService.error != null &&
+                          activityApiService.activities.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 64,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Gagal memuat aktivitas',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                activityApiService.error!,
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 14,
+                                  color: Colors.grey[500],
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _refreshData,
+                                child: const Text('Coba Lagi'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                      return RefreshIndicator(
+                        onRefresh: _refreshData,
+                        child: InfiniteScheduleListWidget(
+                          tasks: _getTasksForCalendar(),
+                          schedules: activityApiService.activities,
+                          selectedCategory: selectedCategory,
+                          selectedDate: selectedDate,
+                          onDateChanged: (date) {
+                            _onDateChanged(date);
+                          },
+                          onEditSchedule: (aktivitas) => _editActivity(aktivitas),
+                          onDeleteSchedule: (aktivitas) => _deleteActivity(aktivitas),
+                          onEditTask: (task) => _editTask(task),
+                          onDeleteTask: (task) => _deleteTask(task),
+                          onShowSuccess: (message) {
+                            _refreshData();
+                            showCustomTopSnackbar(
+                              context: context,
+                              message: message,
+                              isError: false,
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                // Spacer agar konten tidak ketutupan bottom nav
+                SizedBox(height: bottomNavHeight + 24),
+              ],
+            ),
           ),
         ),
-        bottomNavigationBar: const BottomNavbar(currentIndex: 1),
       ),
     );
   }

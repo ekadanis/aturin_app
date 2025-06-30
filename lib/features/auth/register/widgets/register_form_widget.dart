@@ -31,10 +31,9 @@ class RegisterFormWidget extends StatefulWidget {
 
 class _RegisterFormWidgetState extends State<RegisterFormWidget> {
   bool isPasswordVisible = false;
-
   // Password validation getters
   bool get hasUppercase => widget.passwordController.text.contains(RegExp(r'[A-Z]'));
-  bool get hasSymbol => widget.passwordController.text.contains(RegExp(r'[!@#\$&*~._-]'));
+  bool get hasSymbol => widget.passwordController.text.contains(RegExp(r'''[!@#\$%^&*()_+=\[\]{}|;:,.<>?~`'"/-]'''));
   bool get hasMinLength => widget.passwordController.text.length >= 8;
   bool get noSpaces => !widget.passwordController.text.contains(' ');
   bool get isNotEmpty => widget.passwordController.text.isNotEmpty;
@@ -46,9 +45,19 @@ class _RegisterFormWidgetState extends State<RegisterFormWidget> {
     return passed / 5;
   }
 
+  // Form validation for button state
+  bool get isFormValid {
+    return widget.nameController.text.trim().isNotEmpty &&
+           widget.emailController.text.trim().isNotEmpty &&
+           widget.passwordController.text.length >= 8 &&
+           widget.passwordController.text == widget.confirmPasswordController.text;
+  }
   @override
   void initState() {
     super.initState();
+    // Add listeners to all controllers for button state
+    widget.nameController.addListener(() => setState(() {}));
+    widget.emailController.addListener(() => setState(() {}));
     widget.passwordController.addListener(() => setState(() {}));
     widget.confirmPasswordController.addListener(() => setState(() {}));
   }
@@ -57,9 +66,8 @@ class _RegisterFormWidgetState extends State<RegisterFormWidget> {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Name Input
-        _buildInputLabel('Nama'),
+      children: [        // Name Input
+        _buildInputLabel('Nama', isRequired: true),
         SizedBox(height: 1.h),
         CustomTextFieldWidget(
           controller: widget.nameController,
@@ -68,8 +76,8 @@ class _RegisterFormWidgetState extends State<RegisterFormWidget> {
           obscureText: false,
         ),
         
-        SizedBox(height: 2.h),        // Email Input
-        _buildInputLabel('Email'),
+        SizedBox(height: 2.h),
+        _buildInputLabel('Email', isRequired: true),
         SizedBox(height: 1.h),
         CustomTextFieldWidget(
           controller: widget.emailController,
@@ -81,12 +89,11 @@ class _RegisterFormWidgetState extends State<RegisterFormWidget> {
         SizedBox(height: 2.h),
         
         // Password Input
-        _buildInputLabel('Kata Sandi'),
+        _buildInputLabel('Kata Sandi', isRequired: true),
         SizedBox(height: 1.h),
         PasswordFieldWidget(
           controller: widget.passwordController,
-          isPasswordVisible: isPasswordVisible,
-          onVisibilityToggle: () {
+          isPasswordVisible: isPasswordVisible,          onVisibilityToggle: () {
             setState(() => isPasswordVisible = !isPasswordVisible);
           },
         ),
@@ -94,13 +101,46 @@ class _RegisterFormWidgetState extends State<RegisterFormWidget> {
         SizedBox(height: 2.h),
         
         // Confirm Password Input
-        _buildInputLabel('Konfirmasi Kata Sandi'),
-        SizedBox(height: 1.h),
-        ConfirmPasswordFieldWidget(
+        _buildInputLabel('Konfirmasi Kata Sandi', isRequired: true),
+        SizedBox(height: 1.h),        ConfirmPasswordFieldWidget(
           controller: widget.confirmPasswordController,
           passwordController: widget.passwordController,
           isPasswordVisible: isPasswordVisible,
         ),
+        
+        // Password match indicator
+        if (widget.confirmPasswordController.text.isNotEmpty) ...[
+          SizedBox(height: 1.h),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+            child: Row(
+              children: [
+                Icon(
+                  widget.passwordController.text == widget.confirmPasswordController.text
+                      ? Icons.check_circle
+                      : Icons.error,
+                  color: widget.passwordController.text == widget.confirmPasswordController.text
+                      ? AppTheme.successColor
+                      : AppTheme.lightErrorColor,
+                  size: 16.sp,
+                ),
+                SizedBox(width: 2.w),
+                Text(
+                  widget.passwordController.text == widget.confirmPasswordController.text
+                      ? 'Password cocok'
+                      : 'Password tidak cocok',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12.sp,
+                    color: widget.passwordController.text == widget.confirmPasswordController.text
+                        ? AppTheme.successColor
+                        : AppTheme.lightErrorColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         
         // Password Strength Indicator
         if (widget.passwordController.text.isNotEmpty) ...[
@@ -116,31 +156,36 @@ class _RegisterFormWidgetState extends State<RegisterFormWidget> {
         ],
         
         SizedBox(height: 4.h),
-        
-        // Register Button
+          // Register Button
         SizedBox(
           width: 100.w,
           height: 6.h,
           child: ElevatedButton(
-            onPressed: () {
+            onPressed: isFormValid ? () {
               if (_validateForm()) {
                 widget.onRegister();
               }
-            },
+            } : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
+              backgroundColor: isFormValid 
+                  ? AppTheme.primaryColor 
+                  : AppTheme.disabledColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
-              elevation: 4,
-              shadowColor: AppTheme.primaryColor.withOpacity(0.4),
+              elevation: isFormValid ? 4 : 0,
+              shadowColor: isFormValid 
+                  ? AppTheme.primaryColor.withOpacity(0.4) 
+                  : Colors.transparent,
             ),
             child: Text(
               "Daftar",
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: isFormValid 
+                    ? Colors.white 
+                    : AppTheme.disabledTextColor,
               ),
             ),
           ),
@@ -148,14 +193,28 @@ class _RegisterFormWidgetState extends State<RegisterFormWidget> {
       ],
     );
   }
-
-  Widget _buildInputLabel(String label) {
-    return Text(
-      label,
-      style: GoogleFonts.plusJakartaSans(
-        fontSize: 14.sp,
-        fontWeight: FontWeight.w500,
-        color: AppTheme.lightTextColor,
+  Widget _buildInputLabel(String label, {bool isRequired = false}) {
+    return RichText(
+      text: TextSpan(
+        children: [
+          TextSpan(
+            text: label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+              color: AppTheme.lightTextColor,
+            ),
+          ),
+          if (isRequired)
+            TextSpan(
+              text: ' *',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w500,
+                color: AppTheme.lightErrorColor,
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -184,9 +243,8 @@ class _RegisterFormWidgetState extends State<RegisterFormWidget> {
       widget.onValidationError('Password tidak boleh kosong');
       return false;
     }
-    
-    if (strengthValue < 1.0) {
-      widget.onValidationError('Password belum memenuhi semua kriteria');
+      if (widget.passwordController.text.length < 8) {
+      widget.onValidationError('Password minimal 8 karakter');
       return false;
     }
     

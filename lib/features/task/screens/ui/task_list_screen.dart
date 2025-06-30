@@ -85,6 +85,8 @@ class _TaskListScreenState extends State<TaskListScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Mendapatkan tinggi bottom navigation untuk padding scroll
+    final bottomNavHeight = kBottomNavigationBarHeight;
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onTap: _resetAutoReloadTimer,
@@ -103,6 +105,7 @@ class _TaskListScreenState extends State<TaskListScreen>
         },
         child: Scaffold(
           backgroundColor: Colors.white,
+          extendBody: true,
           appBar: AppBar(
             backgroundColor: Colors.white,
             elevation: 0,
@@ -115,96 +118,91 @@ class _TaskListScreenState extends State<TaskListScreen>
               ),
             ),
           ),
+          bottomNavigationBar: const BottomNavbar(currentIndex: 2),
           body: SafeArea(
             bottom: false,
-            child: NotificationListener<ScrollNotification>(
-              onNotification: (notification) {
-                _resetAutoReloadTimer();
-                return false;
-              },
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Transform.translate(
-                    offset: const Offset(0, -8),
-                    child: FilterTabs(
-                      filters: _filters,
-                      selectedFilter: _selectedFilter,
-                      overdueTasksCount: _overdueTasksCount,
-                      onFilterSelected: (filter) {
-                        setState(() {
-                          _selectedFilter = filter;
-                        });
-                      },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: NotificationListener<ScrollNotification>(
+                onNotification: (notification) {
+                  _resetAutoReloadTimer();
+                  return false;
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Transform.translate(
+                      offset: const Offset(0, -8),
+                      child: FilterTabs(
+                        filters: _filters,
+                        selectedFilter: _selectedFilter,
+                        overdueTasksCount: _overdueTasksCount,
+                        onFilterSelected: (filter) {
+                          setState(() {
+                            _selectedFilter = filter;
+                          });
+                        },
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: TaskListView(
-                      currentFilter: _selectedFilter,
-                      onShowSuccess: (message) {
-                        // reload TaskListView
-                        setState(() {});
-                        // reload countLateTask agar badge overdue sinkron
-                        _fetchOverdueCount();
-                        // tampilkan snackbar jika perlu
-                        showCustomTopSnackbar(context: context, message: message);
-                      },                      onTapTask: (task) {
-                        safeOnTap(() async {
-                          // Get all tasks for the current filter to pass to TaskDetailListRoute
-                          final taskApiService = TaskApiService();
-                          List<Task> allTasks = [];
-                          int taskIndex = 0;
-                          
-                          try {
-                            if (_selectedFilter == 'Semua') {
-                              allTasks = await taskApiService.getAllTasks();
-                            } else if (_selectedFilter == 'Terlambat') {
-                              final data = await taskApiService.getTasksByStatus('terlambat');
-                              if (data != null && data['tasks'] != null) {
-                                allTasks = List<Task>.from(data['tasks'].map((e) => Task.fromMap(e)));
+                    Expanded(
+                      child: TaskListView(
+                        currentFilter: _selectedFilter,
+                        onShowSuccess: (message) {
+                          setState(() {});
+                          _fetchOverdueCount();
+                          showCustomTopSnackbar(context: context, message: message);
+                        },
+                        onTapTask: (task) {
+                          safeOnTap(() async {
+                            final taskApiService = TaskApiService();
+                            List<Task> allTasks = [];
+                            int taskIndex = 0;
+                            try {
+                              if (_selectedFilter == 'Semua') {
+                                allTasks = await taskApiService.getAllTasks();
+                              } else if (_selectedFilter == 'Terlambat') {
+                                final data = await taskApiService.getTasksByStatus('terlambat');
+                                if (data != null && data['tasks'] != null) {
+                                  allTasks = List<Task>.from(data['tasks'].map((e) => Task.fromMap(e)));
+                                }
+                              } else if (_selectedFilter == 'Belum Selesai') {
+                                final data = await taskApiService.getTasksByStatus('belum_selesai');
+                                if (data != null && data['tasks'] != null) {
+                                  allTasks = List<Task>.from(data['tasks'].map((e) => Task.fromMap(e)));
+                                }
+                              } else if (_selectedFilter == 'Selesai') {
+                                final data = await taskApiService.getTasksByStatus('selesai');
+                                if (data != null && data['tasks'] != null) {
+                                  allTasks = List<Task>.from(data['tasks'].map((e) => Task.fromMap(e)));
+                                }
                               }
-                            } else if (_selectedFilter == 'Belum Selesai') {
-                              final data = await taskApiService.getTasksByStatus('belum_selesai');
-                              if (data != null && data['tasks'] != null) {
-                                allTasks = List<Task>.from(data['tasks'].map((e) => Task.fromMap(e)));
-                              }
-                            } else if (_selectedFilter == 'Selesai') {
-                              final data = await taskApiService.getTasksByStatus('selesai');
-                              if (data != null && data['tasks'] != null) {
-                                allTasks = List<Task>.from(data['tasks'].map((e) => Task.fromMap(e)));
-                              }
+                              taskIndex = allTasks.indexWhere((t) => t.id == task.id);
+                              if (taskIndex == -1) taskIndex = 0;
+                            } catch (e) {
+                              allTasks = [task];
+                              taskIndex = 0;
                             }
-                            
-                            // Find the index of the tapped task
-                            taskIndex = allTasks.indexWhere((t) => t.id == task.id);
-                            if (taskIndex == -1) taskIndex = 0;
-                            
-                          } catch (e) {
-                            // Fallback to single task if loading fails
-                            allTasks = [task];
-                            taskIndex = 0;
-                          }
-                          
-                          final result = await context.router.push(
-                            TaskDetailListRoute(
-                              tasks: allTasks,
-                              initialIndex: taskIndex,
-                            ),
-                          );
-                          
-                          if (result == true) {
-                            setState(() {});
-                            _fetchOverdueCount();
-                          }
-                        });
-                      },
+                            final result = await context.router.push(
+                              TaskDetailListRoute(
+                                tasks: allTasks,
+                                initialIndex: taskIndex,
+                              ),
+                            );
+                            if (result == true) {
+                              setState(() {});
+                              _fetchOverdueCount();
+                            }
+                          });
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                    // Spacer agar konten tidak ketutupan bottom nav
+                    SizedBox(height: bottomNavHeight + 24),
+                  ],
+                ),
               ),
             ),
           ),
-          bottomNavigationBar: const BottomNavbar(currentIndex: 2),
         ),
       ),
     );

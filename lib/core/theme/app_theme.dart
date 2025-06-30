@@ -25,6 +25,8 @@ class AppTheme {
   static const Color successColor = Color(0xFF3DA755);
   static const Color warningColor = Color(0xFFE6A73C);
   static const Color dangerColor = Color(0xFFD34141);
+  static const Color disabledColor = Color(0xFFE4E4E7); // Gray for disabled buttons
+  static const Color disabledTextColor = Color(0xFF71717A); // Gray text for disabled buttons
 
   // Password strength colors
   static const Color weakPasswordColor = Color(0xFFFF8C42); // Orange for weak

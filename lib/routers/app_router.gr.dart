@@ -484,31 +484,6 @@ class TaskDetailListRouteArgs {
       key.hashCode ^ const ListEquality().hash(tasks) ^ initialIndex.hashCode;
 }
 
-
-
-class TaskDetailRouteArgs {
-  const TaskDetailRouteArgs({this.key, required this.task});
-
-  final Key? key;
-
-  final Task task;
-
-  @override
-  String toString() {
-    return 'TaskDetailRouteArgs{key: $key, task: $task}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! TaskDetailRouteArgs) return false;
-    return key == other.key && task == other.task;
-  }
-
-  @override
-  int get hashCode => key.hashCode ^ task.hashCode;
-}
-
 /// generated route for
 /// [TaskListScreen]
 class TaskListRoute extends PageRouteInfo<void> {
