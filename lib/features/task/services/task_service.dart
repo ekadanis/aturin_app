@@ -35,7 +35,7 @@ class TaskService extends ChangeNotifier {
   
   // Force refresh from API
   Future<void> forceRefresh() async {
-    await _taskApiService.fetchTasks();
+    await _taskApiService.fetchTasks(forceRefresh: true);
   }
   
   // Get task by slug

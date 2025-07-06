@@ -4,6 +4,9 @@ import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:aturin_app/features/jadwal/services/schedule_api_service.dart';
 import 'package:aturin_app/features/jadwal/screens/detail_task/ui/screens/task_detail_list_screen.dart';
 import 'package:alarm/alarm.dart';
+import 'package:provider/provider.dart';
+import 'package:aturin_app/core/services/api/activities/activity_api_service.dart';
+import 'package:aturin_app/core/services/api/task/task_api_service.dart';
 import '../aktivitas_screen/widgets/activity_card.dart';
 import '../aktivitas_screen/widgets/task_card.dart';
 import 'schedule_animator.dart';
@@ -167,7 +170,8 @@ class _ScheduleListViewState extends State<ScheduleListView>
               _isAnimating = true;
             });
             
-            final aktivitasSlug = aktivitas.slug;            try {
+            final aktivitasSlug = aktivitas.slug;            
+            try {
               _animator.prepareItemDeletion(
                 aktivitas, 
                 () async {
@@ -180,15 +184,18 @@ class _ScheduleListViewState extends State<ScheduleListView>
                     }
                   }
                   
-                  // Delete aktivitas
-                  if (aktivitasSlug != null) {
-                    await ScheduleApiService().deleteAktivitas(aktivitasSlug);
-                  }
-                  
-                  // Refresh data and notify parent
-                  if (mounted) {
-                    await _fetchSchedule();
-                    widget.onShowSuccess?.call('Berhasil menghapus aktivitas');
+                  // Use Provider for consistent API response handling
+                  if (aktivitasSlug != null && mounted) {
+                    final activityApiService = Provider.of<ActivityApiService>(context, listen: false);
+                    final success = await activityApiService.deleteActivity(aktivitasSlug);
+                    
+                    if (success && mounted) {
+                      // Refresh data and notify parent with success message
+                      await _fetchSchedule();
+                      widget.onShowSuccess?.call('Aktivitas berhasil dihapus');
+                    } else if (mounted) {
+                      widget.onShowSuccess?.call('Gagal menghapus aktivitas');
+                    }
                   }
                 },
                 () {
@@ -208,7 +215,7 @@ class _ScheduleListViewState extends State<ScheduleListView>
                   _animatingItemSlug = null;
                   _isAnimating = false;
                 });
-                widget.onShowSuccess?.call('Gagal menghapus aktivitas');
+                widget.onShowSuccess?.call('Gagal menghapus aktivitas: ${e.toString()}');
               }
             }
           },
@@ -252,7 +259,8 @@ class _ScheduleListViewState extends State<ScheduleListView>
               _isAnimating = true;
             });
             
-            final taskSlug = task.slug;            try {
+            final taskSlug = task.slug;            
+            try {
               _animator.prepareItemDeletion(
                 task, 
                 () async {
@@ -265,15 +273,18 @@ class _ScheduleListViewState extends State<ScheduleListView>
                     }
                   }
                   
-                  // Delete task
-                  if (taskSlug != null) {
-                    await ScheduleApiService().deleteTask(taskSlug);
-                  }
-                  
-                  // Refresh data and notify parent
-                  if (mounted) {
-                    await _fetchSchedule();
-                    widget.onShowSuccess?.call('Berhasil menghapus tugas');
+                  // Use Provider for consistent API response handling
+                  if (taskSlug != null && mounted) {
+                    final taskApiService = Provider.of<TaskApiService>(context, listen: false);
+                    final result = await taskApiService.deleteTask(taskSlug);
+                    
+                    if (result.isSuccess && mounted) {
+                      // Refresh data and notify parent with API response message
+                      await _fetchSchedule();
+                      widget.onShowSuccess?.call(result.message);
+                    } else if (mounted) {
+                      widget.onShowSuccess?.call(result.message);
+                    }
                   }
                 },
                 () {
@@ -293,7 +304,7 @@ class _ScheduleListViewState extends State<ScheduleListView>
                   _animatingItemSlug = null;
                   _isAnimating = false;
                 });
-                widget.onShowSuccess?.call('Gagal menghapus tugas');
+                widget.onShowSuccess?.call('Gagal menghapus tugas: ${e.toString()}');
               }
             }
           },

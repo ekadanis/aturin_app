@@ -10,13 +10,8 @@ import 'package:aturin_app/core/services/api/profile/profile_service.dart';
 /// Global State Service untuk mengelola data yang di-share antara screens
 /// Mengatasi masalah loading redundant dan sinkronisasi data
 class GlobalStateService extends ChangeNotifier {
-  // Singleton pattern
-  static final GlobalStateService _instance = GlobalStateService._internal();
-  factory GlobalStateService() => _instance;
-  GlobalStateService._internal();
-
   // API Services
-  final TaskApiService _taskApiService = TaskApiService();
+  late final TaskApiService _taskApiService;
   final ActivityApiService _activityApiService = ActivityApiService();
   final ProfileService _profileService = ProfileService();
 
@@ -43,6 +38,20 @@ class GlobalStateService extends ChangeNotifier {
   bool _isLoadingTasks = false;
   bool _isLoadingActivities = false;
   
+  // Task List State
+  String _selectedTaskFilter = 'Semua';
+  int _overdueTasksCount = 0;
+  bool _isTaskLoading = false;
+  String? _taskError;
+  Timer? _taskDebounceTimer;
+  
+  GlobalStateService({
+    required TaskApiService taskApiService,
+  }) {
+    _taskApiService = taskApiService;
+    initialize();
+  }
+  
   // ============================
   // GETTERS
   // ============================
@@ -67,6 +76,12 @@ class GlobalStateService extends ChangeNotifier {
     
   bool get isActivitiesCacheValid => _activitiesLastFetched != null && 
     DateTime.now().difference(_activitiesLastFetched!).inMinutes < 2;
+  
+  // Getters for Task List
+  String get selectedTaskFilter => _selectedTaskFilter;
+  int get overdueTasksCount => _overdueTasksCount;
+  bool get isTaskLoading => _isTaskLoading;
+  String? get taskError => _taskError;
   
   // ============================
   // COMPUTED PROPERTIES
@@ -335,9 +350,81 @@ class GlobalStateService extends ChangeNotifier {
     notifyListeners();
   }
   
+  // Task List Methods
+  Future<void> setTaskFilter(String filter) async {
+    if (_selectedTaskFilter != filter) {
+      _selectedTaskFilter = filter;
+      notifyListeners();
+      await refreshTaskData();
+    }
+  }
+  
+  Future<void> refreshTaskData() async {
+    _taskDebounceTimer?.cancel();
+    
+    _taskDebounceTimer = Timer(const Duration(milliseconds: 300), () async {
+      try {
+        _isTaskLoading = true;
+        _taskError = null;
+        notifyListeners();
+        
+        // Parallel fetch
+        await Future.wait([
+          _fetchOverdueTasks(_taskApiService),
+          _fetchFilteredTasks(_taskApiService),
+        ]);
+      } catch (e) {
+        _handleTaskError(e);
+      } finally {
+        _isTaskLoading = false;
+        notifyListeners();
+      }
+    });
+  }
+  
+  Future<void> refreshTaskDataImmediately() async {
+    try {
+      _isTaskLoading = true;
+      _taskError = null;
+      notifyListeners();
+      
+      await Future.wait([
+        _fetchOverdueTasks(_taskApiService),
+        _fetchFilteredTasks(_taskApiService),
+      ]);
+    } catch (e) {
+      _handleTaskError(e);
+    } finally {
+      _isTaskLoading = false;
+      notifyListeners();
+    }
+  }
+  
+  Future<void> _fetchOverdueTasks(TaskApiService taskService) async {
+    final data = await taskService.countLateTasks();
+    if (data != null && data['overdue_tasks'] != null) {
+      _overdueTasksCount = data['overdue_tasks'] as int;
+    }
+  }
+  
+  Future<void> _fetchFilteredTasks(TaskApiService taskService) async {
+    // Implementation will be handled by TaskService
+    await taskService.fetchTasks(forceRefresh: true);
+  }
+  
+  void _handleTaskError(dynamic error) {
+    if (error is TimeoutException) {
+      _taskError = 'Waktu permintaan habis. Silakan coba lagi.';
+    } else if (error.toString().contains('SocketException')) {
+      _taskError = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+    } else {
+      _taskError = 'Terjadi kesalahan. Silakan coba lagi nanti.';
+    }
+  }
+  
   @override
   void dispose() {
-    // Singleton should not be disposed
+    _taskDebounceTimer?.cancel();
     super.dispose();
   }
 }

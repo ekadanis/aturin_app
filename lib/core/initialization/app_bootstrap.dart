@@ -5,7 +5,6 @@ import 'package:intl/date_symbol_data_local.dart';
 import '../database/database_helper.dart';
 import '../services/connectivity/connectivity_service.dart';
 import 'app_initializer.dart';
-import 'alarm_manager.dart';
 import '../../routers/app_router.dart';
 
 /// Class untuk menangani bootstrap (inisialisasi awal) aplikasi
@@ -16,37 +15,41 @@ class AppBootstrap {
   final AppRouter appRouter;
   final ConnectivityService connectivityService;
   final AppCreator? appCreator;
-    AppBootstrap({
+  
+  // Constructor sederhana
+  AppBootstrap({
     required this.appRouter,
     required this.connectivityService,
     this.appCreator,
   });
   
-  /// Inisialisasi utama aplikasi
+  /// Inisialisasi utama aplikasi - versi sangat ringan tanpa preloading
   /// Returns: Future<void>
   Future<void> initialize() async {
     try {
-      debugPrint('$_tag: Starting app initialization...');
+      debugPrint('$_tag: Starting ultra-lightweight app initialization...');
       
       // Initialize connectivity service first (highest priority)
       await connectivityService.initialize();
       debugPrint('$_tag: Connectivity service initialized successfully');
-
+      
       // Add migration safety check
       await _handleMigrationSafety();
-
+      
       // Initialize date formatting for Indonesian locale
       await initializeDateFormatting('id_ID', null);
       debugPrint('$_tag: Date formatting initialized for id_ID locale');
       
-      // Initialize the app with AppInitializer
+      // Inisialisasi sangat minimal (tanpa preloading sama sekali)
       final appInitializer = AppInitializer(appRouter);
-      await appInitializer.initialize();      // Setup alarm manager with app creator if provided
+      await appInitializer.initialize();
+      
+      // Setup alarm manager with app creator if provided
       if (appCreator != null) {
         appInitializer.alarmManager.setAppCreator(appCreator!);
       }
-
-      debugPrint('$_tag: App initialization completed successfully');
+      
+      debugPrint('$_tag: Ultra-lightweight app initialization completed successfully');
     } catch (e) {
       debugPrint('$_tag: Failed to initialize app: $e');
       throw Exception('App initialization failed: $e');
@@ -90,5 +93,5 @@ class AppBootstrap {
   }
 }
 
-// Import untuk MyApp dari file yang benar
-// Removed the forward declaration since MyApp is now in a separate file
+// Type definition for app creator function
+typedef AppCreator = Widget Function();

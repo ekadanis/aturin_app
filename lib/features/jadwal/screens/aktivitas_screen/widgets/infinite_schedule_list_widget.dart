@@ -23,7 +23,9 @@ class InfiniteScheduleListWidget extends StatefulWidget {
   final Function(Task)? onEditTask;
   final Function(Task)? onDeleteTask;
 
-  final void Function(String)? onShowSuccess; // Add callback like TaskService
+  final void Function(String)? onShowSuccess;
+  final List<Map<String, dynamic>>? sectionTimeConfig;
+  
   const InfiniteScheduleListWidget({
     super.key,
     required this.selectedDate,
@@ -35,8 +37,8 @@ class InfiniteScheduleListWidget extends StatefulWidget {
     this.onDeleteSchedule,
     this.onEditTask,
     this.onDeleteTask,
-    // NOTE: onToggleTaskCompletion removed - schedule context doesn't support completion
-    this.onShowSuccess, // Add this
+    this.onShowSuccess,
+    this.sectionTimeConfig,
   });
 
   @override
@@ -60,6 +62,7 @@ class _InfiniteScheduleListWidgetState
 
   // Service instance
   final ScheduleApiService _scheduleService = ScheduleApiService();
+  
   @override
   void initState() {
     super.initState();
@@ -79,7 +82,7 @@ class _InfiniteScheduleListWidgetState
     // Initialize animator
     _animator = ScheduleAnimator(
       vsync: this,
-      animationStyle: 'scale', // Default animation style
+      animationStyle: 'scale',
     );
   }
 
@@ -102,12 +105,15 @@ class _InfiniteScheduleListWidgetState
       _animateToDate(widget.selectedDate);
     }
   }
+  
   @override
   void dispose() {
     _pageController.dispose();
     _animator.dispose();
     super.dispose();
-  }  void _animateToDate(DateTime targetDate) {
+  }  
+
+  void _animateToDate(DateTime targetDate) {
     if (!_pageController.hasClients) return;
 
     final normalizedDate = DateTime(
@@ -119,19 +125,15 @@ class _InfiniteScheduleListWidgetState
     final daysDifference = normalizedDate.difference(_baseDate).inDays;
     final targetPageIndex = _initialPageIndex + daysDifference;
 
-    // Cancel any ongoing animation to prevent conflicts
     _isPageChanging = true;
     
-    // Use very quick animation (100ms) for visual feedback while maintaining sync
-    // Fast enough to prevent dots/page mismatch but gives slide sensation
     _pageController
         .animateToPage(
           targetPageIndex,
-          duration: const Duration(milliseconds: 100), // Quick slide animation
-          curve: Curves.easeOutQuart, // Sharp but smooth curve
+          duration: const Duration(milliseconds: 100),
+          curve: Curves.easeOutQuart,
         )
         .then((_) {
-          // Reset flag after animation completes
           if (mounted) {
             _isPageChanging = false;
             _currentPageIndex = targetPageIndex;
@@ -142,7 +144,9 @@ class _InfiniteScheduleListWidgetState
   DateTime _getDateForPage(int pageIndex) {
     final daysDifference = pageIndex - _initialPageIndex;
     return _baseDate.add(Duration(days: daysDifference));
-  }  List<AktivitasModel> _getSchedulesForDate(DateTime date) {
+  }  
+
+  List<AktivitasModel> _getSchedulesForDate(DateTime date) {
     final normalizedDate = DateTime(date.year, date.month, date.day);
 
     final filteredSchedules = widget.schedules.where((schedule) {
@@ -154,7 +158,6 @@ class _InfiniteScheduleListWidgetState
 
       bool categoryMatch = widget.selectedCategory == 'Semua';
       if (!categoryMatch) {
-        // Konversi ActivityCategory enum ke CategoryOption name untuk perbandingan yang konsisten
         final categoryName = schedule.activityCategory.displayName;
         categoryMatch = categoryName == widget.selectedCategory;
       }
@@ -164,19 +167,15 @@ class _InfiniteScheduleListWidgetState
       return categoryMatch && dateMatch;
     }).toList();
 
-    // Debug logging
     print('📋 InfiniteScheduleList - Schedule filtering for ${date.toString().split(' ')[0]}:');
     print('   Total schedules available: ${widget.schedules.length}');
     print('   Selected category: ${widget.selectedCategory}');
     print('   Filtered schedules: ${filteredSchedules.length}');
-    if (filteredSchedules.isNotEmpty) {
-      for (final schedule in filteredSchedules) {
-        print('   - ${schedule.activityTitle} (${schedule.activityCategory.displayName}) on ${schedule.activityDate.toString().split(' ')[0]}');
-      }
-    }
 
     return filteredSchedules;
-  }  List<Task> _getTasksForDate(DateTime date) {
+  }  
+
+  List<Task> _getTasksForDate(DateTime date) {
     final normalizedDate = DateTime(date.year, date.month, date.day);
 
     final filteredTasks = widget.tasks.where((task) {
@@ -188,7 +187,6 @@ class _InfiniteScheduleListWidgetState
 
       bool categoryMatch = widget.selectedCategory == 'Semua';
       if (!categoryMatch) {
-        // Konversi task category string ke CategoryOption name untuk perbandingan yang konsisten
         final categoryOption = CategoryHelper.getCategoryOptionFromString(task.category);
         categoryMatch = categoryOption.name == widget.selectedCategory;
       }
@@ -198,16 +196,10 @@ class _InfiniteScheduleListWidgetState
       return categoryMatch && dateMatch;
     }).toList();
 
-    // Debug logging
     print('📋 InfiniteScheduleList - Task filtering for ${date.toString().split(' ')[0]}:');
     print('   Total tasks available: ${widget.tasks.length}');
     print('   Selected category: ${widget.selectedCategory}');
     print('   Filtered tasks: ${filteredTasks.length}');
-    if (filteredTasks.isNotEmpty) {
-      for (final task in filteredTasks) {
-        print('   - ${task.title} (${task.category}) deadline: ${task.deadline.toString().split(' ')[0]}');
-      }
-    }
 
     return filteredTasks;
   }
@@ -222,6 +214,7 @@ class _InfiniteScheduleListWidgetState
     final targetDate = DateTime(date.year, date.month, date.day);
     return targetDate.isAtSameMomentAs(today);
   }
+
   Widget _buildEmptyState() {
     String message;
     String subtitle;
@@ -265,7 +258,6 @@ class _InfiniteScheduleListWidgetState
     );
   }
 
-  // Helper methods for building animated cards
   Widget _buildAnimatedActivityCard(AktivitasModel schedule, List<AktivitasModel> schedulesForDate) {
     final isAnimating = _isAnimating && _animatingItem == schedule;
     
@@ -288,12 +280,15 @@ class _InfiniteScheduleListWidgetState
       onDelete: widget.onDeleteSchedule != null
           ? () => _handleDeleteAktivitas(schedule)
           : null,
-    );    if (isAnimating) {
+    );    
+
+    if (isAnimating) {
       return _animator.buildAnimatedItem(schedule, activityCard);
     } else {
       return activityCard;
     }
   }
+
   Widget _buildAnimatedTaskCard(Task task, List<Task> tasksForDate) {
     final isAnimating = _isAnimating && _animatingItem == task;
     
@@ -321,13 +316,15 @@ class _InfiniteScheduleListWidgetState
         vertical: 0.5.h,
         horizontal: 0,
       ),
-    );    if (isAnimating) {
+    );    
+
+    if (isAnimating) {
       return _animator.buildAnimatedItem(task, taskCard);
     } else {
       return taskCard;
     }
   }
-  // Delete handlers with animation support
+
   Future<void> _handleDeleteAktivitas(AktivitasModel aktivitas) async {
     try {
       setState(() {
@@ -335,7 +332,6 @@ class _InfiniteScheduleListWidgetState
         _isAnimating = true;
       });
 
-      // Use ScheduleAnimator for deletion animation
       _animator.prepareItemDeletion(
         aktivitas, 
         () async {
@@ -347,7 +343,6 @@ class _InfiniteScheduleListWidgetState
           }
         },
         () {
-          // Animation completion callback
           if (mounted) {
             setState(() {
               _isAnimating = false;
@@ -366,6 +361,7 @@ class _InfiniteScheduleListWidgetState
       }
     }
   }
+
   Future<void> _handleDeleteTask(Task task) async {
     try {
       setState(() {
@@ -373,7 +369,6 @@ class _InfiniteScheduleListWidgetState
         _isAnimating = true;
       });
 
-      // Use ScheduleAnimator for deletion animation
       _animator.prepareItemDeletion(
         task, 
         () async {
@@ -385,7 +380,6 @@ class _InfiniteScheduleListWidgetState
           }
         },
         () {
-          // Animation completion callback
           if (mounted) {
             setState(() {
               _isAnimating = false;
@@ -405,10 +399,93 @@ class _InfiniteScheduleListWidgetState
     }
   }
 
-  // NOTE: _handleToggleTaskCompletion removed - schedule context doesn't support completion
+  // FIXED: Improved time extraction for activities and tasks
+  DateTime _getEffectiveDateTime(dynamic item, DateTime fallbackDate) {
+    if (item is AktivitasModel) {
+      // Check if activity has proper time information
+      final activityDate = item.activityDate;
+      
+      // If time is 00:00:00, it likely means we need to extract time from separate fields
+      if (activityDate.hour == 0 && activityDate.minute == 0 && activityDate.second == 0) {
+        // Check if activity model has separate startTime and endTime fields
+        // You might need to adjust this based on your actual AktivitasModel structure
+        
+        // For now, let's try to use the date but with a reasonable default time
+        // You should modify this to use actual start time from your model
+        print('⚠️ Activity "${item.activityTitle}" has no time info, using date: ${activityDate}');
+        
+        // If your AktivitasModel has startTime field, use it like:
+        // if (item.startTime != null) {
+        //   return DateTime(
+        //     activityDate.year,
+        //     activityDate.month, 
+        //     activityDate.day,
+        //     item.startTime!.hour,
+        //     item.startTime!.minute,
+        //   );
+        // }
+        
+        return activityDate; // Use as-is for now
+      }
+      
+      return activityDate;
+    } else if (item is Task) {
+      return item.deadline;
+    }
+    
+    return fallbackDate;
+  }
+
+  // FIXED: Improved section time checking
+  int getSectionIndex(DateTime time) {
+    final config = widget.sectionTimeConfig ?? [
+      {'label': 'Pagi', 'start': 5, 'end': 10},
+      {'label': 'Siang', 'start': 11, 'end': 14}, 
+      {'label': 'Sore', 'start': 15, 'end': 18},
+      {'label': 'Malam', 'start': 19, 'end': 4},
+    ];
+    
+    final hour = time.hour;
+    
+    print('\n🕐 Checking time: ${time.toString()}');
+    print('   Hour: $hour');
+    
+    for (int i = 0; i < config.length; i++) {
+      final start = config[i]['start'] as int;
+      final end = config[i]['end'] as int;
+      final label = config[i]['label'] as String;
+      
+      print('   Checking section: $label ($start:00-$end:59)');
+      
+      bool isInRange = false;
+      
+      if (start <= end) {
+        // Normal range (e.g., 5-10, 11-14, 15-18)
+        isInRange = hour >= start && hour <= end;
+      } else {
+        // Overnight range (e.g., 19-4) - crosses midnight
+        isInRange = hour >= start || hour <= end;
+      }
+      
+      if (isInRange) {
+        print('   ✅ Matched section: $label');
+        return i;
+      }
+    }
+    
+    print('   ❌ No section matched for hour $hour, defaulting to first section');
+    return 0; // Default to first section instead of -1
+  }
 
   @override
   Widget build(BuildContext context) {
+    final config = widget.sectionTimeConfig ?? [
+      {'label': 'Pagi', 'start': 5, 'end': 10},
+      {'label': 'Siang', 'start': 11, 'end': 14},
+      {'label': 'Sore', 'start': 15, 'end': 18},
+      {'label': 'Malam', 'start': 19, 'end': 4},
+    ];
+
     return PageView.builder(
       controller: _pageController,
       onPageChanged: (pageIndex) {
@@ -423,6 +500,49 @@ class _InfiniteScheduleListWidgetState
         final isToday = _isToday(date);
         final schedulesForDate = _getSchedulesForDate(date);
         final tasksForDate = _getTasksForDate(date);
+
+        // Create items with improved time handling
+        List<Map<String, dynamic>> allItems = [
+          ...schedulesForDate.map((a) => {
+                'type': 'aktivitas',
+                'data': a,
+                // Gunakan activityStartTime jika ada, fallback ke activityDate
+                'time': (a.activityStartTime != null) ? a.activityStartTime : a.activityDate,
+              }),
+          ...tasksForDate.map((t) => {
+                'type': 'task', 
+                'data': t,
+                'time': _getEffectiveDateTime(t, date),
+              }),
+        ];
+        
+        // Debug: Print processed times
+        print('\n📅 DEBUG: Processing ${allItems.length} items for ${date.toString().split(' ')[0]}:');
+        for (var item in allItems) {
+          final DateTime time = item['time'] as DateTime;
+          final String type = item['type'] as String;
+          final dynamic data = item['data'];
+          
+          if (type == 'aktivitas') {
+            final aktivitas = data as AktivitasModel;
+            print('   📌 Activity: "${aktivitas.activityTitle}" at ${time.toString()} (${time.hour}:${time.minute.toString().padLeft(2, '0')})');
+          } else {
+            final task = data as Task;
+            print('   ✔️ Task: "${task.title}" deadline ${time.toString()} (${time.hour}:${time.minute.toString().padLeft(2, '0')})');
+          }
+        }
+
+        // Sort by time
+        allItems.sort((a, b) => (a['time'] as DateTime).compareTo(b['time'] as DateTime));
+
+        // Group items by time sections
+        List<List<Map<String, dynamic>>> sectioned = List.generate(config.length, (_) => []);
+        for (final item in allItems) {
+          final sectionIdx = getSectionIndex(item['time'] as DateTime);
+          if (sectionIdx >= 0 && sectionIdx < config.length) {
+            sectioned[sectionIdx].add(item);
+          }
+        }
 
         return RefreshIndicator(
           onRefresh: () async => setState(() {}),
@@ -451,25 +571,45 @@ class _InfiniteScheduleListWidgetState
                     color: const Color(0xFF5263F3),
                   ),
                 ),
-                const SizedBox(height: 16),                // Schedule list and tasks or empty state
-                if (schedulesForDate.isEmpty && tasksForDate.isEmpty)
-                  _buildEmptyState()
-                else ...[
-                  // Debug logging
-                  () {
-                    print('📋 InfiniteScheduleList - Build: schedules=${schedulesForDate.length}, tasks=${tasksForDate.length} for ${date.toString().split(' ')[0]}');
-                    return const SizedBox.shrink();
-                  }(),
-                  
-                  // Display schedules first
-                  ...schedulesForDate.map(
-                    (schedule) => _buildAnimatedActivityCard(schedule, schedulesForDate),
-                  ), 
-                  // Then display tasks
-                  ...tasksForDate.map(
-                    (task) => _buildAnimatedTaskCard(task, tasksForDate),
-                  ),
+                const SizedBox(height: 16),
+                
+                // Sectioned content
+                for (int i = 0; i < config.length; i++) ...[
+                  if (sectioned[i].isNotEmpty) ...[
+                    // Section divider
+                    Row(
+                      children: [
+                        const Expanded(child: Divider(thickness: 1)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Text(
+                            config[i]['label'],
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ),
+                        const Expanded(child: Divider(thickness: 1)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    
+                    // Items in this section
+                    ...sectioned[i].map((item) {
+                      if (item['type'] == 'aktivitas') {
+                        return _buildAnimatedActivityCard(item['data'], schedulesForDate);
+                      } else {
+                        return _buildAnimatedTaskCard(item['data'], tasksForDate);
+                      }
+                    }).toList(),
+                    const SizedBox(height: 16),
+                  ],
                 ],
+                
+                // Empty state
+                if (allItems.isEmpty) _buildEmptyState(),
                 const SizedBox(height: 100),
               ],
             ),

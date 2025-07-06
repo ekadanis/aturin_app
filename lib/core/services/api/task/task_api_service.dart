@@ -5,6 +5,7 @@ import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:aturin_app/core/services/api/alarm/alarm_api_service.dart';
 import 'package:aturin_app/features/alarm/model/alarm.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:aturin_app/core/services/cache/cache_service.dart';
 
 class TaskApiService extends ChangeNotifier {
   static const String baseUrl = 'https://aturin-app.com/api/v1';
@@ -13,12 +14,25 @@ class TaskApiService extends ChangeNotifier {
   
   // Add AlarmApiService instance
   final AlarmApiService _alarmApiService = AlarmApiService();
+  final CacheService _cacheService = CacheService();
+  
+  // Cache keys
+  static const String _allTasksCacheKey = 'all_tasks';
+  static const String _todayTasksCacheKey = 'today_tasks';
+  static const String _uncompletedTodayCacheKey = 'uncompleted_today_tasks';
+  static const String _tasksByStatusCacheKey = 'tasks_by_status_';
+  static const String _dashboardSummaryCacheKey = 'dashboard_summary';
+  static const String _lateTasksCountCacheKey = 'late_tasks_count';
+  static const Duration _cacheValidityDuration = Duration(minutes: 5);
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
   List<Task> _tasks = [];
   List<Task> get tasks => _tasks;
+  
+  // Untuk menandai apakah data telah berubah
+  bool _dataChanged = false;
 
   void _setLoading(bool value) {
     _isLoading = value;
@@ -32,6 +46,31 @@ class TaskApiService extends ChangeNotifier {
 
   void clearError() {
     _setError(null);
+  }
+  
+  // Metode untuk menandai data telah berubah (dipanggil setelah update/delete/create)
+  void _markDataChanged() {
+    _dataChanged = true;
+    debugPrint('🗄️ Cache: Data telah ditandai berubah, membersihkan cache...');
+    _clearRelatedCaches();
+    // fetchTasks(forceRefresh: true) akan dipanggil di create/update/delete agar _tasks dan UI pasti update
+    // notifyListeners(); // Tidak perlu di sini, cukup di fetchTasks
+  }
+  
+  // Metode untuk membersihkan cache yang terkait saat data berubah
+  Future<void> _clearRelatedCaches() async {
+    await _cacheService.removeData(_allTasksCacheKey);
+    await _cacheService.removeData(_todayTasksCacheKey);
+    await _cacheService.removeData(_uncompletedTodayCacheKey);
+    await _cacheService.removeData(_dashboardSummaryCacheKey);
+    await _cacheService.removeData(_lateTasksCountCacheKey);
+    
+    // Clear status-based caches
+    await _cacheService.removeData('${_tasksByStatusCacheKey}terlambat');
+    await _cacheService.removeData('${_tasksByStatusCacheKey}belum_selesai');
+    await _cacheService.removeData('${_tasksByStatusCacheKey}selesai');
+    
+    debugPrint('🗄️ Cache: Semua cache terkait task telah dibersihkan');
   }
 
   Future<String?> _getToken() async {
@@ -65,7 +104,6 @@ class TaskApiService extends ChangeNotifier {
     required DateTime deadline,
     required String estimatedDuration,
     required String category,
-    String? status,
     int? alarmId,
   }) async {
     try {
@@ -87,12 +125,15 @@ class TaskApiService extends ChangeNotifier {
           'task_deadline': deadline.toIso8601String(),
           'estimated_task_duration': estimatedDuration,
           'task_category': category,
-          'task_status': status ?? 'belum_selesai',
+          'task_status': 'belum_selesai',
           'alarm_id': alarmId,
         }),
       );
       final data = jsonDecode(response.body);
       if (response.statusCode == 201 || response.statusCode == 200) {
+        _markDataChanged();
+        await fetchTasks(forceRefresh: true);
+        debugPrint('🗄️ Cache: Data task berhasil diperbarui setelah createTask');
         return TaskResult.success(
           task: Task.fromMap(data['data']),
           message: data['message'],
@@ -140,6 +181,9 @@ class TaskApiService extends ChangeNotifier {
       );
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
+        _markDataChanged();
+        await fetchTasks(forceRefresh: true);
+        debugPrint('🗄️ Cache: Data task berhasil diperbarui setelah updateTask');
         return TaskResult.success(
           task: Task.fromMap(data['data']),
           message: data['message'],
@@ -161,17 +205,11 @@ class TaskApiService extends ChangeNotifier {
         headers: headers,
       );
       
-      final data = jsonDecode(response.body);      if (response.statusCode == 200 || response.statusCode == 204) {
-        // Auto refresh data after successful deletion with improved synchronization
-        try {
-          await fetchTasks();
-          
-          // Small delay to ensure UI has time to process the changes
-          await Future.delayed(const Duration(milliseconds: 100));
-        } catch (e) {
-          debugPrint('Warning: Failed to refresh tasks after deletion: $e');
-        }
-        
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        _markDataChanged();
+        await fetchTasks(forceRefresh: true);
+        debugPrint('🗄️ Cache: Data task berhasil diperbarui setelah deleteTask');
         return TaskResult.success(message: data['message'] ?? 'Tugas berhasil dihapus');
       } else {
         return _handleErrorResponse(response);
@@ -184,23 +222,46 @@ class TaskApiService extends ChangeNotifier {
   }
   // FETCH
 
-  Future<void> fetchTasks() async {
+  Future<void> fetchTasks({bool forceRefresh = false}) async {
+    // Periksa jika cache valid dan data tidak berubah, gunakan cache
+    // Skip cache jika forceRefresh = true atau data telah berubah (_dataChanged = true)
+    if (!forceRefresh && !_dataChanged && await _cacheService.isCacheValid(_allTasksCacheKey)) {
+      try {
+        final cachedData = await _cacheService.getData(_allTasksCacheKey);
+        if (cachedData != null) {
+          final cachedTasks = List<Map<String, dynamic>>.from(cachedData)
+              .map((taskMap) => Task.fromMap(taskMap))
+              .toList();
+          _tasks = cachedTasks;
+          _dataChanged = false;
+          notifyListeners();
+          debugPrint('🗄️ Cache: Menggunakan data task dari cache');
+          return;
+        }
+      } catch (e) {
+        debugPrint('🗄️ Cache: Error menggunakan cache untuk tasks: $e');
+      }
+    }
+    
+    debugPrint('🗄️ Cache: Mengambil data task dari server (forceRefresh=$forceRefresh, dataChanged=$_dataChanged)');
     _setLoading(true);
     try {
-      final tasks = await getAllTasks();
+      final tasks = await getAllTasks(forceRefresh: forceRefresh);
       _tasks = tasks;
       _setError(null);
+      _dataChanged = false;
     } catch (e) {
       _setError('Gagal mengambil data tugas');
+      debugPrint('Error in fetchTasks: $e');
     }
     _setLoading(false);
     notifyListeners();
   }
 
-  Future<void> fetchTasksToday() async {
+  Future<void> fetchTasksToday({bool forceRefresh = false}) async {
     _setLoading(true);
     try {
-      final tasks = await getTasksToday();
+      final tasks = await getTasksToday(forceRefresh: forceRefresh);
       _tasks = tasks;
       _setError(null);
     } catch (e) {
@@ -210,10 +271,10 @@ class TaskApiService extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> fetchUncompletedTasksToday() async {
+  Future<void> fetchUncompletedTasksToday({bool forceRefresh = false}) async {
     _setLoading(true);
     try {
-      final tasks = await getUncompletedTasksToday();
+      final tasks = await getUncompletedTasksToday(forceRefresh: forceRefresh);
       _tasks = tasks;
       _setError(null);
     } catch (e) {
@@ -223,7 +284,26 @@ class TaskApiService extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<List<Task>> getAllTasks() async {
+  Future<List<Task>> getAllTasks({bool forceRefresh = false}) async {
+    // Periksa apakah data sudah ada di cache
+    // Skip cache jika forceRefresh = true atau data telah berubah (_dataChanged = true)
+    if (!forceRefresh && !_dataChanged && await _cacheService.isCacheValid(_allTasksCacheKey)) {
+      try {
+        final cachedData = await _cacheService.getData(_allTasksCacheKey);
+        if (cachedData != null) {
+          final List<Task> cachedTasks = List<Map<String, dynamic>>.from(cachedData)
+              .map((taskMap) => Task.fromMap(taskMap))
+              .toList();
+          debugPrint('🗄️ Cache: Berhasil mendapatkan tasks dari cache');
+          return cachedTasks;
+        }
+      } catch (e) {
+        debugPrint('🗄️ Cache: Error mendapatkan tasks dari cache: $e');
+      }
+    }
+    
+    debugPrint('🗄️ Cache: Mengambil semua task dari server (forceRefresh=$forceRefresh, dataChanged=$_dataChanged)');
+    
     try {
       final headers = await _getHeaders();
       final response = await http.get(
@@ -253,6 +333,16 @@ class TaskApiService extends ChangeNotifier {
           return task;
         }).toList();
         
+        // Simpan ke cache
+        final List<Map<String, dynamic>> tasksAsMap = tasksWithAlarms
+            .map((task) => task.toMap())
+            .toList();
+        await _cacheService.saveData(
+          key: _allTasksCacheKey, 
+          data: tasksAsMap,
+          maxAge: _cacheValidityDuration,
+        );
+        
         return tasksWithAlarms;
       }
     } catch (e) {
@@ -261,7 +351,26 @@ class TaskApiService extends ChangeNotifier {
     }
     return [];
   }
-  Future<List<Task>> getTasksToday() async {
+  Future<List<Task>> getTasksToday({bool forceRefresh = false}) async {
+    // Periksa apakah data sudah ada di cache
+    // Skip cache jika forceRefresh = true atau data telah berubah (_dataChanged = true)
+    if (!forceRefresh && !_dataChanged && await _cacheService.isCacheValid(_todayTasksCacheKey)) {
+      try {
+        final cachedData = await _cacheService.getData(_todayTasksCacheKey);
+        if (cachedData != null) {
+          final List<Task> cachedTasks = List<Map<String, dynamic>>.from(cachedData)
+              .map((taskMap) => Task.fromMap(taskMap))
+              .toList();
+          debugPrint('🗄️ Cache: Berhasil mendapatkan tasks hari ini dari cache');
+          return cachedTasks;
+        }
+      } catch (e) {
+        debugPrint('🗄️ Cache: Error mendapatkan tasks hari ini dari cache: $e');
+      }
+    }
+    
+    debugPrint('🗄️ Cache: Mengambil tasks hari ini dari server (forceRefresh=$forceRefresh)');
+    
     try {
       final headers = await _getHeaders();
       final response = await http.get(
@@ -291,6 +400,16 @@ class TaskApiService extends ChangeNotifier {
           return task;
         }).toList();
         
+        // Simpan ke cache
+        final List<Map<String, dynamic>> tasksAsMap = tasksWithAlarms
+            .map((task) => task.toMap())
+            .toList();
+        await _cacheService.saveData(
+          key: _todayTasksCacheKey, 
+          data: tasksAsMap,
+          maxAge: _cacheValidityDuration,
+        );
+        
         return tasksWithAlarms;
       }
     } catch (e) {
@@ -300,7 +419,26 @@ class TaskApiService extends ChangeNotifier {
     return [];
   }
 
-  Future<List<Task>> getUncompletedTasksToday() async {
+  Future<List<Task>> getUncompletedTasksToday({bool forceRefresh = false}) async {
+    // Periksa apakah data sudah ada di cache
+    // Skip cache jika forceRefresh = true atau data telah berubah (_dataChanged = true)
+    if (!forceRefresh && !_dataChanged && await _cacheService.isCacheValid(_uncompletedTodayCacheKey)) {
+      try {
+        final cachedData = await _cacheService.getData(_uncompletedTodayCacheKey);
+        if (cachedData != null) {
+          final List<Task> cachedTasks = List<Map<String, dynamic>>.from(cachedData)
+              .map((taskMap) => Task.fromMap(taskMap))
+              .toList();
+          debugPrint('🗄️ Cache: Berhasil mendapatkan tasks belum selesai hari ini dari cache');
+          return cachedTasks;
+        }
+      } catch (e) {
+        debugPrint('🗄️ Cache: Error mendapatkan tasks belum selesai hari ini dari cache: $e');
+      }
+    }
+    
+    debugPrint('🗄️ Cache: Mengambil tasks belum selesai hari ini dari server (forceRefresh=$forceRefresh)');
+    
     try {
       final headers = await _getHeaders();
       final response = await http.get(
@@ -329,6 +467,16 @@ class TaskApiService extends ChangeNotifier {
           }
           return task;
         }).toList();
+        
+        // Simpan ke cache
+        final List<Map<String, dynamic>> tasksAsMap = tasksWithAlarms
+            .map((task) => task.toMap())
+            .toList();
+        await _cacheService.saveData(
+          key: _uncompletedTodayCacheKey, 
+          data: tasksAsMap,
+          maxAge: _cacheValidityDuration,
+        );
         
         return tasksWithAlarms;
       }
@@ -373,7 +521,21 @@ class TaskApiService extends ChangeNotifier {
     return null;
   }
 
-  Future<Map<String, dynamic>?> countLateTasks() async {
+  Future<Map<String, dynamic>?> countLateTasks({bool forceRefresh = false}) async {
+    // Periksa apakah data sudah ada di cache
+    // Skip cache jika forceRefresh = true atau data telah berubah (_dataChanged = true)
+    if (!forceRefresh && !_dataChanged && await _cacheService.isCacheValid(_lateTasksCountCacheKey)) {
+      try {
+        final cachedData = await _cacheService.getData(_lateTasksCountCacheKey);
+        if (cachedData != null) {
+          debugPrint('🗄️ Cache: Berhasil mendapatkan jumlah tasks terlambat dari cache');
+          return cachedData as Map<String, dynamic>;
+        }
+      } catch (e) {
+        debugPrint('🗄️ Cache: Error mendapatkan jumlah tasks terlambat dari cache: $e');
+      }
+    }
+    
     try {
       final headers = await _getHeaders();
       final response = await http.get(
@@ -384,6 +546,12 @@ class TaskApiService extends ChangeNotifier {
       print('Response body: ${response.body}');
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
+        // Simpan ke cache
+        await _cacheService.saveData(
+          key: _lateTasksCountCacheKey, 
+          data: data['data'],
+          maxAge: _cacheValidityDuration,
+        );
         return data['data'];
       }
     } catch (e) {
@@ -393,6 +561,20 @@ class TaskApiService extends ChangeNotifier {
   }
 
   Future<Map<String, dynamic>?> getTasksByStatus(String status) async {
+    // Periksa apakah data sudah ada di cache
+    final cacheKey = '${_tasksByStatusCacheKey}$status';
+    if (!_dataChanged && await _cacheService.isCacheValid(cacheKey)) {
+      try {
+        final cachedData = await _cacheService.getData(cacheKey);
+        if (cachedData != null) {
+          debugPrint('🗄️ Cache: Berhasil mendapatkan tasks dengan status $status dari cache');
+          return cachedData as Map<String, dynamic>;
+        }
+      } catch (e) {
+        debugPrint('🗄️ Cache: Error mendapatkan tasks dengan status $status dari cache: $e');
+      }
+    }
+    
     try {
       final headers = await _getHeaders();
       final uri = Uri.parse(
@@ -401,12 +583,31 @@ class TaskApiService extends ChangeNotifier {
       final response = await http.get(uri, headers: headers);
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
+        // Simpan ke cache
+        await _cacheService.saveData(
+          key: cacheKey, 
+          data: data['data'],
+          maxAge: _cacheValidityDuration,
+        );
         return data['data'];
       }
     } catch (e) {
       _handleException(e);
     }
     return null;
+  }
+
+  /// Memaksa pembaruan UI dengan memancarkan notifikasi listener
+  void forceRefreshUI() {
+    debugPrint('🔄 TaskApiService: Memaksa pembaruan UI');
+    notifyListeners();
+  }
+  
+  /// Memaksa pembaruan data dan UI
+  Future<void> refreshDataAndUI() async {
+    debugPrint('🔄 TaskApiService: Menyegarkan data dan UI');
+    await fetchTasks(forceRefresh: true);
+    notifyListeners();
   }
 
   // HANDLERS

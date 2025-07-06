@@ -41,7 +41,7 @@ class CoreProviders extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: ProviderConfig.getCoreProviders(
+      providers: ProviderConfig.getProviders(
         connectivityService: connectivityService,
       ),
       child: child,

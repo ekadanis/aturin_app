@@ -3,9 +3,21 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:aturin_app/features/profile/models/user_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:aturin_app/core/services/cache/cache_service.dart';
 
 class ProfileService extends ChangeNotifier {
   static const String baseUrl = 'https://aturin-app.com/api/v1';
+  
+  // Cache keys
+  static const String _profileCacheKey = 'user_profile';
+  static const String _globalAlarmSettingCacheKey = 'global_alarm_setting';
+  static const Duration _cacheValidityDuration = Duration(minutes: 30);
+  
+  // Cache service instance
+  final CacheService _cacheService = CacheService();
+  
+  // Flag to track if data has changed
+  bool _dataChanged = false;
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -26,7 +38,43 @@ class ProfileService extends ChangeNotifier {
     _errorMessage = error;
     notifyListeners();
   }
-  Future<User?> me() async {
+  
+  // Mark data as changed (called after update operations)
+  void _markDataChanged() {
+    _dataChanged = true;
+    debugPrint('🗄️ Cache: Data profil telah ditandai berubah, membersihkan cache...');
+    _clearRelatedCaches();
+    
+    // Force data refresh from server on next fetch
+    notifyListeners(); 
+  }
+  
+  // Clear all related caches when data changes
+  Future<void> _clearRelatedCaches() async {
+    await _cacheService.removeData(_profileCacheKey);
+    await _cacheService.removeData(_globalAlarmSettingCacheKey);
+    
+    debugPrint('🗄️ Cache: Semua cache terkait profil telah dibersihkan');
+  }
+
+  Future<User?> me({bool forceRefresh = false}) async {
+    // Check if cache is valid and data hasn't changed
+    if (!forceRefresh && !_dataChanged && await _cacheService.isCacheValid(_profileCacheKey)) {
+      try {
+        final cachedData = await _cacheService.getData(_profileCacheKey);
+        if (cachedData != null) {
+          final user = User.fromJson(cachedData);
+          _currentUser = user;
+          _dataChanged = false;
+          debugPrint('🗄️ Cache: Menggunakan data profil dari cache');
+          return user;
+        }
+      } catch (e) {
+        debugPrint('🗄️ Cache: Error menggunakan cache untuk profil: $e');
+      }
+    }
+
+    debugPrint('🗄️ Cache: Mengambil data profil dari server (forceRefresh=$forceRefresh)');
     try {
       _setLoading(true);
       final prefs = await SharedPreferences.getInstance();
@@ -79,7 +127,15 @@ class ProfileService extends ChangeNotifier {
                   : null,
         );
 
+        // Save to cache
+        await _cacheService.saveData(
+          key: _profileCacheKey,
+          data: user.toJson(),
+          maxAge: _cacheValidityDuration,
+        );
+        
         _currentUser = user;
+        _dataChanged = false;
         notifyListeners();
         return user;
       } else {
@@ -142,6 +198,7 @@ class ProfileService extends ChangeNotifier {
         );
 
         _currentUser = user;
+        _markDataChanged(); // Mark data as changed after update
         notifyListeners();
         return user;
       } else {

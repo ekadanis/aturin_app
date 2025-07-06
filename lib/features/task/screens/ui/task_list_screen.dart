@@ -31,55 +31,82 @@ class _TaskListScreenState extends State<TaskListScreen>
   ];
 
   int _overdueTasksCount = 0;
-
-  Timer? _reloadTimer;
+  Timer? _refreshTimer;
+  Timer? _debounceTimer;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchOverdueCount();
-      Provider.of<TaskApiService>(context, listen: false).fetchTasks();
-      _startAutoReload();
-    });
-  }
-
-  void _startAutoReload() {
-    _reloadTimer?.cancel();
-    _reloadTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      _fetchOverdueCount();
-      setState(() {}); // Trigger reload TaskListView
-    });
-  }
-
-  void _resetAutoReloadTimer() {
-    _startAutoReload();
+    // Initial data fetch
+    _refreshData();
   }
 
   @override
   void dispose() {
+    // Cancel all timers before dispose
+    _refreshTimer?.cancel();
+    _debounceTimer?.cancel();
+    // Remove observer
     WidgetsBinding.instance.removeObserver(this);
-    _reloadTimer?.cancel();
     super.dispose();
   }
 
   Future<void> _fetchOverdueCount() async {
-    final taskService = Provider.of<TaskApiService>(context, listen: false);
-    final data = await taskService.countLateTasks();
-    print('Data dari API: $data');
-    if (data != null && data['overdue_tasks'] != null) {
-      setState(() {
-        _overdueTasksCount = data['overdue_tasks'] as int;
-      });
+    // Check if widget is still mounted to avoid accessing deactivated widget
+    if (!mounted) return;
+
+    try {
+      final taskService = Provider.of<TaskApiService>(context, listen: false);
+      final data = await taskService.countLateTasks();
+      print('Data dari API: $data');
+
+      // Check again if widget is still mounted before calling setState
+      if (!mounted) return;
+
+      if (data != null && data['overdue_tasks'] != null) {
+        setState(() {
+          _overdueTasksCount = data['overdue_tasks'] as int;
+        });
+      }
+    } catch (e) {
+      // Handle error silently if widget is disposed
+      if (mounted) {
+        print('Error fetching overdue count: $e');
+      }
     }
+  }
+
+  // Method to refresh all data dengan debouncing
+  Future<void> _refreshData() async {
+    if (!mounted) return;
+
+    // Cancel previous debounce timer
+    _debounceTimer?.cancel();
+
+    // Debounce untuk menghindari multiple rapid calls
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () async {
+      if (!mounted) return;
+
+      try {
+        final taskService = Provider.of<TaskApiService>(context, listen: false);
+        await Future.wait([
+          _fetchOverdueCount(),
+          taskService.fetchTasks(forceRefresh: true),
+        ]);
+      } catch (e) {
+        if (mounted) {
+          print('Error refreshing data: $e');
+        }
+      }
+    });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _fetchOverdueCount();
-      setState(() {});
+    if (state == AppLifecycleState.resumed && mounted) {
+      // Ketika app kembali ke foreground, refresh data
+      _refreshData();
     }
   }
 
@@ -89,8 +116,6 @@ class _TaskListScreenState extends State<TaskListScreen>
     final bottomNavHeight = kBottomNavigationBarHeight;
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
-      onTap: _resetAutoReloadTimer,
-      onPanDown: (_) => _resetAutoReloadTimer(),
       child: PopScope(
         canPop: false,
         onPopInvokedWithResult: (didPop, result) {
@@ -98,7 +123,7 @@ class _TaskListScreenState extends State<TaskListScreen>
           safeNavigate(() {
             context.router.pushAndPopUntil(
               const HomeRoute(),
-              predicate: (_) => false
+              predicate: (_) => false,
             );
           });
           return;
@@ -125,7 +150,6 @@ class _TaskListScreenState extends State<TaskListScreen>
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: NotificationListener<ScrollNotification>(
                 onNotification: (notification) {
-                  _resetAutoReloadTimer();
                   return false;
                 },
                 child: Column(
@@ -137,62 +161,113 @@ class _TaskListScreenState extends State<TaskListScreen>
                         filters: _filters,
                         selectedFilter: _selectedFilter,
                         overdueTasksCount: _overdueTasksCount,
-                        onFilterSelected: (filter) {
+                        onFilterSelected: (filter) async {
                           setState(() {
                             _selectedFilter = filter;
                           });
+                          // Refresh data when filter changes
+                          final taskService = Provider.of<TaskApiService>(
+                            context,
+                            listen: false,
+                          );
+                          await taskService.fetchTasks(forceRefresh: true);
                         },
                       ),
                     ),
                     Expanded(
-                      child: TaskListView(
-                        currentFilter: _selectedFilter,
-                        onShowSuccess: (message) {
-                          setState(() {});
-                          _fetchOverdueCount();
-                          showCustomTopSnackbar(context: context, message: message);
-                        },
-                        onTapTask: (task) {
-                          safeOnTap(() async {
-                            final taskApiService = TaskApiService();
-                            List<Task> allTasks = [];
-                            int taskIndex = 0;
-                            try {
-                              if (_selectedFilter == 'Semua') {
-                                allTasks = await taskApiService.getAllTasks();
-                              } else if (_selectedFilter == 'Terlambat') {
-                                final data = await taskApiService.getTasksByStatus('terlambat');
-                                if (data != null && data['tasks'] != null) {
-                                  allTasks = List<Task>.from(data['tasks'].map((e) => Task.fromMap(e)));
-                                }
-                              } else if (_selectedFilter == 'Belum Selesai') {
-                                final data = await taskApiService.getTasksByStatus('belum_selesai');
-                                if (data != null && data['tasks'] != null) {
-                                  allTasks = List<Task>.from(data['tasks'].map((e) => Task.fromMap(e)));
-                                }
-                              } else if (_selectedFilter == 'Selesai') {
-                                final data = await taskApiService.getTasksByStatus('selesai');
-                                if (data != null && data['tasks'] != null) {
-                                  allTasks = List<Task>.from(data['tasks'].map((e) => Task.fromMap(e)));
-                                }
-                              }
-                              taskIndex = allTasks.indexWhere((t) => t.id == task.id);
-                              if (taskIndex == -1) taskIndex = 0;
-                            } catch (e) {
-                              allTasks = [task];
-                              taskIndex = 0;
-                            }
-                            final result = await context.router.push(
-                              TaskDetailListRoute(
-                                tasks: allTasks,
-                                initialIndex: taskIndex,
-                              ),
-                            );
-                            if (result == true) {
-                              setState(() {});
-                              _fetchOverdueCount();
+                      child: Consumer<TaskApiService>(
+                        builder: (context, taskApiService, child) {
+                          // Trigger refresh ketika Consumer di-rebuild
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted) {
+                              _refreshData();
                             }
                           });
+
+                          return RefreshIndicator(
+                            onRefresh: _refreshData,
+                            child: TaskListView(
+                              currentFilter: _selectedFilter,
+                              onShowSuccess: (message) {
+                                // Refresh all data including overdue count and task list
+                                _refreshData();
+                                showCustomTopSnackbar(
+                                  context: context,
+                                  message: message,
+                                );
+                              },
+                              onTapTask: (task) {
+                                safeOnTap(() async {
+                                  final taskApiService =
+                                      Provider.of<TaskApiService>(
+                                        context,
+                                        listen: false,
+                                      );
+                                  List<Task> allTasks = [];
+                                  int taskIndex = 0;
+                                  try {
+                                    if (_selectedFilter == 'Semua') {
+                                      allTasks =
+                                          await taskApiService.getAllTasks();
+                                    } else if (_selectedFilter == 'Terlambat') {
+                                      final data = await taskApiService
+                                          .getTasksByStatus('terlambat');
+                                      if (data != null &&
+                                          data['tasks'] != null) {
+                                        allTasks = List<Task>.from(
+                                          data['tasks'].map(
+                                            (e) => Task.fromMap(e),
+                                          ),
+                                        );
+                                      }
+                                    } else if (_selectedFilter ==
+                                        'Belum Selesai') {
+                                      final data = await taskApiService
+                                          .getTasksByStatus('belum_selesai');
+                                      if (data != null &&
+                                          data['tasks'] != null) {
+                                        allTasks = List<Task>.from(
+                                          data['tasks'].map(
+                                            (e) => Task.fromMap(e),
+                                          ),
+                                        );
+                                      }
+                                    } else if (_selectedFilter == 'Selesai') {
+                                      final data = await taskApiService
+                                          .getTasksByStatus('selesai');
+                                      if (data != null &&
+                                          data['tasks'] != null) {
+                                        allTasks = List<Task>.from(
+                                          data['tasks'].map(
+                                            (e) => Task.fromMap(e),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                    taskIndex = allTasks.indexWhere(
+                                      (t) => t.id == task.id,
+                                    );
+                                    if (taskIndex == -1) taskIndex = 0;
+                                  } catch (e) {
+                                    allTasks = [task];
+                                    taskIndex = 0;
+                                  }
+
+                                  if (!mounted) return;
+
+                                  final result = await context.router.push(
+                                    TaskDetailListRoute(
+                                      tasks: allTasks,
+                                      initialIndex: taskIndex,
+                                    ),
+                                  );
+                                  if (result == true) {
+                                    _fetchOverdueCount();
+                                  }
+                                });
+                              },
+                            ),
+                          );
                         },
                       ),
                     ),

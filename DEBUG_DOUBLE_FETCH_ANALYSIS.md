@@ -1,10 +1,12 @@
-# DEBUG: Analisis Double Fetch pada GreetingHeader
+# Analisis Double Fetch dan Troubleshooting Cache
 
-## 🔍 Identifikasi Masalah
+## Masalah yang Dilaporkan
 
-Berdasarkan analisis kode, ditemukan penyebab **double fetch** ketika navigasi dari halaman jadwal (AktivitasRoute) ke beranda (HomeRoute):
+Setelah implementasi caching, beberapa pengguna melaporkan bahwa saat menambahkan tugas baru, tampilan tidak segera memperbarui untuk menampilkan tugas tersebut. Hal ini disebabkan karena sistem caching yang berfungsi dengan baik namun perlu mekanisme tambahan untuk penanganan CRUD.
 
-### 1. **Root Cause: Lifecycle HomeService**
+## Analisis Penyebab
+
+1. **Mekanisme Caching**:
 
 **MASALAH UTAMA:**
 - `HomeService` dibuat sebagai **singleton** melalui `ChangeNotifierProvider<HomeService>(create: (_) => HomeService())` di `main.dart`

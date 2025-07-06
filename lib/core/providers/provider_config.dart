@@ -1,6 +1,7 @@
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 import 'package:aturin_app/features/home/services/home_service.dart';
+import 'package:aturin_app/features/home/providers/home_widget_provider.dart';
 import 'package:aturin_app/core/services/api/profile/profile_service.dart';
 import 'package:aturin_app/core/services/api/auth/auth_service.dart';
 import 'package:aturin_app/core/services/api/activities/activity_api_service.dart';
@@ -11,6 +12,7 @@ import 'package:aturin_app/core/services/api/task/task_api_service.dart';
 import 'package:aturin_app/core/services/api/alarm/alarm_api_service.dart';
 import 'package:aturin_app/features/task/services/task_service.dart';
 import 'package:aturin_app/features/task/services/task_utility_service.dart';
+import 'package:aturin_app/core/services/cache/cache_service.dart';
 
 /// Kelas untuk mengatur konfigurasi semua Provider dalam aplikasi
 /// Digunakan untuk memisahkan Provider setup dari main.dart agar lebih terorganisir
@@ -28,9 +30,9 @@ class ProviderConfig {
         value: connectivityService,
       ),
       
-      // Global State Management
-      ChangeNotifierProvider<GlobalStateService>(
-        create: (_) => GlobalStateService()..initialize(),
+      // Cache Service (Single instance)
+      Provider<CacheService>(
+        create: (_) => CacheService(),
       ),
       
       // Authentication & User Management
@@ -39,7 +41,9 @@ class ProviderConfig {
       ),
       ChangeNotifierProvider<ProfileService>(
         create: (_) => ProfileService(),
-      ),        // Task Management Services
+      ),
+      
+      // Task Management Services (Must be before GlobalStateService)
       ChangeNotifierProvider<TaskApiService>(
         create: (_) => TaskApiService(),
       ),
@@ -64,59 +68,22 @@ class ProviderConfig {
       ChangeNotifierProvider<AktivitasService>(
         create: (_) => AktivitasService(),
       ),
-        // Home Services
-      Provider<HomeService>(
-        create: (_) => HomeService(),
-      ),
-    ];
-  }
-    /// Mendapatkan Provider khusus untuk layanan inti
-  static List<SingleChildWidget> getCoreProviders({
-    required ConnectivityService connectivityService,
-  }) {
-    return [
-      ChangeNotifierProvider<ConnectivityService>.value(
-        value: connectivityService,
-      ),
+      
+      // Global State Management (Must be after TaskApiService)
       ChangeNotifierProvider<GlobalStateService>(
-        create: (_) => GlobalStateService()..initialize(),
-      ),
-    ];
-  }
-    /// Mendapatkan Provider khusus untuk layanan API
-  static List<SingleChildWidget> getApiProviders() {
-    return [
-      ChangeNotifierProvider<AuthService>(
-        create: (_) => AuthService(),
-      ),
-      ChangeNotifierProvider<ProfileService>(
-        create: (_) => ProfileService(),
-      ),
-      ChangeNotifierProvider<TaskApiService>(
-        create: (_) => TaskApiService(),
-      ),
-      ChangeNotifierProvider<ActivityApiService>(
-        create: (_) => ActivityApiService(),
-      ),
-    ];
-  }    /// Mendapatkan Provider khusus untuk layanan fitur
-  static List<SingleChildWidget> getFeatureProviders() {
-    return [
-      Provider<TaskUtilityService>(
-        create: (_) => TaskUtilityService(),
-      ),
-      ChangeNotifierProvider<TaskService>(
-        create: (context) => TaskService(
+        create: (context) => GlobalStateService(
           taskApiService: context.read<TaskApiService>(),
-          alarmApiService: context.read<AlarmApiService>(),
-          utilityService: context.read<TaskUtilityService>(),
-        ),
+        )..initialize(),
       ),
-      ChangeNotifierProvider<AktivitasService>(
-        create: (_) => AktivitasService(),
-      ),
+      
+      // Home Services
       Provider<HomeService>(
         create: (_) => HomeService(),
+      ),
+      
+      // Home Widget Provider
+      ChangeNotifierProvider<HomeWidgetProvider>(
+        create: (_) => HomeWidgetProvider()..initialize(),
       ),
     ];
   }

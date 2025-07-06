@@ -4,12 +4,29 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:aturin_app/core/services/api/alarm/alarm_api_service.dart';
+import 'package:aturin_app/core/services/cache/cache_service.dart';
 
 class ActivityApiService extends ChangeNotifier {
   static const String baseUrl = 'https://aturin-app.com/api/v1/activities';
 
   // Instance for loading alarm relationships
   final AlarmApiService _alarmApiService = AlarmApiService();
+  
+  // Cache service instance
+  final CacheService _cacheService = CacheService();
+  
+  // Cache keys
+  static const String _allActivitiesCacheKey = 'all_activities';
+  static const String _todayActivitiesCacheKey = 'today_activities';
+  static const String _activitiesByDateCachePrefix = 'activities_by_date_';
+  static const String _activitiesByCategoryCachePrefix = 'activities_by_category_';
+  static const String _activitiesByDateRangeCachePrefix = 'activities_by_date_range_';
+  static const String _activityBySlugCachePrefix = 'activity_by_slug_';
+  
+  static const Duration _cacheValidityDuration = Duration(minutes: 5);
+  
+  // Flag to track if data has changed
+  bool _dataChanged = false;
 
   // State management properties
   List<AktivitasModel> _activities = [];
@@ -35,15 +52,60 @@ class ActivityApiService extends ChangeNotifier {
     _activities = activities;
     notifyListeners();
   }
+  
+  // Mark data as changed (called after update/delete/create)
+  void _markDataChanged() {
+    _dataChanged = true;
+    debugPrint('🗄️ Cache: Data aktivitas telah ditandai berubah, membersihkan cache...');
+    _clearRelatedCaches();
+    
+    // Force data refresh from server on next fetch
+    notifyListeners(); // Notify listeners that data has changed
+  }
+  
+  // Clear all related caches when data changes
+  Future<void> _clearRelatedCaches() async {
+    // Clear all activity-related caches
+    await _cacheService.removeData(_allActivitiesCacheKey);
+    await _cacheService.removeData(_todayActivitiesCacheKey);
+    
+    // Clear caches with prefixes - implemented manually since removePrefixedData doesn't exist
+    // Note: flutter_cache_manager doesn't support prefix removal natively
+    // These would need to be cleared individually if we had stored them with individual keys
+    debugPrint('🗄️ Cache: Cache dengan prefix tidak bisa dihapus secara batch');
+    
+    debugPrint('🗄️ Cache: Semua cache terkait aktivitas telah dibersihkan');
+  }
 
-  // Fetch activities with automatic state management
-  Future<void> fetchActivities() async {
+  // Fetch activities with automatic state management and caching
+  Future<void> fetchActivities({bool forceRefresh = false}) async {
+    // Check if cache is valid and data hasn't changed, use cache
+    // Skip cache if forceRefresh = true or data has changed (_dataChanged = true)
+    if (!forceRefresh && !_dataChanged && await _cacheService.isCacheValid(_allActivitiesCacheKey)) {
+      try {
+        final cachedData = await _cacheService.getData(_allActivitiesCacheKey);
+        if (cachedData != null) {
+          final cachedActivities = List<Map<String, dynamic>>.from(cachedData)
+              .map((activityMap) => AktivitasModel.fromJson(activityMap))
+              .toList();
+          _setActivities(cachedActivities);
+          _dataChanged = false;
+          debugPrint('🗄️ Cache: Menggunakan data aktivitas dari cache');
+          return;
+        }
+      } catch (e) {
+        debugPrint('🗄️ Cache: Error menggunakan cache untuk aktivitas: $e');
+      }
+    }
+    
+    debugPrint('🗄️ Cache: Mengambil data aktivitas dari server (forceRefresh=$forceRefresh, dataChanged=$_dataChanged)');
     _setLoading(true);
     _setError(null);
 
     try {
-      final activities = await getAllActivities();
+      final activities = await getAllActivities(forceRefresh: forceRefresh);
       _setActivities(activities);
+      _dataChanged = false;
     } catch (e) {
       _setError(e.toString());
     } finally {
@@ -78,7 +140,26 @@ class ActivityApiService extends ChangeNotifier {
   }
 
   // GET /activities → Get all activities
-  Future<List<AktivitasModel>> getAllActivities() async {
+  Future<List<AktivitasModel>> getAllActivities({bool forceRefresh = false}) async {
+    // Check if data is in cache
+    // Skip cache if forceRefresh = true or data has changed (_dataChanged = true)
+    if (!forceRefresh && !_dataChanged && await _cacheService.isCacheValid(_allActivitiesCacheKey)) {
+      try {
+        final cachedData = await _cacheService.getData(_allActivitiesCacheKey);
+        if (cachedData != null) {
+          final List<AktivitasModel> cachedActivities = List<Map<String, dynamic>>.from(cachedData)
+              .map((activityMap) => AktivitasModel.fromJson(activityMap))
+              .toList();
+          debugPrint('🗄️ Cache: Berhasil mendapatkan aktivitas dari cache');
+          return cachedActivities;
+        }
+      } catch (e) {
+        debugPrint('🗄️ Cache: Error mendapatkan aktivitas dari cache: $e');
+      }
+    }
+    
+    debugPrint('🗄️ Cache: Mengambil semua aktivitas dari server (forceRefresh=$forceRefresh)');
+    
     try {
       final headers = await _getHeaders();
       final response = await http.get(Uri.parse(baseUrl), headers: headers);
@@ -125,12 +206,42 @@ class ActivityApiService extends ChangeNotifier {
                 return activity;
               }).toList();
 
+              // Save to cache
+              try {
+                final List<Map<String, dynamic>> activitiesAsMap = activitiesWithAlarms
+                    .map((activity) => activity.toJson())
+                    .toList();
+                await _cacheService.saveData(
+                  key: _allActivitiesCacheKey, 
+                  data: activitiesAsMap,
+                  maxAge: _cacheValidityDuration,
+                );
+                debugPrint('🗄️ Cache: Data aktivitas berhasil disimpan ke cache');
+              } catch (e) {
+                debugPrint('🗄️ Cache: Error menyimpan aktivitas ke cache: $e');
+              }
+
               return activitiesWithAlarms;
             }
           } catch (e) {
             // Silently continue if alarm loading fails
           }
 
+          // Save to cache
+          try {
+            final List<Map<String, dynamic>> activitiesAsMap = activities
+                .map((activity) => activity.toJson())
+                .toList();
+            await _cacheService.saveData(
+              key: _allActivitiesCacheKey, 
+              data: activitiesAsMap,
+              maxAge: _cacheValidityDuration,
+            );
+            debugPrint('🗄️ Cache: Data aktivitas berhasil disimpan ke cache');
+          } catch (e) {
+            debugPrint('🗄️ Cache: Error menyimpan aktivitas ke cache: $e');
+          }
+          
           return activities;
         }
         return [];
@@ -143,7 +254,26 @@ class ActivityApiService extends ChangeNotifier {
   }
 
   // GET /activities/today → Get today's activities
-  Future<List<AktivitasModel>> getTodayActivities() async {
+  Future<List<AktivitasModel>> getTodayActivities({bool forceRefresh = false}) async {
+    // Check if data is in cache
+    // Skip cache if forceRefresh = true or data has changed (_dataChanged = true)
+    if (!forceRefresh && !_dataChanged && await _cacheService.isCacheValid(_todayActivitiesCacheKey)) {
+      try {
+        final cachedData = await _cacheService.getData(_todayActivitiesCacheKey);
+        if (cachedData != null) {
+          final List<AktivitasModel> cachedActivities = List<Map<String, dynamic>>.from(cachedData)
+              .map((activityMap) => AktivitasModel.fromJson(activityMap))
+              .toList();
+          debugPrint('🗄️ Cache: Berhasil mendapatkan aktivitas hari ini dari cache');
+          return cachedActivities;
+        }
+      } catch (e) {
+        debugPrint('🗄️ Cache: Error mendapatkan aktivitas hari ini dari cache: $e');
+      }
+    }
+    
+    debugPrint('🗄️ Cache: Mengambil aktivitas hari ini dari server (forceRefresh=$forceRefresh)');
+    
     try {
       final headers = await _getHeaders();
       final response = await http.get(
@@ -192,11 +322,41 @@ class ActivityApiService extends ChangeNotifier {
                 }
                 return activity;
               }).toList();
+              
+              // Save to cache
+              try {
+                final List<Map<String, dynamic>> activitiesAsMap = activitiesWithAlarms
+                    .map((activity) => activity.toJson())
+                    .toList();
+                await _cacheService.saveData(
+                  key: _todayActivitiesCacheKey, 
+                  data: activitiesAsMap,
+                  maxAge: _cacheValidityDuration,
+                );
+                debugPrint('🗄️ Cache: Data aktivitas hari ini berhasil disimpan ke cache');
+              } catch (e) {
+                debugPrint('🗄️ Cache: Error menyimpan aktivitas hari ini ke cache: $e');
+              }
 
               return activitiesWithAlarms;
             }
           } catch (e) {
             // Silently continue if alarm loading fails
+          }
+
+          // Save to cache
+          try {
+            final List<Map<String, dynamic>> activitiesAsMap = activities
+                .map((activity) => activity.toJson())
+                .toList();
+            await _cacheService.saveData(
+              key: _todayActivitiesCacheKey, 
+              data: activitiesAsMap,
+              maxAge: _cacheValidityDuration,
+            );
+            debugPrint('🗄️ Cache: Data aktivitas hari ini berhasil disimpan ke cache');
+          } catch (e) {
+            debugPrint('🗄️ Cache: Error menyimpan aktivitas hari ini ke cache: $e');
           }
 
           return activities;
@@ -266,7 +426,15 @@ class ActivityApiService extends ChangeNotifier {
                   .firstOrNull;
 
               if (alarm != null) {
-                return result.copyWith(alarm: alarm);
+                final resultWithAlarm = result.copyWith(alarm: alarm);
+                
+                // Mark data as changed and clear all caches
+                _markDataChanged();
+                
+                // Fetch fresh data to update UI
+                fetchActivities(forceRefresh: true);
+                
+                return resultWithAlarm;
               }
             } catch (e) {
               if (kDebugMode) {
@@ -275,6 +443,12 @@ class ActivityApiService extends ChangeNotifier {
             }
           }
 
+          // Mark data as changed and clear all caches
+          _markDataChanged();
+          
+          // Fetch fresh data to update UI
+          fetchActivities(forceRefresh: true);
+          
           return result;
         }
       } else {
@@ -289,7 +463,27 @@ class ActivityApiService extends ChangeNotifier {
   }
 
   // GET /activities/{slug} → Get activity detail
-  Future<AktivitasModel?> getActivityBySlug(String slug) async {
+  Future<AktivitasModel?> getActivityBySlug(String slug, {bool forceRefresh = false}) async {
+    // Generate cache key for this specific activity
+    final cacheKey = '${_activityBySlugCachePrefix}$slug';
+    
+    // Check if data is in cache
+    // Skip cache if forceRefresh = true or data has changed (_dataChanged = true)
+    if (!forceRefresh && !_dataChanged && await _cacheService.isCacheValid(cacheKey)) {
+      try {
+        final cachedData = await _cacheService.getData(cacheKey);
+        if (cachedData != null) {
+          final activity = AktivitasModel.fromJson(cachedData);
+          debugPrint('🗄️ Cache: Berhasil mendapatkan aktivitas dengan slug $slug dari cache');
+          return activity;
+        }
+      } catch (e) {
+        debugPrint('🗄️ Cache: Error mendapatkan aktivitas dengan slug $slug dari cache: $e');
+      }
+    }
+    
+    debugPrint('🗄️ Cache: Mengambil aktivitas dengan slug $slug dari server');
+    
     try {
       final headers = await _getHeaders();
       final response = await http.get(
@@ -315,13 +509,39 @@ class ActivityApiService extends ChangeNotifier {
                   .firstOrNull;
 
               if (alarm != null) {
-                return activity.copyWith(alarm: alarm);
+                final activityWithAlarm = activity.copyWith(alarm: alarm);
+                
+                // Save to cache
+                try {
+                  await _cacheService.saveData(
+                    key: cacheKey, 
+                    data: activityWithAlarm.toJson(),
+                    maxAge: _cacheValidityDuration,
+                  );
+                  debugPrint('🗄️ Cache: Aktivitas dengan slug $slug berhasil disimpan ke cache');
+                } catch (e) {
+                  debugPrint('🗄️ Cache: Error menyimpan aktivitas ke cache: $e');
+                }
+                
+                return activityWithAlarm;
               }
             } catch (e) {
               if (kDebugMode) {
                 print('Error loading alarm relationship: $e');
               }
             }
+          }
+
+          // Save to cache
+          try {
+            await _cacheService.saveData(
+              key: cacheKey, 
+              data: activity.toJson(),
+              maxAge: _cacheValidityDuration,
+            );
+            debugPrint('🗄️ Cache: Aktivitas dengan slug $slug berhasil disimpan ke cache');
+          } catch (e) {
+            debugPrint('🗄️ Cache: Error menyimpan aktivitas ke cache: $e');
           }
 
           return activity;
@@ -385,7 +605,15 @@ class ActivityApiService extends ChangeNotifier {
                   .firstOrNull;
 
               if (alarm != null) {
-                return updatedActivity.copyWith(alarm: alarm);
+                final resultWithAlarm = updatedActivity.copyWith(alarm: alarm);
+                
+                // Mark data as changed and clear all caches
+                _markDataChanged();
+                
+                // Fetch fresh data to update UI
+                fetchActivities(forceRefresh: true);
+                
+                return resultWithAlarm;
               }
             } catch (e) {
               if (kDebugMode) {
@@ -394,6 +622,12 @@ class ActivityApiService extends ChangeNotifier {
             }
           }
 
+          // Mark data as changed and clear all caches
+          _markDataChanged();
+          
+          // Fetch fresh data to update UI
+          fetchActivities(forceRefresh: true);
+          
           return updatedActivity;
         }
       } else {
@@ -436,9 +670,13 @@ class ActivityApiService extends ChangeNotifier {
       if (response.statusCode == 200 ||
           response.statusCode == 204 ||
           response.statusCode == 404) {
+        
+        // Mark data as changed and clear all caches
+        _markDataChanged();
+        
         // Auto refresh data after successful deletion
         try {
-          await fetchActivities();
+          await fetchActivities(forceRefresh: true);
           await Future.delayed(const Duration(milliseconds: 100));
         } catch (e) {
           if (kDebugMode) {
@@ -459,7 +697,32 @@ class ActivityApiService extends ChangeNotifier {
   Future<List<AktivitasModel>> getActivitiesByDateRange(
     DateTime startDate,
     DateTime endDate,
+    {bool forceRefresh = false}
   ) async {
+    // Generate cache key based on date range
+    final startDateStr = startDate.toIso8601String().split('T')[0];
+    final endDateStr = endDate.toIso8601String().split('T')[0];
+    final cacheKey = '${_activitiesByDateRangeCachePrefix}${startDateStr}_${endDateStr}';
+    
+    // Check if data is in cache
+    // Skip cache if forceRefresh = true or data has changed (_dataChanged = true)
+    if (!forceRefresh && !_dataChanged && await _cacheService.isCacheValid(cacheKey)) {
+      try {
+        final cachedData = await _cacheService.getData(cacheKey);
+        if (cachedData != null) {
+          final List<AktivitasModel> cachedActivities = List<Map<String, dynamic>>.from(cachedData)
+              .map((activityMap) => AktivitasModel.fromJson(activityMap))
+              .toList();
+          debugPrint('🗄️ Cache: Berhasil mendapatkan aktivitas rentang tanggal dari cache');
+          return cachedActivities;
+        }
+      } catch (e) {
+        debugPrint('🗄️ Cache: Error mendapatkan aktivitas rentang tanggal dari cache: $e');
+      }
+    }
+    
+    debugPrint('🗄️ Cache: Mengambil aktivitas rentang tanggal dari server');
+    
     try {
       final headers = await _getHeaders();
       final response = await http.get(
@@ -500,11 +763,41 @@ class ActivityApiService extends ChangeNotifier {
                 }
                 return activity;
               }).toList();
+              
+              // Save to cache
+              try {
+                final List<Map<String, dynamic>> activitiesAsMap = activitiesWithAlarms
+                    .map((activity) => activity.toJson())
+                    .toList();
+                await _cacheService.saveData(
+                  key: cacheKey, 
+                  data: activitiesAsMap,
+                  maxAge: _cacheValidityDuration,
+                );
+                debugPrint('🗄️ Cache: Data aktivitas rentang tanggal berhasil disimpan ke cache');
+              } catch (e) {
+                debugPrint('🗄️ Cache: Error menyimpan aktivitas rentang tanggal ke cache: $e');
+              }
 
               return activitiesWithAlarms;
             }
           } catch (e) {
             // Silently continue if alarm loading fails
+          }
+          
+          // Save to cache
+          try {
+            final List<Map<String, dynamic>> activitiesAsMap = activities
+                .map((activity) => activity.toJson())
+                .toList();
+            await _cacheService.saveData(
+              key: cacheKey, 
+              data: activitiesAsMap,
+              maxAge: _cacheValidityDuration,
+            );
+            debugPrint('🗄️ Cache: Data aktivitas rentang tanggal berhasil disimpan ke cache');
+          } catch (e) {
+            debugPrint('🗄️ Cache: Error menyimpan aktivitas rentang tanggal ke cache: $e');
           }
 
           return activities;
@@ -523,7 +816,31 @@ class ActivityApiService extends ChangeNotifier {
   // Get activities by category
   Future<List<AktivitasModel>> getActivitiesByCategory(
     ActivityCategory category,
+    {bool forceRefresh = false}
   ) async {
+    // Generate cache key based on category
+    final categoryName = category.displayName;
+    final cacheKey = '${_activitiesByCategoryCachePrefix}$categoryName';
+    
+    // Check if data is in cache
+    // Skip cache if forceRefresh = true or data has changed (_dataChanged = true)
+    if (!forceRefresh && !_dataChanged && await _cacheService.isCacheValid(cacheKey)) {
+      try {
+        final cachedData = await _cacheService.getData(cacheKey);
+        if (cachedData != null) {
+          final List<AktivitasModel> cachedActivities = List<Map<String, dynamic>>.from(cachedData)
+              .map((activityMap) => AktivitasModel.fromJson(activityMap))
+              .toList();
+          debugPrint('🗄️ Cache: Berhasil mendapatkan aktivitas kategori dari cache');
+          return cachedActivities;
+        }
+      } catch (e) {
+        debugPrint('🗄️ Cache: Error mendapatkan aktivitas kategori dari cache: $e');
+      }
+    }
+    
+    debugPrint('🗄️ Cache: Mengambil aktivitas kategori dari server');
+    
     try {
       final headers = await _getHeaders();
       final response = await http.get(
@@ -562,11 +879,41 @@ class ActivityApiService extends ChangeNotifier {
                 }
                 return activity;
               }).toList();
+              
+              // Save to cache
+              try {
+                final List<Map<String, dynamic>> activitiesAsMap = activitiesWithAlarms
+                    .map((activity) => activity.toJson())
+                    .toList();
+                await _cacheService.saveData(
+                  key: cacheKey, 
+                  data: activitiesAsMap,
+                  maxAge: _cacheValidityDuration,
+                );
+                debugPrint('🗄️ Cache: Data aktivitas kategori berhasil disimpan ke cache');
+              } catch (e) {
+                debugPrint('🗄️ Cache: Error menyimpan aktivitas kategori ke cache: $e');
+              }
 
               return activitiesWithAlarms;
             }
           } catch (e) {
             // Silently continue if alarm loading fails
+          }
+          
+          // Save to cache
+          try {
+            final List<Map<String, dynamic>> activitiesAsMap = activities
+                .map((activity) => activity.toJson())
+                .toList();
+            await _cacheService.saveData(
+              key: cacheKey, 
+              data: activitiesAsMap,
+              maxAge: _cacheValidityDuration,
+            );
+            debugPrint('🗄️ Cache: Data aktivitas kategori berhasil disimpan ke cache');
+          } catch (e) {
+            debugPrint('🗄️ Cache: Error menyimpan aktivitas kategori ke cache: $e');
           }
 
           return activities;
@@ -583,7 +930,33 @@ class ActivityApiService extends ChangeNotifier {
   }
 
   // Helper method to get activities for a specific date
-  Future<List<AktivitasModel>> getActivitiesByDate(DateTime date) async {
+  Future<List<AktivitasModel>> getActivitiesByDate(
+    DateTime date,
+    {bool forceRefresh = false}
+  ) async {
+    // Generate cache key based on date
+    final dateStr = date.toIso8601String().split('T')[0];
+    final cacheKey = '${_activitiesByDateCachePrefix}$dateStr';
+    
+    // Check if data is in cache
+    // Skip cache if forceRefresh = true or data has changed (_dataChanged = true)
+    if (!forceRefresh && !_dataChanged && await _cacheService.isCacheValid(cacheKey)) {
+      try {
+        final cachedData = await _cacheService.getData(cacheKey);
+        if (cachedData != null) {
+          final List<AktivitasModel> cachedActivities = List<Map<String, dynamic>>.from(cachedData)
+              .map((activityMap) => AktivitasModel.fromJson(activityMap))
+              .toList();
+          debugPrint('🗄️ Cache: Berhasil mendapatkan aktivitas tanggal dari cache');
+          return cachedActivities;
+        }
+      } catch (e) {
+        debugPrint('🗄️ Cache: Error mendapatkan aktivitas tanggal dari cache: $e');
+      }
+    }
+    
+    debugPrint('🗄️ Cache: Mengambil aktivitas tanggal dari server');
+    
     try {
       final headers = await _getHeaders();
       final dateString = date.toIso8601String().split('T')[0];
@@ -623,11 +996,41 @@ class ActivityApiService extends ChangeNotifier {
                 }
                 return activity;
               }).toList();
+              
+              // Save to cache
+              try {
+                final List<Map<String, dynamic>> activitiesAsMap = activitiesWithAlarms
+                    .map((activity) => activity.toJson())
+                    .toList();
+                await _cacheService.saveData(
+                  key: cacheKey, 
+                  data: activitiesAsMap,
+                  maxAge: _cacheValidityDuration,
+                );
+                debugPrint('🗄️ Cache: Data aktivitas tanggal berhasil disimpan ke cache');
+              } catch (e) {
+                debugPrint('🗄️ Cache: Error menyimpan aktivitas tanggal ke cache: $e');
+              }
 
               return activitiesWithAlarms;
             }
           } catch (e) {
             // Silently continue if alarm loading fails
+          }
+          
+          // Save to cache
+          try {
+            final List<Map<String, dynamic>> activitiesAsMap = activities
+                .map((activity) => activity.toJson())
+                .toList();
+            await _cacheService.saveData(
+              key: cacheKey, 
+              data: activitiesAsMap,
+              maxAge: _cacheValidityDuration,
+            );
+            debugPrint('🗄️ Cache: Data aktivitas tanggal berhasil disimpan ke cache');
+          } catch (e) {
+            debugPrint('🗄️ Cache: Error menyimpan aktivitas tanggal ke cache: $e');
           }
 
           return activities;

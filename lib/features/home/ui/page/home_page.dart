@@ -7,6 +7,8 @@ import 'package:aturin_app/core/services/api/activities/activity_api_service.dar
 import 'package:aturin_app/features/home/widget/greeting_header.dart';
 import 'package:aturin_app/features/home/widget/timeline_widget.dart';
 import 'package:aturin_app/features/home/widget/activity_card.dart';
+import 'package:aturin_app/features/home/widgets/home_widget_control_card.dart';
+import 'package:aturin_app/features/home/providers/home_widget_provider.dart';
 import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:flutter/material.dart';
@@ -36,11 +38,54 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     debugPrint('🏠 HomePage: initState() called');
     homeService = Provider.of<HomeService>(context, listen: false);
+    
     // Note: fetchData() is already called by DataPrefetchGuard before navigation
     // so we don't need to call it again here to avoid duplicate API calls
     debugPrint(
       '🏠 HomePage: Skipping fetchData() - already called by DataPrefetchGuard',
     );
+    
+    // Check for widget navigation request
+    _checkWidgetNavigation();
+  }
+  
+  void _checkWidgetNavigation() {
+    // Delayed to ensure context is ready
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      
+      final homeWidgetProvider = Provider.of<HomeWidgetProvider>(context, listen: false);
+      final pendingNavigation = homeWidgetProvider.pendingNavigation;
+      
+      if (pendingNavigation != null) {
+        debugPrint('🏠 HomePage: Processing widget navigation: $pendingNavigation');
+        
+        // Handle different navigation requests
+        switch (pendingNavigation) {
+          case 'view_schedule':
+            // Default to showing activities
+            setState(() {
+              _selectedView = TaskViewType.aktivitas;
+            });
+            break;
+            
+          case 'open_schedule':
+            // Navigate ke halaman jadwal
+            break;
+            
+          case 'add_task':
+            // Navigate ke halaman tambah tugas
+            break;
+            
+          case 'add_activity':
+            // Navigate ke halaman tambah aktivitas
+            break;
+        }
+        
+        // Clear the pending navigation
+        homeWidgetProvider.clearPendingNavigation();
+      }
+    });
   }
 
   @override
@@ -90,6 +135,10 @@ class _HomePageState extends State<HomePage> {
                       width: 100.w,
                       fit: BoxFit.contain,
                     ),
+                    
+                    // Home Widget Control Card
+                    const HomeWidgetControlCard(),
+                    
                     SizedBox(height: 2.h),
                     Row(
                       children: [
@@ -162,6 +211,9 @@ class _HomePageState extends State<HomePage> {
                                         final success = await taskService.toggleTaskCompletion(task.slug);
                                         if (success) {
                                           globalState.onTasksChanged();
+                                          // Update home widget ketika ada perubahan tugas
+                                          final homeWidgetProvider = context.read<HomeWidgetProvider>();
+                                          homeWidgetProvider.onDataChanged();
                                         }
                                       },
                                       onDelete: () async {
@@ -169,6 +221,9 @@ class _HomePageState extends State<HomePage> {
                                           task.slug!,
                                         );
                                         globalState.onTasksChanged();
+                                        // Update home widget ketika ada penghapusan tugas
+                                        final homeWidgetProvider = context.read<HomeWidgetProvider>();
+                                        homeWidgetProvider.onDataChanged();
                                       },                                      onToggleAlarm: () async {
                                         final success = await taskService.toggleTaskAlarmStatus(task.slug!);
                                         if (success) {

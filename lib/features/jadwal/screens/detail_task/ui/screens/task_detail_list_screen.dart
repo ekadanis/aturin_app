@@ -242,11 +242,11 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
             }
           });
 
-          // Show success message
+          // Show success message from API response
           if (mounted) {
             showCustomTopSnackbar(
               context: context,
-              message: 'Tugas berhasil dihapus',
+              message: result.message,
               isError: false,
             );
           }
@@ -264,7 +264,7 @@ class _TaskDetailListScreenState extends State<TaskDetailListScreen> {
             );
           }
         } else {
-          // Show error message
+          // Show error message from API response
           if (mounted) {
             showCustomTopSnackbar(
               context: context,
