@@ -203,7 +203,7 @@ class _ProfileTextFieldState extends State<ProfileTextField> {
           const Padding(
             padding: EdgeInsets.only(left: 12, top: 6),
             child: Text(
-              'Data ini tidak bisa diedit',
+              'Data ini tidak bisa diubah',
               style: TextStyle(fontSize: 12, color: Colors.red),
             ),
           ),

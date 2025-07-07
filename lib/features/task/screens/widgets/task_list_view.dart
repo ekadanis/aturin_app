@@ -211,7 +211,6 @@ class _TaskListViewState extends State<TaskListView>
           task: task,
           currentFilter: widget.currentFilter,
           showCheckbox: !isSelesai, // hilangkan checkbox jika selesai
-          showPopupMenu: !isSelesai, // hilangkan titik tiga jika selesai
           onToggleCompletion:
               isSelesai
                   ? () {}

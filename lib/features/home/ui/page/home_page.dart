@@ -217,7 +217,7 @@ class _HomePageState extends State<HomePage> {
                                       },
                                       onDelete: () async {
                                         await activityService.deleteActivity(
-                                          activity.id!.toString(),
+                                          activity.slug!,
                                         );
                                         globalState.onActivitiesChanged();
                                       },

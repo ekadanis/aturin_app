@@ -83,7 +83,7 @@ class ProfileCard extends StatelessWidget {
                   foregroundColor: AppTheme.primaryColor,
                 ),
                 child: Text(
-                  'Edit',
+                  'Ubah',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,

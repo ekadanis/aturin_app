@@ -5,6 +5,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class InteractiveCalendarWidget extends StatelessWidget {
+  final DateTime? firstAllowedDate;
   final DateTime selectedDate;
   final DateTime focusedDate;
   final CalendarFormat calendarFormat;
@@ -21,7 +22,8 @@ class InteractiveCalendarWidget extends StatelessWidget {
     super.key,
     required this.selectedDate,
     required this.focusedDate,
-    required this.calendarFormat,    required this.schedules,
+    required this.calendarFormat,
+    required this.schedules,
     required this.tasks,
     required this.viewTransitionController,
     required this.viewTransitionAnimation,
@@ -29,11 +31,13 @@ class InteractiveCalendarWidget extends StatelessWidget {
     required this.onPageChanged,
     required this.onFormatChanged,
     required this.onSwitchFormat,
-  });  @override
+    this.firstAllowedDate,
+  });
+  @override
   Widget build(BuildContext context) {
     // Create a stable key based on data length only - avoid excessive rebuilds
     final dataKey = ValueKey('cal_${schedules.length}_${tasks.length}');
-    
+
     return GestureDetector(
       onVerticalDragUpdate: (details) {
         final delta = details.delta.dy;
@@ -57,7 +61,8 @@ class InteractiveCalendarWidget extends StatelessWidget {
             viewTransitionController.reverse();
           }
         }
-      },      child: AnimatedBuilder(
+      },
+      child: AnimatedBuilder(
         animation: viewTransitionAnimation,
         builder: (context, child) {
           return TableCalendar<AktivitasModel>(
@@ -86,26 +91,42 @@ class InteractiveCalendarWidget extends StatelessWidget {
             onPageChanged: onPageChanged,
             onFormatChanged: onFormatChanged,
             availableGestures: AvailableGestures.horizontalSwipe,
+            enabledDayPredicate: (day) {
+              if (firstAllowedDate != null) {
+                return !day.isBefore(
+                  DateTime(
+                    firstAllowedDate!.year,
+                    firstAllowedDate!.month,
+                    firstAllowedDate!.day,
+                  ),
+                );
+              }
+              return true;
+            },
           );
         },
       ),
     );
-  }  List<AktivitasModel> _getEventsForDay(DateTime day) {
+  }
+
+  List<AktivitasModel> _getEventsForDay(DateTime day) {
     // Get activities for this day
-    final activitiesForDay = schedules
-        .where((schedule) => isSameDay(schedule.activityDate, day))
-        .toList();
-    
+    final activitiesForDay =
+        schedules
+            .where((schedule) => isSameDay(schedule.activityDate, day))
+            .toList();
+
     // Check if there are UNCOMPLETED tasks for this day - filter out completed tasks
-    final hasUncompletedTasksForDay = tasks.any((task) => 
-        isSameDay(task.deadline, day) && !task.isCompleted);
-    
+    final hasUncompletedTasksForDay = tasks.any(
+      (task) => isSameDay(task.deadline, day) && !task.isCompleted,
+    );
+
     // Create list of events to show marker
     final events = <AktivitasModel>[];
-    
+
     // Add real activities
     events.addAll(activitiesForDay);
-    
+
     // If there are uncompleted tasks but no activities, create a dummy entry to show the marker
     if (hasUncompletedTasksForDay && activitiesForDay.isEmpty) {
       // Create a minimal dummy activity just to trigger marker display
@@ -115,9 +136,10 @@ class InteractiveCalendarWidget extends StatelessWidget {
         activityStartTime: day,
         activityCompleteTime: day,
         activityCategory: ActivityCategory.akademik,
-      );      events.add(dummyActivity);
+      );
+      events.add(dummyActivity);
     }
-    
+
     return events;
   }
 
@@ -126,10 +148,7 @@ class InteractiveCalendarWidget extends StatelessWidget {
       todayDecoration: BoxDecoration(
         color: Colors.transparent,
         shape: BoxShape.circle,
-        border: Border.all(
-          color: const Color(0xFF5263F3),
-          width: 1.5,
-        ),
+        border: Border.all(color: const Color(0xFF5263F3), width: 1.5),
       ),
       todayTextStyle: GoogleFonts.plusJakartaSans(
         fontSize: 14,
@@ -167,14 +186,12 @@ class InteractiveCalendarWidget extends StatelessWidget {
         fontSize: 14,
         fontWeight: FontWeight.w500,
         color: Colors.grey[400],
-      ),      markersMaxCount: 1,
+      ),
+      markersMaxCount: 1,
       markerDecoration: BoxDecoration(
         color: const Color(0xFFFFC550), // Yellow color for markers
         shape: BoxShape.circle,
-        border: Border.all(
-          color: Colors.white,
-          width: 1,
-        ),
+        border: Border.all(color: Colors.white, width: 1),
       ),
       markerMargin: const EdgeInsets.symmetric(horizontal: 1.5),
       markerSizeScale: 0.25, // Make markers slightly bigger

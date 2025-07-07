@@ -8,12 +8,14 @@ class LoginFormWidget extends StatefulWidget {
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final VoidCallback onLogin;
+  final bool isLoading;
 
   const LoginFormWidget({
     super.key,
     required this.emailController,
     required this.passwordController,
     required this.onLogin,
+    this.isLoading = false, // default false
   });
 
   @override
@@ -35,7 +37,8 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
             fontSize: 14.sp,
             fontWeight: FontWeight.w500,
             color: AppTheme.lightTextColor,
-          ),        ),
+          ),
+        ),
         SizedBox(height: 1.h),
         CustomTextFieldWidget(
           controller: widget.emailController,
@@ -87,15 +90,25 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
               elevation: 4,
               shadowColor: AppTheme.primaryColor.withOpacity(0.4),
             ),
-            onPressed: widget.onLogin,
-            child: Text(
-              'Masuk',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
+            onPressed: widget.isLoading ? null : widget.onLogin,
+            child:
+                widget.isLoading
+                    ? SizedBox(
+                      width: 20.sp,
+                      height: 20.sp,
+                      child: const CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                    : Text(
+                      'Masuk',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
           ),
         ),
       ],
