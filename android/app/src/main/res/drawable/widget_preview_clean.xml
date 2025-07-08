@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="250dp"
+    android:height="110dp"
+    android:viewportWidth="250"
+    android:viewportHeight="110">
+    
+    <!-- Background putih -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M0,0h250v110h-250z"/>
+    
+    <!-- Border abu-abu -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#E5E7EB"
+        android:strokeWidth="1"
+        android:pathData="M4,4h242v102h-242z"/>
+    
+    <!-- Header biru -->
+    <path
+        android:fillColor="#5263F3"
+        android:pathData="M12,12h60v12h-60z"/>
+    
+    <!-- Text date abu-abu -->
+    <path
+        android:fillColor="#9CA3AF"
+        android:pathData="M12,32h80v8h-80z"/>
+    
+    <!-- Item 1 -->
+    <path
+        android:fillColor="#F3F4F6"
+        android:pathData="M12,48h220v16h-220z"/>
+    <path
+        android:fillColor="#5263F3"
+        android:pathData="M16,52h30v8h-30z"/>
+    <path
+        android:fillColor="#374151"
+        android:pathData="M52,52h120v8h-120z"/>
+    
+    <!-- Item 2 -->
+    <path
+        android:fillColor="#F3F4F6"
+        android:pathData="M12,70h220v16h-220z"/>
+    <path
+        android:fillColor="#059669"
+        android:pathData="M16,74h30v8h-30z"/>
+    <path
+        android:fillColor="#374151"
+        android:pathData="M52,74h120v8h-120z"/>
+    
+    <!-- Icon kecil di kanan -->
+    <circle
+        android:fillColor="#5263F3"
+        cx="220"
+        cy="56"
+        r="4"/>
+    <circle
+        android:fillColor="#059669"
+        cx="220"
+        cy="78"
+        r="4"/>
+        
+</vector>

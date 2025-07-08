@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="250dp"
+    android:height="110dp"
+    android:viewportWidth="250"
+    android:viewportHeight="110">
+    
+    <!-- Background putih dengan shadow -->
+    <path
+        android:fillColor="#F9FAFB"
+        android:pathData="M0,0h250v110h-250z"/>
+    
+    <!-- Widget container dengan rounded corner -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M8,8h234v94a8,8 0 0,1 -8,8h-218a8,8 0 0,1 -8,-8v-94z"/>
+    
+    <!-- Border abu-abu -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#E5E7EB"
+        android:strokeWidth="1"
+        android:pathData="M8,8h234v94a8,8 0 0,1 -8,8h-218a8,8 0 0,1 -8,-8v-94z"/>
+    
+    <!-- Header area -->
+    <path
+        android:fillColor="#5263F3"
+        android:pathData="M16,16h50v8h-50z"/>
+    
+    <!-- Date text -->
+    <path
+        android:fillColor="#6B7280"
+        android:pathData="M16,28h80v5h-80z"/>
+    
+    <!-- Item 1 - Meeting -->
+    <rect
+        android:layout_width="210dp"
+        android:layout_height="15dp"
+        android:fillColor="#F8FAFC"/>
+    <path
+        android:fillColor="#F8FAFC"
+        android:pathData="M16,40h210v15h-210z"/>
+    
+    <!-- Time 1 -->
+    <path
+        android:fillColor="#5263F3"
+        android:pathData="M20,44h25v7h-25z"/>
+    
+    <!-- Text 1 -->
+    <path
+        android:fillColor="#374151"
+        android:pathData="M50,44h120v7h-120z"/>
+    
+    <!-- Badge 1 -->
+    <path
+        android:fillColor="#EBF8FF"
+        android:pathData="M180,42h40v11a4,4 0 0,1 -4,4h-32a4,4 0 0,1 -4,-4v-11z"/>
+    <path
+        android:fillColor="#3B82F6"
+        android:pathData="M185,45h30v5h-30z"/>
+    
+    <!-- Item 2 - Task -->
+    <path
+        android:fillColor="#F8FAFC"
+        android:pathData="M16,60h210v15h-210z"/>
+    
+    <!-- Time 2 -->
+    <path
+        android:fillColor="#16A34A"
+        android:pathData="M20,64h25v7h-25z"/>
+    
+    <!-- Text 2 -->
+    <path
+        android:fillColor="#374151"
+        android:pathData="M50,64h100v7h-100z"/>
+    
+    <!-- Badge 2 -->
+    <path
+        android:fillColor="#F0FDF4"
+        android:pathData="M180,62h40v11a4,4 0 0,1 -4,4h-32a4,4 0 0,1 -4,-4v-11z"/>
+    <path
+        android:fillColor="#22C55E"
+        android:pathData="M185,65h30v5h-30z"/>
+    
+    <!-- Item 3 - Task -->
+    <path
+        android:fillColor="#F8FAFC"
+        android:pathData="M16,80h210v15h-210z"/>
+    
+    <!-- Time 3 -->
+    <path
+        android:fillColor="#DC2626"
+        android:pathData="M20,84h25v7h-25z"/>
+    
+    <!-- Text 3 -->
+    <path
+        android:fillColor="#374151"
+        android:pathData="M50,84h110v7h-110z"/>
+    
+    <!-- Badge 3 -->
+    <path
+        android:fillColor="#FEF2F2"
+        android:pathData="M180,82h40v11a4,4 0 0,1 -4,4h-32a4,4 0 0,1 -4,-4v-11z"/>
+    <path
+        android:fillColor="#EF4444"
+        android:pathData="M185,85h30v5h-30z"/>
+    
+</vector>
