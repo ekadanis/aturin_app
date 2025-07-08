@@ -7,6 +7,7 @@ import 'package:sizer/sizer.dart';
 import 'package:dots_indicator/dots_indicator.dart';
 import 'package:aturin_app/routers/app_router.dart';
 import 'package:aturin_app/features/onboarding/models/on_boarding_content.dart';
+import 'package:lottie/lottie.dart';
 
 @RoutePage()
 class OnboardingScreen extends StatefulWidget {
@@ -72,10 +73,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               SizedBox(
                                 height: 40.h,
                                 child: Center(
-                                  child: Image.asset(
+                                  child: Lottie.asset(
                                     contents[index].image,
                                     fit: BoxFit.contain,
                                     height: 40.h,
+                                    width: 80.w,
+                                    repeat: true,
+                                    animate: true,
                                   ),
                                 ),
                               ),

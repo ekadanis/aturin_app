@@ -136,8 +136,8 @@ class _HomePageState extends State<HomePage> {
                       fit: BoxFit.contain,
                     ),
                     
-                    // Home Widget Control Card
-                    const HomeWidgetControlCard(),
+                    // // Home Widget Control Card
+                    // const HomeWidgetControlCard(),
                     
                     SizedBox(height: 2.h),
                     Row(

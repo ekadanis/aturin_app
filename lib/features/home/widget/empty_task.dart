@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:sizer/sizer.dart';
+import 'package:lottie/lottie.dart';
 class EmptyTaskAndAciivty extends StatelessWidget {
   final String? message;
   
@@ -11,11 +12,14 @@ class EmptyTaskAndAciivty extends StatelessWidget {
     return Column(
 
       children: [
-          SizedBox(height: 5.h),
-        Image.asset(
-          'assets/images/https___lottiefiles.com_animations_no-data-bt8EDsKmcr.gif',
+        //  SizedBox(height: 5.h),
+        Lottie.asset(
+          'assets/icons/NoData.json',
           height: 150,
-          color: AppTheme.primaryColor,
+          width: 150,
+          fit: BoxFit.contain,
+          repeat: true,
+          animate: true,
         ),
 
         Text(

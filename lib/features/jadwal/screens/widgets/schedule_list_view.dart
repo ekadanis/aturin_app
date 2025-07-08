@@ -10,6 +10,7 @@ import 'package:aturin_app/core/services/api/task/task_api_service.dart';
 import '../aktivitas_screen/widgets/activity_card.dart';
 import '../aktivitas_screen/widgets/task_card.dart';
 import 'schedule_animator.dart';
+import 'package:lottie/lottie.dart';
 
 class ScheduleListView extends StatefulWidget {
   final void Function(String)? onShowSuccess;
@@ -125,10 +126,13 @@ class _ScheduleListViewState extends State<ScheduleListView>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(
-              'assets/images/https___lottiefiles.com_animations_no-data-bt8EDsKmcr.gif',
+            Lottie.asset(
+              'assets/icons/NoData.json',
               height: 150,
               width: 150,
+              fit: BoxFit.contain,
+              repeat: true,
+              animate: true,
             ),
             const SizedBox(height: 16),
             Text('Tidak ada jadwal untuk hari ini'),

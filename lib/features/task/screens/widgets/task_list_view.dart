@@ -6,6 +6,7 @@ import 'task_card.dart';
 import '../../../../core/widgets/custom_snackbar_top.dart';
 import 'task_animator.dart';
 import 'package:provider/provider.dart';
+import 'package:lottie/lottie.dart';
 
 class TaskListView extends StatefulWidget {
   final void Function(String)? onShowSuccess;
@@ -139,10 +140,13 @@ class _TaskListViewState extends State<TaskListView>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset(
-                  'assets/images/https___lottiefiles.com_animations_no-data-bt8EDsKmcr.gif',
+                Lottie.asset(
+                  'assets/icons/NoData.json',
                   height: 150,
                   width: 150,
+                  fit: BoxFit.contain,
+                  repeat: true,
+                  animate: true,
                 ),
                 const SizedBox(height: 16),
               ],

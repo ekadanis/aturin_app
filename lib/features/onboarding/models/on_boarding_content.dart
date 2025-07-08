@@ -12,17 +12,17 @@ class OnboardingContent {
 
 final List<OnboardingContent> contents = [
   OnboardingContent(
-    image: "assets/images/onboarding_images/schedule.gif",
+    image: "assets/onboarding/onboarding_1.json",
     title: "Atur Jadwal",
     description: "Dengan aturin, kamu bisa mengatur jadwalmu agar kehidupanmu lebih tertata.",
   ),
   OnboardingContent(
-    image: "assets/images/onboarding_images/task.gif",
+    image: "assets/onboarding/onboarding_2.json",
     title: "Atur Tugas",
     description: "Dengan aturin, kamu bisa mencatat tugas-tugasmu agar kehidupanmu lebih tertata.",
   ),
   OnboardingContent(
-    image: "assets/images/onboarding_images/work_life_balance.gif",
+    image: "assets/onboarding/onboarding_3.json",
     title: "Work Life Balance",
     description: "Mulai kehidupan Work Life Balancemu dengan Aturin!",
   ),
