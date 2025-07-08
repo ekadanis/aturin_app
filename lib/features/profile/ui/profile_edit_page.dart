@@ -1,4 +1,3 @@
-import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:aturin_app/features/profile/models/user_model.dart';
 import 'package:aturin_app/core/services/api/profile/profile_service.dart';
@@ -7,8 +6,8 @@ import 'package:aturin_app/features/profile/widgets/profile_text_field.dart';
 import 'package:aturin_app/features/profile/ui/avatar_selection.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:aturin_app/features/profile/widgets/snackbar.dart';
+import 'package:aturin_app/features/profile/widgets/confirm_discard_changes_dialog.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 @RoutePage()
 class ProfileEditPage extends StatefulWidget {
@@ -218,44 +217,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     if (_hasUnsavedChanges()) {
       final shouldLeave = await showDialog<bool>(
         context: context,
-        builder:
-            (context) => AlertDialog(
-              title:  Text('Batal menyimpan perubahan?', style: GoogleFonts.plusJakartaSans(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.lightTextColor,
-                    ),
-              ),
-              content:  Text('Perubahan yang belum disimpan akan hilang.', style: GoogleFonts.plusJakartaSans(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.lightTextColor,
-                    ),),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: Text(
-                    'Batal',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.lightTextColor,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: Text(
-                    'Keluar',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.dangerColor,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+        builder: (context) => const ConfirmDiscardChangesDialog(),
       );
 
       if (shouldLeave == true && mounted) {
