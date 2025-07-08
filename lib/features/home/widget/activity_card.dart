@@ -1,8 +1,12 @@
+import 'package:aturin_app/core/services/api/activities/activity_api_service.dart';
+import 'package:aturin_app/core/widgets/confirm_dialog.dart';
+import 'package:aturin_app/features/jadwal/screens/add_aktivitas/ui/add_aktivitas.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:aturin_app/core/widgets/categories.dart';
+import 'package:provider/provider.dart';
 import 'package:sizer/sizer.dart';
 
 class ActivityCard extends StatelessWidget {
@@ -23,7 +27,8 @@ class ActivityCard extends StatelessWidget {
       final slugLower = schedule.slug!.toLowerCase();
       if (slugLower.contains('tugas')) {
         return 'Tugas';
-      } else if (slugLower.contains('aktivitas') || slugLower.contains('activity')) {
+      } else if (slugLower.contains('aktivitas') ||
+          slugLower.contains('activity')) {
         return 'Aktivitas';
       }
     }
@@ -34,6 +39,7 @@ class ActivityCard extends StatelessWidget {
     }
     return 'Aktivitas';
   }
+
   bool _isCompleted() {
     // Check if activity is marked as completed
     if (activity.slug != null) {
@@ -71,7 +77,6 @@ class ActivityCard extends StatelessWidget {
     final durationText = _getDurationText(activity);
     final hasAlarm = activity.alarm != null;
 
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -98,7 +103,8 @@ class ActivityCard extends StatelessWidget {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [                        Row(
+                      children: [
+                        Row(
                           children: [
                             _buildBadge(
                               icon: SvgPicture.asset(
@@ -169,7 +175,7 @@ class ActivityCard extends StatelessWidget {
                   ),
                 ],
               ),
-            ),            // Menu button positioned in top right corner (hidden if completed)
+            ), // Menu button positioned in top right corner (hidden if completed)
             if ((onEdit != null || onDelete != null) && !_isCompleted())
               Positioned(
                 top: 1.h,
@@ -177,14 +183,58 @@ class ActivityCard extends StatelessWidget {
                 child: PopupMenuButton<String>(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: Color(0xFF5263F3), width: 1.5),
+                    side: const BorderSide(
+                      color: Color(0xFF5263F3),
+                      width: 1.5,
+                    ),
                   ),
                   color: const Color.fromARGB(255, 249, 251, 255),
-                  onSelected: (value) {
+                  onSelected: (value) async {
                     if (value == 'edit') {
-                      onEdit?.call();
+                      // Use TaskApiService from provider
+                      final activityApiService =
+                          Provider.of<ActivityApiService>(
+                            context,
+                            listen: false,
+                          );
+
+                      // Store context to avoid async gap warning
+                      final navigator = Navigator.of(context);
+
+                      // Get latest task data from provider service
+                      final latestTask =
+                          activity.slug != null
+                              ? await activityApiService.getActivityBySlug(
+                                activity.slug!,
+                              )
+                              : null;
+
+                      final result = await navigator.push(
+                        MaterialPageRoute(
+                          builder:
+                              (_) => AddAktivitasPage(
+                                existingAktivitas: latestTask ?? activity,
+                              ),
+                        ),
+                      );
+
+                      if (result == true) {
+                        // Refresh tasks through provider
+                        await activityApiService.fetchActivities();
+                      }
                     } else if (value == 'delete') {
-                      onDelete?.call();
+                      // Tampilkan DeletePopup
+                      showDialog(
+                        context: context,
+                        builder:
+                            (_) => ConfirmDialog(
+                              onConfirm: () {
+                                if (onDelete != null) {
+                                  onDelete!();
+                                }
+                              },
+                            ),
+                      );
                     }
                   },
                   itemBuilder:

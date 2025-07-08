@@ -288,7 +288,7 @@ class AuthService extends ChangeNotifier {
         return AuthResult.success(
           user: user,
           token: data['token'],
-          message: data['message'] ?? 'Login berhasil!',
+          message: data['message'] ?? 'Berhasil masuk!',
         );
       } else {
         try {

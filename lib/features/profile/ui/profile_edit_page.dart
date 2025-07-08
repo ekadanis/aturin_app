@@ -1,3 +1,4 @@
+import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:aturin_app/features/profile/models/user_model.dart';
 import 'package:aturin_app/core/services/api/profile/profile_service.dart';
@@ -7,6 +8,7 @@ import 'package:aturin_app/features/profile/ui/avatar_selection.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:aturin_app/features/profile/widgets/snackbar.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 @RoutePage()
 class ProfileEditPage extends StatefulWidget {
@@ -23,6 +25,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   late String _selectedAvatar;
   final ProfileService _profileService = ProfileService();
   bool _hasChanges = false; // Track apakah ada perubahan
+  bool _isSaving = false;
 
   final List<String> _availableAvatars = [
     'assets/avatars/profile1.jpg',
@@ -52,14 +55,20 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     super.dispose();
   }
 
+  bool _hasUnsavedChanges() {
+    return _usernameController.text.trim() != widget.user.name.trim() ||
+        _selectedAvatar != widget.user.avatar;
+  }
+
   void _showAvatarSelection() async {
     final selectedAvatar = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AvatarSelectionPage(
-          availableAvatars: _availableAvatars,
-          selectedAvatar: _selectedAvatar,
-        ),
+        builder:
+            (context) => AvatarSelectionPage(
+              availableAvatars: _availableAvatars,
+              selectedAvatar: _selectedAvatar,
+            ),
       ),
     );
 
@@ -82,17 +91,17 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false, // Prevent automatic pop
-      onPopInvoked: (bool didPop) {
+      onPopInvoked: (bool didPop) async {
         if (!didPop) {
-          // Handle back button manually - return true to indicate potential changes
-          Navigator.pop(context, _hasChanges);
+          await _onBackPressed();
         }
       },
+
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
           title: Text(
-            'Edit Profile',
+            'Ubah Profil',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               color: const Color(0xFF131927),
               fontWeight: FontWeight.bold,
@@ -105,7 +114,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
               width: 16,
               height: 16,
             ),
-            onPressed: () => Navigator.pop(context, _hasChanges),
+            onPressed: _onBackPressed,
           ),
           actions: [
             IconButton(
@@ -150,7 +159,13 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   }
 
   Future<void> _saveChanges({bool shouldPop = true}) async {
+    if (_isSaving) return; // Mencegah eksekusi ganda
+
     if (_usernameController.text.isNotEmpty) {
+      setState(() {
+        _isSaving = true;
+      });
+
       try {
         final updatedUser = await _profileService.editProfile(
           _usernameController.text,
@@ -164,7 +179,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 
           showCustomTopSnackbar(
             context: context,
-            message: 'Berhasil Mengedit Profile',
+            message: 'Berhasil Memperbarui Profile',
           );
 
           if (shouldPop) {
@@ -183,6 +198,12 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
           message: 'Error: $e',
           isError: true,
         );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSaving = false;
+          });
+        }
       }
     } else {
       showCustomTopSnackbar(
@@ -190,6 +211,58 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         message: 'Nama tidak boleh kosong',
         isError: true,
       );
+    }
+  }
+
+  Future<void> _onBackPressed() async {
+    if (_hasUnsavedChanges()) {
+      final shouldLeave = await showDialog<bool>(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title:  Text('Batal menyimpan perubahan?', style: GoogleFonts.plusJakartaSans(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.lightTextColor,
+                    ),
+              ),
+              content:  Text('Perubahan yang belum disimpan akan hilang.', style: GoogleFonts.plusJakartaSans(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.lightTextColor,
+                    ),),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text(
+                    'Batal',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.lightTextColor,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: Text(
+                    'Keluar',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.dangerColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+      );
+
+      if (shouldLeave == true && mounted) {
+        Navigator.pop(context, _hasChanges); // tetap return status _hasChanges
+      }
+    } else {
+      Navigator.pop(context, _hasChanges);
     }
   }
 }

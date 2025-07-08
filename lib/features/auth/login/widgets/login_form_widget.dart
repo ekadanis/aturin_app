@@ -8,12 +8,14 @@ class LoginFormWidget extends StatefulWidget {
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final VoidCallback onLogin;
+  final bool isLoading;
 
   const LoginFormWidget({
     super.key,
     required this.emailController,
     required this.passwordController,
     required this.onLogin,
+    this.isLoading = false, // default false
   });
 
   @override
@@ -57,6 +59,7 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
                   ),
                 ],
               ),
+
             ),
             SizedBox(height: 1.h),
             CustomTextFieldWidget(
