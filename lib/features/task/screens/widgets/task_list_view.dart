@@ -206,7 +206,6 @@ class _TaskListViewState extends State<TaskListView>
           task: task,
           currentFilter: widget.currentFilter,
           showCheckbox: !isSelesai,
-          showPopupMenu: !isSelesai,
           onToggleCompletion: isSelesai
               ? () {}
               : () async {

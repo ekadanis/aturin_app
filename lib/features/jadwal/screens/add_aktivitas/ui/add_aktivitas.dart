@@ -155,16 +155,18 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
       category: selectedCategory?.name,
     );
 
-    DateTime today = DateTime.now();
-    DateTime onlyToday = DateTime(today.year, today.month, today.day);
+    if (widget.existingAktivitas == null) {
+      DateTime today = DateTime.now();
+      DateTime onlyToday = DateTime(today.year, today.month, today.day);
 
-    if (selectedDate.isBefore(onlyToday)) {
-      showCustomTopSnackbar(
-        context: context,
-        message: 'Tidak bisa menambahkan aktivitas di hari yang telah lewat.',
-        isError: true,
-      );
-      return;
+      if (selectedDate.isBefore(onlyToday)) {
+        showCustomTopSnackbar(
+          context: context,
+          message: 'Tidak bisa menambahkan aktivitas di hari yang telah lewat.',
+          isError: true,
+        );
+        return; // Stop for new activities on past dates.
+      }
     }
 
     setState(() {
@@ -345,7 +347,7 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
                     calendarFormat = format;
                   });
                 },
-                firstAllowedDate: DateTime.now(),
+                firstAllowedDate: widget.existingAktivitas != null ? DateTime(2000) : DateTime.now(),
               ),
               Padding(
                 padding: const EdgeInsets.all(16),

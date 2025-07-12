@@ -26,6 +26,8 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   bool _hasChanges = false; // Track apakah ada perubahan
   bool _isSaving = false;
 
+  late User _currentUser;
+
   final List<String> _availableAvatars = [
     'assets/avatars/profile1.jpg',
     'assets/avatars/profile2.jpg',
@@ -44,6 +46,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   @override
   void initState() {
     super.initState();
+    _currentUser = widget.user;
     _usernameController = TextEditingController(text: widget.user.name);
     _selectedAvatar = widget.user.avatar;
   }
@@ -55,8 +58,8 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   }
 
   bool _hasUnsavedChanges() {
-    return _usernameController.text.trim() != widget.user.name.trim() ||
-        _selectedAvatar != widget.user.avatar;
+    return _usernameController.text.trim() != _currentUser.name.trim() ||
+        _selectedAvatar != _currentUser.avatar;
   }
 
   void _showAvatarSelection() async {
@@ -123,7 +126,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                 height: 14,
                 color: const Color(0xFF131927),
               ),
-              onPressed: () => _saveChanges(shouldPop: false),
+              onPressed: () => _saveChanges(),
             ),
           ],
         ),
@@ -173,6 +176,9 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 
         if (updatedUser != null) {
           setState(() {
+            // Update your local user state with the new, saved data.
+            // This is the crucial step.
+            _currentUser = updatedUser;
             _hasChanges = true;
           });
 
@@ -182,7 +188,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
           );
 
           if (shouldPop) {
-            Navigator.pop(context, true); // Return true karena ada perubahan
+            Navigator.pop(context, _hasChanges); // Return true karena ada perubahan
           }
         } else {
           showCustomTopSnackbar(
