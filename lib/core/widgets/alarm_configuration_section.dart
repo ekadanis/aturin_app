@@ -23,7 +23,9 @@ class AlarmConfigurationSection extends StatelessWidget {
     required this.onToggle,
     required this.onAlarmTimeChanged,
     this.isEditing = false, // Default to false for backward compatibility
-  });  // Check if start time allows for alarm (start time should be in the future with 1 minute buffer)
+  });
+
+  // Check if start time allows for alarm (start time should be in the future with 1 minute buffer)
   bool get _hasValidStartTime {
     if (startTime == null) return false;
 
@@ -52,6 +54,7 @@ class AlarmConfigurationSection extends StatelessWidget {
       return startDateTime.isAfter(now);
     }
   }
+
   // Check if current alarm time is still valid and not equal to current time
   bool get _isAlarmTimeValid {
     if (alarmDateTime == null) return true;
@@ -151,12 +154,15 @@ class AlarmConfigurationSection extends StatelessWidget {
           newAlarmTime = startDateTime.subtract(const Duration(hours: 1));
           break;
       }
-    }    // In edit mode, allow setting any alarm time; in create mode, only allow future times
+    }
+
+    // In edit mode, allow setting any alarm time; in create mode, only allow future times
     if (newAlarmTime != null && (isEditing || newAlarmTime.isAfter(DateTime.now()))) {
       onAlarmTimeChanged(newAlarmTime);
       onToggle(true);
     }
   }
+
   String get _getInfoMessage {
     if (startTime == null) {
       return '*Silakan isi waktu mulai terlebih dahulu';
@@ -169,10 +175,12 @@ class AlarmConfigurationSection extends StatelessWidget {
       selectedDate.day,
       startTime!.hour,
       startTime!.minute,
-    );    // Check if start time has already passed - but allow in edit mode
+    );
+
+    // Check if start time has already passed - but allow in edit mode
     if (startDateTime.isBefore(now) || startDateTime.isAtSameMomentAs(now)) {
       if (isEditing) {
-        return '*Mode edit: Waktu aktivitas dapat diperbarui sesuai kebutuhan';
+        return '*Waktu dapat diperbarui sesuai kebutuhan';
       } else {
         return '*Waktu mulai sudah terlewat. Alarm tidak dapat diaktifkan untuk waktu yang sudah berlalu.';
       }
@@ -183,14 +191,16 @@ class AlarmConfigurationSection extends StatelessWidget {
       if (selectedDate.year == now.year && 
           selectedDate.month == now.month && 
           selectedDate.day == now.day) {
-        return '*Untuk aktivitas hari ini, alarm dapat diaktifkan minimal 1 menit sebelum waktu mulai';
+        return '*Untuk hari ini, alarm dapat diaktifkan minimal 1 menit sebelum waktu mulai';
       } else {
-        return '*Waktu mulai aktivitas harus di masa depan untuk mengaktifkan alarm';
+        return '*Waktu mulai harus di masa depan untuk mengaktifkan alarm';
       }
-    }if (alarmDateTime != null && !_isAlarmTimeValid) {
+    }
+
+    if (alarmDateTime != null && !_isAlarmTimeValid) {
       // In edit mode, don't show error for past alarm times - allow editing
       if (isEditing) {
-        return '*Mode edit: Waktu alarm dapat diperbarui sesuai kebutuhan';
+        return '*Waktu alarm dapat diperbarui sesuai kebutuhan';
       } else {
         return '*Waktu alarm sudah lewat, silakan atur ulang';
       }
@@ -198,6 +208,7 @@ class AlarmConfigurationSection extends StatelessWidget {
 
     return '';
   }
+
   @override
   Widget build(BuildContext context) {
     // Auto-disable alarm if time equals current time - but only for new activities, not when editing
@@ -209,7 +220,8 @@ class AlarmConfigurationSection extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [        // Alarm picker
+      children: [
+        // Alarm picker
         AlarmPicker(
           isEnabled: isEnabled && _hasValidStartTime && _isAlarmTimeValid,
           alarmDateTime: ((_isAlarmTimeValid || isEditing) && alarmDateTime != null) ? alarmDateTime : null,

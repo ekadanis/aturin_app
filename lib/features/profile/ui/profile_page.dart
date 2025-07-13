@@ -25,13 +25,16 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   Future<User?>? _userFuture;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Hanya load user sekali saat pertama kali inisialisasi
+    if (!_isInitialized) {
       _loadUser();
-    });
+      _isInitialized = true;
+    }
   }
 
   void _loadUser() {

@@ -20,50 +20,34 @@ class PengaturanCard extends StatefulWidget {
   _PengaturanCardState createState() => _PengaturanCardState();
 }
 
-class _PengaturanCardState extends State<PengaturanCard> with SingleTickerProviderStateMixin {
+class _PengaturanCardState extends State<PengaturanCard> {
   bool _isAlarmEnabled = false;
   bool _isLoading = false;
-  bool _isAnimating = false;
+  bool _isInitialized = false;
   final ProfileService _profileService = ProfileService();
-  final AlarmService _alarmService = AlarmService(); // Tambah dependency
-  late AnimationController _animationController;
-  bool _nextValue = false;
-  bool _pendingValueChange = false;
+  final AlarmService _alarmService = AlarmService();
 
   @override
   void initState() {
     super.initState();
-    _loadAlarmStatus();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    _animationController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        if (_pendingValueChange) {
-          setState(() {
-            _isAlarmEnabled = _nextValue;
-            _isAnimating = false;
-            _pendingValueChange = false;
-          });
-          _toggleGlobalAlarm(_nextValue);
-        } else {
-          setState(() {
-            _isAnimating = false;
-          });
-        }
-      }
-    });
+    // Hanya load alarm status sekali saat pertama kali inisialisasi
+    if (!_isInitialized) {
+      _loadAlarmStatus();
+      _isInitialized = true;
+    }
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
     super.dispose();
   }
 
   Future<void> _loadAlarmStatus() async {
-    setState(() => _isLoading = true);
+    // Hanya set loading jika benar-benar pertama kali load
+    if (!_isInitialized) {
+      setState(() => _isLoading = true);
+    }
+    
     try {
       final isEnabled = await _profileService.getGlobalAlarmStatus();
       if (mounted) {
@@ -83,24 +67,30 @@ class _PengaturanCardState extends State<PengaturanCard> with SingleTickerProvid
   }
 
   Future<void> _toggleGlobalAlarm(bool value) async {
-    setState(() => _isLoading = true);
+    // Langsung update UI tanpa loading indicator
+    setState(() {
+      _isAlarmEnabled = value;
+    });
+    
     try {
-      // Hanya panggil sinkronisasi ke AlarmService (sudah otomatis ke API dan lokal)
+      // Panggil sinkronisasi ke AlarmService di background
       await _alarmService.setGlobalAlarmEnabled(value);
-      // Ambil status terbaru dari API agar toggle benar-benar sesuai server
-      final latestStatus = await _profileService.getGlobalAlarmStatus();
-      if (mounted) {
-        setState(() {
-          _isAlarmEnabled = latestStatus ?? value;
-          _isLoading = false;
-        });
-      }
     } catch (e) {
       debugPrint('Error toggling global alarm: $e');
+      // Jika error, kembalikan ke nilai sebelumnya
       if (mounted) {
         setState(() {
-          _isLoading = false;
+          _isAlarmEnabled = !value; // Kembalikan ke nilai sebelumnya
         });
+        
+        // Tampilkan error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mengubah pengaturan alarm'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+          ),
+        );
       }
     }
   }
@@ -161,26 +151,8 @@ class _PengaturanCardState extends State<PengaturanCard> with SingleTickerProvid
                     current: _isAlarmEnabled,
                     values: const [false, true],
                     onChanged: (value) {
-                      // Cek apakah sedang animasi, jika ya, abaikan toggle
-                      if (_isAnimating) return;
-                      
-                      // Set animating ke true dan toggle alarm
-                      setState(() {
-                        _isAnimating = true;
-                        _nextValue = value;
-                        _pendingValueChange = true;
-                      });
-                      
+                      // Langsung toggle tanpa loading berputar
                       _toggleGlobalAlarm(value);
-                      
-                      // Menunggu animasi selesai sebelum mengizinkan toggle lagi
-                      Future.delayed(const Duration(milliseconds:300),() {
-                        if (mounted) {
-                          setState(() {
-                            _isAnimating = false;
-                          });
-                        }
-                      });
                     },
                     iconBuilder: (value, size) {
                       return value 

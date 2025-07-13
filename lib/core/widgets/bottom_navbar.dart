@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:sizer/sizer.dart';
 import 'dart:ui';
 import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:aturin_app/routers/app_router.dart';
@@ -53,11 +54,11 @@ class _BottomNavbarState extends State<BottomNavbar>
     super.dispose();
   }
 
-  Widget _buildSvgIcon(String assetPath, Color color) {
+  Widget _buildSvgIcon(String assetPath, Color color, {double size = 24}) {
     return SvgPicture.asset(
       assetPath,
-      height: 24,
-      width: 24,
+      height: size,
+      width: size,
       colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
     );
   }
@@ -79,10 +80,10 @@ class _BottomNavbarState extends State<BottomNavbar>
             duration: const Duration(milliseconds: 200),
             opacity: isVisible ? 1.0 : 0.0,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 1.h),
               decoration: BoxDecoration(
                 color: Colors.black87,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(6),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.2),
@@ -95,17 +96,17 @@ class _BottomNavbarState extends State<BottomNavbar>
                 tooltipText,
                 style: GoogleFonts.plusJakartaSans(
                   color: Colors.white,
-                  fontSize: 12,
+                  fontSize: 11.sp,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 8),
-          // FAB
+          SizedBox(height: 0.8.h),
+          // FAB Kiri/Kanan
           Container(
-            width: 60,
-            height: 60,
+            width: 12.w,
+            height: 12.w,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
@@ -119,21 +120,22 @@ class _BottomNavbarState extends State<BottomNavbar>
               boxShadow: [
                 BoxShadow(
                   color: AppTheme.primaryColor.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(6.w),
                 splashColor: Colors.white.withOpacity(0.3),
                 onTap: isVisible ? onTap : null,
                 child: Center(
                   child: _buildSvgIcon(
                     iconPath,
                     AppTheme.buttonBackgroundColor,
+                    size: 4.w,
                   ),
                 ),
               ),
@@ -144,10 +146,55 @@ class _BottomNavbarState extends State<BottomNavbar>
     );
   }
 
+  Widget _buildNavItem({
+    required String iconPath,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    double offsetX = 0,
+  }) {
+    return Expanded(
+      child: Transform.translate(
+        offset: Offset(offsetX, 0),
+        child: InkWell(
+          onTap: onTap,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildSvgIcon(
+                iconPath,
+                isSelected
+                    ? AppTheme.primaryColor
+                    : AppTheme.buttonBackgroundColor,
+              ),
+              SizedBox(height: 0.5.h),
+              Text(
+                label,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w900,
+                  color:
+                      isSelected
+                          ? AppTheme.primaryColor
+                          : AppTheme.buttonBackgroundColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    
+    final fabSpacing = 25.w;
+    final minSpacing = 15.w;
+    final maxSpacing = 35.w;
+
+    final leftPosition = (55.w - fabSpacing).clamp(minSpacing, maxSpacing);
+    final rightPosition = (55.w - fabSpacing).clamp(minSpacing, maxSpacing);
+
     return Stack(
       children: [
         // Backdrop barrier saat FAB aktif
@@ -165,14 +212,14 @@ class _BottomNavbarState extends State<BottomNavbar>
               ),
             ),
           ),
-        
+
         // Bottom Navigation Bar
         Positioned(
           left: 0,
           right: 0,
           bottom: 0,
           child: Container(
-            height: kBottomNavigationBarHeight + 16,
+            height: kBottomNavigationBarHeight + 2.h,
             decoration: BoxDecoration(
               color: AppTheme.lightCardColor,
               boxShadow: [
@@ -184,92 +231,55 @@ class _BottomNavbarState extends State<BottomNavbar>
                 ),
               ],
             ),
-            child: NavigationBarTheme(
-              data: NavigationBarThemeData(
-                elevation: 0,
-                labelPadding: const EdgeInsets.only(top: 0),
-                backgroundColor: Colors.transparent,
-                indicatorColor: Colors.transparent,
-                labelTextStyle: WidgetStateProperty.resolveWith((states) {
-                  final isSelected = states.contains(WidgetState.selected);
-                  return GoogleFonts.plusJakartaSans(
-                    fontStyle: FontStyle.normal,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    color: isSelected
-                        ? AppTheme.primaryColor
-                        : AppTheme.buttonBackgroundColor,
-                  );
-                }),
-                iconTheme: WidgetStateProperty.resolveWith((states) {
-                  final isSelected = states.contains(WidgetState.selected);
-                  return IconThemeData(
-                    color: isSelected
-                        ? AppTheme.primaryColor
-                        : AppTheme.buttonBackgroundColor,
-                  );
-                }),
-              ),
-              child: NavigationBar(
-                selectedIndex: widget.currentIndex,
-                onDestinationSelected: (index) => _handleNavigation(context, index),
-                destinations: [
-                  NavigationDestination(
-                    icon: _buildSvgIcon(
-                      'assets/icons/home-simple.svg',
-                      AppTheme.buttonBackgroundColor,
-                    ),
-                    selectedIcon: _buildSvgIcon(
-                      'assets/icons/home-simple.svg',
-                      AppTheme.primaryColor,
-                    ),
-                    label: 'Beranda',
-                  ),
-                  NavigationDestination(
-                    icon: _buildSvgIcon(
-                      'assets/icons/calendaro.svg',
-                      AppTheme.buttonBackgroundColor,
-                    ),
-                    selectedIcon: _buildSvgIcon(
-                      'assets/icons/calendaro.svg',
-                      AppTheme.primaryColor,
-                    ),
-                    label: 'Jadwal',
-                  ),
-                  NavigationDestination(
-                    icon: _buildSvgIcon(
-                      'assets/icons/task-list.svg',
-                      AppTheme.buttonBackgroundColor,
-                    ),
-                    selectedIcon: _buildSvgIcon(
-                      'assets/icons/task-list.svg',
-                      AppTheme.primaryColor,
-                    ),
-                    label: 'Tugas',
-                  ),
-                  NavigationDestination(
-                    icon: _buildSvgIcon(
-                      'assets/icons/profile-circle.svg',
-                      AppTheme.buttonBackgroundColor,
-                    ),
-                    selectedIcon: _buildSvgIcon(
-                      'assets/icons/profile-circle.svg',
-                      AppTheme.primaryColor,
-                    ),
-                    label: 'Profil',
-                  ),
-                ],
-              ),
+            child: Row(
+              children: [
+                // Beranda
+                _buildNavItem(
+                  iconPath: 'assets/icons/home-simple.svg',
+                  label: 'Beranda',
+                  isSelected: widget.currentIndex == 0,
+                  onTap: () => _handleNavigation(context, 0),
+                ),
+
+                // Jadwal - Digeser ke kiri 2.w
+                _buildNavItem(
+                  iconPath: 'assets/icons/calendaro.svg',
+                  label: 'Jadwal',
+                  isSelected: widget.currentIndex == 1,
+                  onTap: () => _handleNavigation(context, 1),
+                  offsetX: -4.w,
+                ),
+
+                // // Spacer untuk FAB
+                // Expanded(child: SizedBox()),
+
+                // Tugas - Digeser ke kanan 4.w
+                _buildNavItem(
+                  iconPath: 'assets/icons/task-list.svg',
+                  label: 'Tugas',
+                  isSelected: widget.currentIndex == 2,
+                  onTap: () => _handleNavigation(context, 2),
+                  offsetX: 4.w,
+                ),
+
+                // Profil
+                _buildNavItem(
+                  iconPath: 'assets/icons/profile-circle.svg',
+                  label: 'Profil',
+                  isSelected: widget.currentIndex == 3,
+                  onTap: () => _handleNavigation(context, 3),
+                ),
+              ],
             ),
           ),
         ),
-        
-        // FAB Kiri (Aktivitas) - Benar-benar melayang di luar navbar
+
+        // FAB Kiri (Aktivitas)
         AnimatedPositioned(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
-          left: _isRotated ? screenWidth * 0.25 - 2 : screenWidth * 0.5 - 2,
-          bottom: kBottomNavigationBarHeight + 50, // Di atas navbar
+          left: _isRotated ? leftPosition : 50.w - 6.w,
+          bottom: kBottomNavigationBarHeight + 7.h,
           child: _buildFloatingFABWithTooltip(
             onTap: () {
               print('DEBUG: FAB Kiri di-tap - navigasi ke Aktivitas');
@@ -283,13 +293,13 @@ class _BottomNavbarState extends State<BottomNavbar>
             tooltipText: 'Aktivitas',
           ),
         ),
-        
-        // FAB Kanan (Tugas) - Benar-benar melayang di luar navbar
+
+        // FAB Kanan (Tugas)
         AnimatedPositioned(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
-          right: _isRotated ? screenWidth * 0.25 - 2 : screenWidth * 0.5 - 2,
-          bottom: kBottomNavigationBarHeight + 50,
+          right: _isRotated ? rightPosition : 50.w - 6.w,
+          bottom: kBottomNavigationBarHeight + 7.h,
           child: _buildFloatingFABWithTooltip(
             onTap: () {
               print('DEBUG: FAB Kanan di-tap - navigasi ke Tugas');
@@ -303,14 +313,14 @@ class _BottomNavbarState extends State<BottomNavbar>
             tooltipText: 'Tugas',
           ),
         ),
-        
-        // FAB Utama (Tengah) - Overlap dengan navbar
+
+        // FAB Utama (Tengah)
         Positioned(
-          left: screenWidth * 0.5 - 35,
-          bottom: kBottomNavigationBarHeight - 16,
+          left: 50.w - 6.5.w,
+          bottom: kBottomNavigationBarHeight - 1.5.h,
           child: Container(
-            width: 70,
-            height: 70,
+            width: 13.w,
+            height: 13.w,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
@@ -324,15 +334,15 @@ class _BottomNavbarState extends State<BottomNavbar>
               boxShadow: [
                 BoxShadow(
                   color: AppTheme.primaryColor.withOpacity(0.4),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                borderRadius: BorderRadius.circular(35),
+                borderRadius: BorderRadius.circular(6.5.w),
                 onTap: () {
                   setState(() {
                     _isRotated = !_isRotated;
@@ -346,6 +356,7 @@ class _BottomNavbarState extends State<BottomNavbar>
                     child: _buildSvgIcon(
                       'assets/icons/plus.svg',
                       AppTheme.buttonBackgroundColor,
+                      size: 4.5.w,
                     ),
                   ),
                 ),
