@@ -13,14 +13,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:aturin_app/features/profile/widgets/confirm_exit_dialog.dart';
 import 'package:provider/provider.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
+import 'package:aturin_app/core/widgets/custom_snackbar_top.dart';
 
 @RoutePage()
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
   @override
-  _ProfilePageState createState() => _ProfilePageState();
+  State<ProfilePage> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
@@ -30,19 +30,22 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    // Hanya load user sekali saat pertama kali inisialisasi
+    // Load user data hanya sekali saat pertama kali inisialisasi
     if (!_isInitialized) {
-      _loadUser();
+      _loadUser(
+        forceRefresh: true,
+      ); // Force refresh sekali di awal untuk memastikan data terbaru
       _isInitialized = true;
     }
   }
 
-  void _loadUser() {
+  void _loadUser({bool forceRefresh = false}) {
     final profileService = Provider.of<ProfileService>(context, listen: false);
-    final newUserFuture = profileService.me();
+    final newUserFuture = profileService.me(forceRefresh: forceRefresh);
     setState(() {
       _userFuture = newUserFuture;
     });
+    print('🔄 ProfilePage: Loading user data (forceRefresh=$forceRefresh)');
   }
 
   @override
@@ -86,9 +89,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: CircularProgressIndicator(color: AppTheme.primaryColor),
               );
             } else if (snapshot.hasError) {
+              print('❌ ProfilePage Error: ${snapshot.error}');
               return Center(
                 child: Text(
-                  'Error: {snapshot.error}',
+                  'Error: ${snapshot.error}',
                   style: GoogleFonts.plusJakartaSans(
                     color: AppTheme.lightTextColor,
                   ),
@@ -106,6 +110,9 @@ class _ProfilePageState extends State<ProfilePage> {
             }
 
             User user = snapshot.data!;
+            print(
+              '✅ ProfilePage: User loaded - Name: ${user.name}, Email: ${user.email}',
+            );
 
             return SafeArea(
               bottom: false,
@@ -114,8 +121,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Bisa tambahkan header image/profile di sini jika ingin konsisten dengan HomePage
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     ProfileCard(
                       user: user,
                       onEdit: () => _navigateToEditPage(context, user),
@@ -130,32 +136,83 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    PengaturanCard(
+                    const PengaturanCard(
                       title: 'Alarm',
                       description: 'Atur Alarm kamu',
                     ),
                     const SizedBox(height: 8),
                     LogoutButton(
                       onPressed: () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => const ConfirmExitDialog(),
-                        );
-                        if (confirm == true) {
-                          final authService = AuthService();
-                          final result = await authService.logout();
-                          if (result.isSuccess) {
-                            if (context.mounted) {
-                              context.router.replaceAll([const LoginRoute()]);
+                        print('🚪 Logout button pressed!');
+                        try {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (context) {
+                              print('🔧 Building ConfirmExitDialog...');
+                              return const ConfirmExitDialog();
+                            },
+                          );
+
+                          print('🚪 Dialog result: $confirm');
+
+                          if (confirm == true) {
+                            print('🔄 Starting logout process...');
+                            final authService = AuthService();
+                            final profileService = Provider.of<ProfileService>(
+                              context,
+                              listen: false,
+                            );
+
+                            // Clear SEMUA cache aplikasi sebelum logout
+                            await profileService.clearAllAppCache();
+                            final result = await authService.logout();
+                            
+                            if (result.isSuccess) {
+                              print('✅ Logout successful, navigating to login...');
+                              if (context.mounted) {
+                                // Gunakan custom SnackBar untuk success
+                                showCustomTopSnackbar(
+                                  context: context,
+                                  message: result.message.isNotEmpty
+                                      ? result.message
+                                      : 'Berhasil keluar',
+                                  isError: false,
+                                );
+                                
+                                await Future.delayed(
+                                  const Duration(milliseconds: 800),
+                                );
+                                
+                                if (context.mounted) {
+                                  context.router.replaceAll([const LoginRoute()]);
+                                }
+                              }
+                            } else {
+                              print('❌ Logout failed: ${result.message}');
+                              if (context.mounted) {
+                                // Gunakan custom SnackBar untuk error
+                                showCustomTopSnackbar(
+                                  context: context,
+                                  message: result.message.isNotEmpty
+                                      ? result.message
+                                      : 'Logout gagal',
+                                  isError: true,
+                                );
+                              }
                             }
                           } else {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(result.message.isNotEmpty ? result.message : 'Logout gagal'),
-                                ),
-                              );
-                            }
+                            print('🚫 Logout cancelled by user');
+                          }
+                        } catch (e) {
+                          print('❌ Error in logout process: $e');
+                          if (context.mounted) {
+                            // Gunakan custom SnackBar untuk exception
+                            showCustomTopSnackbar(
+                              context: context,
+                              message: 'Terjadi kesalahan saat logout',
+                              isError: true,
+                            );
                           }
                         }
                       },
@@ -179,7 +236,8 @@ class _ProfilePageState extends State<ProfilePage> {
       MaterialPageRoute(builder: (context) => ProfileEditPage(user: user)),
     );
     if (result == true) {
-      _loadUser();
+      // Reload user data setelah edit dengan force refresh
+      _loadUser(forceRefresh: true);
     }
   }
 }

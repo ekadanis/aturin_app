@@ -5,6 +5,7 @@ import 'package:aturin_app/features/auth/login/widgets/login_header_widget.dart'
 import 'package:aturin_app/features/auth/login/widgets/register_link_widget.dart';
 import 'package:aturin_app/routers/app_router.dart';
 import 'package:aturin_app/core/services/api/auth/auth_service.dart';
+import 'package:aturin_app/core/widgets/custom_snackbar_top.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -86,46 +87,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // Future<void> _handleLogin() async {
-  //   if (_isProcessing) return; // Hindari multiple tap
-  //   setState(() => _isProcessing = true);
-
-  //   if (!_validateInputs()) {
-  //     setState(() => _isProcessing = false);
-  //     return;
-  //   }
-
-  //   final authService = Provider.of<AuthService>(context, listen: false);
-
-  //   try {
-  //     // Call the API login service
-  //     final result = await authService.login(
-  //       email: emailController.text.trim(),
-  //       password: passwordController.text.trim(),
-  //     );
-
-  //     if (result.isSuccess && mounted) {
-  //       // Save login data
-  //       await _saveLoginData(result);
-
-  //       // Navigate to home page using AutoRouter
-  //       context.router.replaceAll([const HomeRoute()]);
-
-  //       // Show success message
-  //       _showSnackBar(result.message, isSuccess: true);
-  //     } else {
-  //       // Show error message
-  //       _showSnackBar(result.message);
-  //     }
-  //   } catch (e) {
-  //     _showSnackBar('Terjadi kesalahan: $e');
-  //   } finally {
-  //     if (mounted) {
-  //       setState(() => _isProcessing = false);
-  //     }
-  //   }
-  // }
-
   Future<void> _handleLogin() async {
     if (_isProcessing) return; // Hindari multiple tap
     setState(() => _isProcessing = true);
@@ -146,19 +107,35 @@ class _LoginPageState extends State<LoginPage> {
       if (result.isSuccess && mounted) {
         await _saveLoginData(result);
 
-        _showSnackBar(result.message, isSuccess: true);
+        // Gunakan custom top SnackBar untuk success
+        showCustomTopSnackbar(
+          context: context,
+          message: result.message.isNotEmpty ? result.message : 'Berhasil masuk',
+          isError: false,
+        );
+        
         await Future.delayed(
-          const Duration(milliseconds: 500),
+          const Duration(milliseconds: 800),
         ); // beri waktu snackbar muncul
 
         if (mounted) {
           context.router.replaceAll([const HomeRoute()]);
         }
       } else {
-        _showSnackBar(result.message);
+        // Gunakan custom top SnackBar untuk error
+        showCustomTopSnackbar(
+          context: context,
+          message: result.message.isNotEmpty ? result.message : 'Login gagal',
+          isError: true,
+        );
       }
     } catch (e) {
-      _showSnackBar('Terjadi kesalahan: $e');
+      // Gunakan custom top SnackBar untuk exception
+      showCustomTopSnackbar(
+        context: context,
+        message: 'Terjadi kesalahan: $e',
+        isError: true,
+      );
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
@@ -204,57 +181,20 @@ class _LoginPageState extends State<LoginPage> {
 
     // 2. Set the flag to true and clear any previous snackbars.
     setState(() => _isValidationSnackbarActive = true);
-    ScaffoldMessenger.of(context).clearSnackBars();
 
-    // 3. Show the snackbar and wait for it to close.
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
-          SnackBar(
-            content: Text(
-              message,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 13.sp,
-                color: Colors.white,
-              ),
-            ),
-            backgroundColor: AppTheme.lightErrorColor,
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.all(4.w),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            duration: const Duration(seconds: 3),
-          ),
-        )
-        .closed // This future completes when the snackbar is gone
-        .then((_) {
-          // 4. When it closes, reset the flag.
-          if (mounted) {
-            setState(() => _isValidationSnackbarActive = false);
-          }
-        });
-  }
-
-  void _showSnackBar(String message, {bool isSuccess = false}) {
-    final messenger = ScaffoldMessenger.of(context);
-
-    // Bersihkan semua snackbar sebelumnya
-    messenger.clearSnackBars();
-
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 13.sp,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: isSuccess ? Colors.green : AppTheme.lightErrorColor,
-        behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.all(4.w),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        duration: const Duration(seconds: 3),
-      ),
+    // 3. Gunakan custom top SnackBar untuk validation error
+    showCustomTopSnackbar(
+      context: context,
+      message: message,
+      isError: true,
     );
+
+    // 4. Reset flag setelah delay
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() => _isValidationSnackbarActive = false);
+      }
+    });
   }
 
   Future<void> _saveLoginData(AuthResult result) async {

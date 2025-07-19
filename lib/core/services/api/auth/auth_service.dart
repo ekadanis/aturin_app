@@ -347,14 +347,18 @@ class AuthService extends ChangeNotifier {
           'Authorization': 'Bearer $token',
         },
       );
-      if (response.statusCode == 200) {
-        await prefs.remove('token');
-        await prefs.setBool('isLoggedIn', false); // Tambahkan ini
-        return AuthResult.success(
-          user: null,
-          token: null,
-          message: 'Logout berhasil',
-        );
+   if (response.statusCode == 200) {
+  // Hapus token dan status login
+  await prefs.remove('token');
+  await prefs.setBool('isLoggedIn', false);
+  
+  // NOTE: Cache lainnya akan dibersihkan oleh ProfileService.clearAllAppCache()
+  
+  return AuthResult.success(
+    user: null,
+    token: null,
+    message: 'Logout berhasil',
+  );
       } else {
         final body = jsonDecode(response.body);
         final message = body['message'] ?? 'Logout gagal';

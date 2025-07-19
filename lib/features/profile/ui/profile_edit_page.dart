@@ -63,14 +63,19 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   }
 
   void _showAvatarSelection() async {
+    // PENTING: Tutup keyboard sebelum navigasi ke halaman avatar
+    FocusScope.of(context).unfocus();
+    
+    // Tunggu sebentar agar keyboard benar-benar tertutup
+    await Future.delayed(const Duration(milliseconds: 200));
+    
     final selectedAvatar = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder:
-            (context) => AvatarSelectionPage(
-              availableAvatars: _availableAvatars,
-              selectedAvatar: _selectedAvatar,
-            ),
+        builder: (context) => AvatarSelectionPage(
+          availableAvatars: _availableAvatars,
+          selectedAvatar: _selectedAvatar,
+        ),
       ),
     );
 
@@ -98,62 +103,72 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
           await _onBackPressed();
         }
       },
-
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          title: Text(
-            'Ubah Profil',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: const Color(0xFF131927),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+      child: GestureDetector(
+        // Tutup keyboard saat tap area kosong
+        onTap: () {
+          FocusScope.of(context).unfocus();
+        },
+        child: Scaffold(
           backgroundColor: Colors.white,
-          leading: IconButton(
-            icon: SvgPicture.asset(
-              'assets/icons/back.svg',
-              width: 16,
-              height: 16,
-            ),
-            onPressed: _onBackPressed,
-          ),
-          actions: [
-            IconButton(
-              icon: SvgPicture.asset(
-                'assets/icons/check.svg',
-                width: 14,
-                height: 14,
+          resizeToAvoidBottomInset: true, // Penting untuk menghindari overflow
+          appBar: AppBar(
+            title: Text(
+              'Ubah Profil',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 color: const Color(0xFF131927),
+                fontWeight: FontWeight.bold,
               ),
-              onPressed: () => _saveChanges(),
             ),
-          ],
-        ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              ProfileAvatar(
-                avatarPath: _selectedAvatar,
-                onEditPressed: _showAvatarSelection,
+            backgroundColor: Colors.white,
+            leading: IconButton(
+              icon: SvgPicture.asset(
+                'assets/icons/back.svg',
+                width: 16,
+                height: 16,
               ),
-              const SizedBox(height: 20),
-              ProfileTextField(
-                label: 'Nama',
-                editable: true,
-                controller: _usernameController,
-                onSubmitted: () => _saveChanges(shouldPop: false),
-                maxChar: 20,
-                onEditPressed: () {},
-              ),
-              const SizedBox(height: 20),
-              ProfileTextField(
-                label: 'Email',
-                value: widget.user.email,
-                editable: false,
+              onPressed: _onBackPressed,
+            ),
+            actions: [
+              IconButton(
+                icon: SvgPicture.asset(
+                  'assets/icons/check.svg',
+                  width: 14,
+                  height: 14,
+                  color: const Color(0xFF131927),
+                ),
+                onPressed: () => _saveChanges(),
               ),
             ],
+          ),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  ProfileAvatar(
+                    avatarPath: _selectedAvatar,
+                    onEditPressed: _showAvatarSelection,
+                  ),
+                  const SizedBox(height: 20),
+                  ProfileTextField(
+                    label: 'Nama',
+                    editable: true,
+                    controller: _usernameController,
+                    onSubmitted: () => _saveChanges(shouldPop: false),
+                    maxChar: 20,
+                    onEditPressed: () {},
+                  ),
+                  const SizedBox(height: 20),
+                  ProfileTextField(
+                    label: 'Email',
+                    value: widget.user.email,
+                    editable: false,
+                  ),
+                  // Tambahkan spacing ekstra untuk menghindari overflow
+                  SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -162,6 +177,9 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 
   Future<void> _saveChanges({bool shouldPop = true}) async {
     if (_isSaving) return; // Mencegah eksekusi ganda
+
+    // Tutup keyboard saat save
+    FocusScope.of(context).unfocus();
 
     if (_usernameController.text.isNotEmpty) {
       setState(() {
@@ -220,6 +238,9 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   }
 
   Future<void> _onBackPressed() async {
+    // Tutup keyboard saat back
+    FocusScope.of(context).unfocus();
+    
     if (_hasUnsavedChanges()) {
       final shouldLeave = await showDialog<bool>(
         context: context,
