@@ -274,7 +274,7 @@ class _TaskCardState extends State<TaskCard> {
                         ],
                       ),
                     ),                    // titik tiga, popup edit dan hapus
-                    if (widget.showPopupMenu && !_isCompleted())
+                    if (widget.showPopupMenu)
                       PopupMenuButton<String>(
                         offset: Offset(0, 1.h),
                         shape: RoundedRectangleBorder(

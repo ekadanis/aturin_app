@@ -67,9 +67,23 @@ class CacheService {
     debugPrint('🗄️ Cache: Cache dihapus untuk key $key');
   }
   
-  /// Membersihkan semua cache
+  /// Menghapus beberapa cache berdasarkan daftar keys
+  Future<void> removeMultipleData(List<String> keys) async {
+    for (String key in keys) {
+      await _cacheManager.removeFile(key);
+      debugPrint('🗑️ Cache: Cache dihapus untuk key $key');
+    }
+  }
+  
+  /// Membersihkan semua cache CacheManager
   Future<void> clearCache() async {
     await _cacheManager.emptyCache();
-    debugPrint('🗄️ Cache: Semua cache dibersihkan');
+    debugPrint('🗄️ Cache: Semua cache CacheManager dibersihkan');
+  }
+  
+  /// Membersihkan semua cache aplikasi (hanya CacheManager)
+  Future<void> clearAll() async {
+    await _cacheManager.emptyCache();
+    debugPrint('🧹 CacheService: Semua cache aplikasi telah dibersihkan');
   }
 }

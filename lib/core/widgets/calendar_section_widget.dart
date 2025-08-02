@@ -6,7 +6,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:aturin_app/features/task/model/task_model.dart';
 
-
 class CalendarSectionWidget extends StatefulWidget {
   final DateTime selectedDate;
   final DateTime focusedDate;
@@ -16,6 +15,7 @@ class CalendarSectionWidget extends StatefulWidget {
   final Function(DateTime, DateTime) onDateSelected;
   final Function(DateTime) onPageChanged;
   final Function(CalendarFormat) onFormatChanged;
+  final DateTime? firstAllowedDate;
 
   const CalendarSectionWidget({
     super.key,
@@ -27,6 +27,7 @@ class CalendarSectionWidget extends StatefulWidget {
     required this.onDateSelected,
     required this.onPageChanged,
     required this.onFormatChanged,
+    this.firstAllowedDate,
   });
 
   @override
@@ -70,7 +71,8 @@ class _CalendarSectionWidgetState extends State<CalendarSectionWidget>
             viewTransitionAnimation: _viewTransitionAnimation,
             onNavigate: _navigatePeriod,
           ),
-          const SizedBox(height: 16),          InteractiveCalendarWidget(
+          const SizedBox(height: 16),
+          InteractiveCalendarWidget(
             selectedDate: widget.selectedDate,
             focusedDate: widget.focusedDate,
             calendarFormat: widget.calendarFormat,
@@ -82,6 +84,7 @@ class _CalendarSectionWidgetState extends State<CalendarSectionWidget>
             onPageChanged: widget.onPageChanged,
             onFormatChanged: widget.onFormatChanged,
             onSwitchFormat: _switchCalendarFormat,
+            firstAllowedDate: widget.firstAllowedDate,
           ),
           const SizedBox(height: 12),
           _buildCalendarIndicator(),
@@ -155,9 +158,10 @@ class _CalendarSectionWidgetState extends State<CalendarSectionWidget>
                 width: 40 + (_viewTransitionAnimation.value * 20),
                 height: 4 + (_viewTransitionAnimation.value * 1),
                 decoration: BoxDecoration(
-                  color: widget.calendarFormat == CalendarFormat.month
-                      ? const Color(0xFF5263F3).withOpacity(0.7)
-                      : Colors.grey[400],
+                  color:
+                      widget.calendarFormat == CalendarFormat.month
+                          ? const Color(0xFF5263F3).withOpacity(0.7)
+                          : Colors.grey[400],
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),

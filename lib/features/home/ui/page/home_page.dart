@@ -7,8 +7,8 @@ import 'package:aturin_app/core/services/api/activities/activity_api_service.dar
 import 'package:aturin_app/features/home/widget/greeting_header.dart';
 import 'package:aturin_app/features/home/widget/timeline_widget.dart';
 import 'package:aturin_app/features/home/widget/activity_card.dart';
-import 'package:aturin_app/features/home/widgets/home_widget_control_card.dart';
 import 'package:aturin_app/features/home/providers/home_widget_provider.dart';
+import 'package:aturin_app/features/home/services/widget_background_service.dart';
 import 'package:aturin_app/features/task/model/task_model.dart';
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
 import 'package:flutter/material.dart';
@@ -47,6 +47,40 @@ class _HomePageState extends State<HomePage> {
     
     // Check for widget navigation request
     _checkWidgetNavigation();
+    
+    // Check if app was opened from widget click
+    _checkWidgetLaunch();
+  }
+  
+  void _checkWidgetLaunch() {
+    // Check if app was opened from widget
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Auto-initialize dan update widget provider
+      final homeWidgetProvider = Provider.of<HomeWidgetProvider>(context, listen: false);
+      final globalState = Provider.of<GlobalStateService>(context, listen: false);
+      
+      // Initialize widget jika belum
+      if (!homeWidgetProvider.isInitialized) {
+        homeWidgetProvider.initialize();
+      }
+      
+      // Auto-update widget dengan data terbaru
+      final allActivities = globalState.allActivities;
+      final allTasks = globalState.allTasks;
+      
+      if (allActivities.isNotEmpty || allTasks.isNotEmpty) {
+        homeWidgetProvider.updateWidget(
+          activities: allActivities.map((a) => a.toMap()).toList(),
+          tasks: allTasks.map((t) => t.toMap()).toList(),
+        );
+        debugPrint('🏠 HomePage: Auto-updated widget with ${allActivities.length} activities, ${allTasks.length} tasks');
+      }
+      
+      // Use background service to check and update if needed
+      WidgetBackgroundService.checkAndUpdate(homeWidgetProvider);
+      
+      debugPrint('🏠 HomePage: Auto-initialized widget and updated data');
+    });
   }
   
   void _checkWidgetNavigation() {
@@ -68,18 +102,7 @@ class _HomePageState extends State<HomePage> {
               _selectedView = TaskViewType.aktivitas;
             });
             break;
-            
-          case 'open_schedule':
-            // Navigate ke halaman jadwal
-            break;
-            
-          case 'add_task':
-            // Navigate ke halaman tambah tugas
-            break;
-            
-          case 'add_activity':
-            // Navigate ke halaman tambah aktivitas
-            break;
+          
         }
         
         // Clear the pending navigation
@@ -136,8 +159,8 @@ class _HomePageState extends State<HomePage> {
                       fit: BoxFit.contain,
                     ),
                     
-                    // // Home Widget Control Card
-                    // const HomeWidgetControlCard(),
+                    // Home Widget Control Card
+                    //const HomeWidgetControlCard(),
                     
                     SizedBox(height: 2.h),
                     Row(
@@ -213,7 +236,7 @@ class _HomePageState extends State<HomePage> {
                                           globalState.onTasksChanged();
                                           // Update home widget ketika ada perubahan tugas
                                           final homeWidgetProvider = context.read<HomeWidgetProvider>();
-                                          homeWidgetProvider.onDataChanged();
+                                          await homeWidgetProvider.forceRefresh();
                                         }
                                       },
                                       onDelete: () async {
@@ -223,7 +246,7 @@ class _HomePageState extends State<HomePage> {
                                         globalState.onTasksChanged();
                                         // Update home widget ketika ada penghapusan tugas
                                         final homeWidgetProvider = context.read<HomeWidgetProvider>();
-                                        homeWidgetProvider.onDataChanged();
+                                        await homeWidgetProvider.forceRefresh();
                                       },                                      onToggleAlarm: () async {
                                         final success = await taskService.toggleTaskAlarmStatus(task.slug!);
                                         if (success) {
@@ -272,7 +295,7 @@ class _HomePageState extends State<HomePage> {
                                       },
                                       onDelete: () async {
                                         await activityService.deleteActivity(
-                                          activity.id!.toString(),
+                                          activity.slug!,
                                         );
                                         globalState.onActivitiesChanged();
                                       },

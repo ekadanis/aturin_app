@@ -48,15 +48,17 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
 
   void _initializeExistingAktivitas() async {
     final aktivitas = widget.existingAktivitas;
-    print('DEBUG: _initializeExistingAktivitas called, existingAktivitas: ${aktivitas != null ? 'NOT NULL' : 'NULL'}');
-    
+    print(
+      'DEBUG: _initializeExistingAktivitas called, existingAktivitas: ${aktivitas != null ? 'NOT NULL' : 'NULL'}',
+    );
+
     if (aktivitas != null) {
       activityTitle = aktivitas.activityTitle;
       selectedDate = aktivitas.activityDate;
       focusedDate = aktivitas.activityDate;
       startTime = TimeOfDay.fromDateTime(aktivitas.activityStartTime);
       endTime = TimeOfDay.fromDateTime(aktivitas.activityCompleteTime);
-      
+
       // Cari kategori yang sesuai dengan aktivitas yang sedang diedit
       try {
         selectedCategory = categories.firstWhere(
@@ -79,24 +81,32 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
     } else {
       // Untuk aktivitas baru, set default kategori ke "Akademik"
       selectedCategory = categories.firstWhere((c) => c.name == 'Akademik');
-      print('DEBUG: New activity, selectedCategory set to default: ${selectedCategory?.name}');
+      print(
+        'DEBUG: New activity, selectedCategory set to default: ${selectedCategory?.name}',
+      );
     }
   }
 
   Future<void> _loadAlarmData(int alarmId) async {
     try {
-      final aktivitasService = Provider.of<AktivitasService>(context, listen: false);
+      final aktivitasService = Provider.of<AktivitasService>(
+        context,
+        listen: false,
+      );
       // Use API service to get all alarms and find by ID since backend only supports slug-based endpoints
       final allAlarms = await aktivitasService.alarmApiService.getAllAlarms();
-      final alarmData = allAlarms.where((alarm) => alarm.id == alarmId).firstOrNull;
-      
+      final alarmData =
+          allAlarms.where((alarm) => alarm.id == alarmId).firstOrNull;
+
       if (alarmData != null && mounted) {
         setState(() {
           alarmDateTime = alarmData.alarmDateTime;
           // Set isAlarmEnabled based on the actual alarmEnabled field from the database
           isAlarmEnabled = alarmData.alarmEnabled;
         });
-        print('DEBUG: Loaded alarm data via API - alarmDateTime: ${alarmData.alarmDateTime}, alarmEnabled: ${alarmData.alarmEnabled}');
+        print(
+          'DEBUG: Loaded alarm data via API - alarmDateTime: ${alarmData.alarmDateTime}, alarmEnabled: ${alarmData.alarmEnabled}',
+        );
       } else {
         // If no alarm data found, set alarm as disabled
         setState(() {
@@ -145,6 +155,20 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
       category: selectedCategory?.name,
     );
 
+    if (widget.existingAktivitas == null) {
+      DateTime today = DateTime.now();
+      DateTime onlyToday = DateTime(today.year, today.month, today.day);
+
+      if (selectedDate.isBefore(onlyToday)) {
+        showCustomTopSnackbar(
+          context: context,
+          message: 'Tidak bisa menambahkan aktivitas di hari yang telah lewat.',
+          isError: true,
+        );
+        return; // Stop for new activities on past dates.
+      }
+    }
+
     setState(() {
       errors = validationResult.errors;
     });
@@ -190,7 +214,9 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
       pickedAlarmDateTime = alarmDateTime;
       print('DEBUG: Alarm enabled - pickedAlarmDateTime: $pickedAlarmDateTime');
     } else {
-      print('DEBUG: Alarm disabled - isAlarmEnabled: $isAlarmEnabled, alarmDateTime: $alarmDateTime');
+      print(
+        'DEBUG: Alarm disabled - isAlarmEnabled: $isAlarmEnabled, alarmDateTime: $alarmDateTime',
+      );
     }
 
     final schedule = AktivitasModel(
@@ -201,39 +227,55 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
       activityStartTime: startDateTime,
       activityCompleteTime: endDateTime, // Use original end time
       activityCategory: _getCategoryEnum(selectedCategory!.name),
-      alarmId: widget.existingAktivitas?.alarmId, // Keep existing alarmId for updates
-      slug: widget.existingAktivitas?.slug, // Preserve existing slug for updates
+      alarmId:
+          widget
+              .existingAktivitas
+              ?.alarmId, // Keep existing alarmId for updates
+      slug:
+          widget.existingAktivitas?.slug, // Preserve existing slug for updates
     );
 
     try {
-      final aktivitasService = Provider.of<AktivitasService>(context, listen: false);
-      
-      print('DEBUG: About to save aktivitas - isEdit: ${widget.existingAktivitas != null}, pickedAlarmDateTime: $pickedAlarmDateTime');
-      
-      if (widget.existingAktivitas != null && widget.existingAktivitas!.slug != null) {
+      final aktivitasService = Provider.of<AktivitasService>(
+        context,
+        listen: false,
+      );
+
+      print(
+        'DEBUG: About to save aktivitas - isEdit: ${widget.existingAktivitas != null}, pickedAlarmDateTime: $pickedAlarmDateTime',
+      );
+
+      if (widget.existingAktivitas != null &&
+          widget.existingAktivitas!.slug != null) {
         // Update existing activity with new alarm time using slug
-        print('DEBUG: Updating existing aktivitas with slug: ${widget.existingAktivitas!.slug}');
+        print(
+          'DEBUG: Updating existing aktivitas with slug: ${widget.existingAktivitas!.slug}',
+        );
         await aktivitasService.updateAktivitasBySlug(
           widget.existingAktivitas!.slug!,
           schedule,
-          pickedAlarmDateTime
+          pickedAlarmDateTime,
         );
         print('DEBUG: Successfully updated aktivitas');
       } else {
         // Create new activity with alarm time
         print('DEBUG: Creating new aktivitas');
-        final newSlug = await aktivitasService.addAktivitas(schedule, pickedAlarmDateTime);
+        final newSlug = await aktivitasService.addAktivitas(
+          schedule,
+          pickedAlarmDateTime,
+        );
         print('DEBUG: Successfully created aktivitas with slug: $newSlug');
       }
 
       if (mounted) {
         showCustomTopSnackbar(
           context: context,
-          message: widget.existingAktivitas != null
-              ? 'Aktivitas berhasil diperbarui'
-              : 'Aktivitas berhasil ditambahkan',
+          message:
+              widget.existingAktivitas != null
+                  ? 'Aktivitas berhasil diperbarui'
+                  : 'Aktivitas berhasil ditambahkan',
           isError: false,
-        );        // Small delay to show the snackbar before navigation
+        ); // Small delay to show the snackbar before navigation
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
             context.router.pushAndPopUntil(
@@ -257,17 +299,19 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
 
   @override
   Widget build(BuildContext context) {
-    final startDateTime = (startTime != null)
-        ? DateTime(
-            selectedDate.year,
-            selectedDate.month,
-            selectedDate.day,
-            startTime!.hour,
-            startTime!.minute,
-          )
-        : null;
+    final startDateTime =
+        (startTime != null)
+            ? DateTime(
+              selectedDate.year,
+              selectedDate.month,
+              selectedDate.day,
+              startTime!.hour,
+              startTime!.minute,
+            )
+            : null;
     return PopScope(
-      canPop: false,      onPopInvokedWithResult: (didPop, result) {
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         // Return false to indicate no data changes when going back without saving
         context.router.pop(false);
@@ -303,6 +347,7 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
                     calendarFormat = format;
                   });
                 },
+                firstAllowedDate: widget.existingAktivitas != null ? DateTime(2000) : DateTime.now(),
               ),
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -359,11 +404,14 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
                       selectedDate: selectedDate,
                       maxDate: startDateTime ?? selectedDate,
                       startTime: startTime,
-                      isEditing: widget.existingAktivitas != null, // Pass editing mode
+                      isEditing:
+                          widget.existingAktivitas != null, // Pass editing mode
                       onToggle: (value) {
                         setState(() {
                           isAlarmEnabled = value;
-                          if (value && alarmDateTime == null && startTime != null) {
+                          if (value &&
+                              alarmDateTime == null &&
+                              startTime != null) {
                             _updateAlarmTimeIfNeeded();
                           } else if (!value) {
                             alarmDateTime = null;
@@ -403,7 +451,7 @@ class _AddAktivitasPageState extends State<AddAktivitasPage> {
     if (endTime != null) {
       final startMinutes = newStartTime.hour * 60 + newStartTime.minute;
       final endMinutes = endTime!.hour * 60 + endTime!.minute;
-      
+
       if (endMinutes <= startMinutes) {
         final newEndTime = TimeOfDay(
           hour: (newStartTime.hour + 1) % 24,

@@ -222,15 +222,22 @@ class _TaskListScreenState extends State<TaskListScreen>
                                       }
                                     } else if (_selectedFilter ==
                                         'Belum Selesai') {
+                                      // Filter untuk belum selesai: ambil yang statusnya belum_selesai
+                                      // dan deadline masih di masa depan (tidak terlambat)
                                       final data = await taskApiService
                                           .getTasksByStatus('belum_selesai');
                                       if (data != null &&
                                           data['tasks'] != null) {
-                                        allTasks = List<Task>.from(
+                                        final allBelumSelesai = List<Task>.from(
                                           data['tasks'].map(
                                             (e) => Task.fromMap(e),
                                           ),
                                         );
+                                        // Filter out yang terlambat
+                                        final now = DateTime.now();
+                                        allTasks = allBelumSelesai
+                                            .where((task) => !task.deadline.isBefore(now))
+                                            .toList();
                                       }
                                     } else if (_selectedFilter == 'Selesai') {
                                       final data = await taskApiService

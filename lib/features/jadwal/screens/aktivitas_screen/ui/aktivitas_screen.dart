@@ -354,10 +354,10 @@ class _AktivitasPageState extends State<AktivitasPage> {
                             );
                           },
                           sectionTimeConfig: const [
-                            {'label': 'Pagi', 'start': 5, 'end': 10},
-                            {'label': 'Siang', 'start': 11, 'end': 14},
-                            {'label': 'Sore', 'start': 15, 'end': 18},
-                            {'label': 'Malam', 'start': 19, 'end': 4},
+                            {'label': 'Pagi (05:00 - 10:00)', 'start': 5, 'end': 10},
+                            {'label': 'Siang (11:00 - 14:00)', 'start': 11, 'end': 14},
+                            {'label': 'Sore (15:00 - 18:00)', 'start': 15, 'end': 18},
+                            {'label': 'Malam (19:00 - 04:00)', 'start': 19, 'end': 4},
                           ],
                         ),
                       );

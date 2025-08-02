@@ -24,6 +24,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController = TextEditingController();
+  bool _isValidationSnackbarActive = false;
 
   @override
   void dispose() {
@@ -115,13 +116,13 @@ class _RegisterPageState extends State<RegisterPage> {
                                       });
                                     } else {
                                       // Show error message
-                                      _showSnackBar(result.message);
+                                      _showThrottledSnackBar(result.message);
                                     }
                                   } catch (e) {
-                                    _showSnackBar('Terjadi kesalahan: ${e.toString()}');
+                                    _showThrottledSnackBar('Terjadi kesalahan: ${e.toString()}');
                                   }
                                 },
-                                onValidationError: _showSnackBar,
+                                onValidationError: _showThrottledSnackBar,
                               ),
 
                               SizedBox(height: 3.h),
@@ -155,6 +156,41 @@ class _RegisterPageState extends State<RegisterPage> {
   void _navigateToLogin() {
     // Replace Navigator.pushReplacement with auto_route navigation
     context.router.replace(const LoginRoute());
+  }
+
+  void _showThrottledSnackBar(String message) {
+    // 1. If a validation snackbar is already visible, do nothing.
+    if (_isValidationSnackbarActive) return;
+
+    // 2. Set the flag to true and clear any previous snackbars.
+    setState(() => _isValidationSnackbarActive = true);
+    ScaffoldMessenger.of(context).clearSnackBars();
+
+    // 3. Show the snackbar and wait for it to close.
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+          SnackBar(
+            content: Text(
+              message,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13.sp,
+                color: Colors.white,
+              ),
+            ),
+            backgroundColor: AppTheme.lightErrorColor,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(4.w),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            duration: const Duration(seconds: 3),
+          ),
+        )
+        .closed // This future completes when the snackbar is gone
+        .then((_) {
+          // 4. When it closes, reset the flag.
+          if (mounted) {
+            setState(() => _isValidationSnackbarActive = false);
+          }
+        });
   }
 
   void _showSnackBar(String message) {

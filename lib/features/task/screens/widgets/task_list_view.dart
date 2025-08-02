@@ -58,16 +58,20 @@ class _TaskListViewState extends State<TaskListView>
 
   // Filter tasks based on current filter
   List<Task> _filterTasks(List<Task> allTasks) {
+    final now = DateTime.now();
+    
     if (widget.currentFilter == 'Semua') {
       List<Task> tasks = List.from(allTasks);
       tasks.sort(_compareTasksByPriority);
       return tasks;
     } else if (widget.currentFilter == 'Terlambat') {
-      final now = DateTime.now();
       return allTasks.where((task) => 
         task.deadline.isBefore(now) && !task.isCompleted).toList();
     } else if (widget.currentFilter == 'Belum Selesai') {
-      return allTasks.where((task) => !task.isCompleted).toList();
+      // Hanya tampilkan tugas yang belum selesai DAN tidak terlambat
+      return allTasks.where((task) => 
+        !task.isCompleted && !task.deadline.isBefore(now)).toList()
+        ..sort((a, b) => a.deadline.compareTo(b.deadline));
     } else if (widget.currentFilter == 'Selesai') {
       return allTasks.where((task) => task.isCompleted).toList();
     }
@@ -76,16 +80,17 @@ class _TaskListViewState extends State<TaskListView>
 
   // Task sorting method based on priority order:
   // 1. Hari ini (Today)
-  // 2. ... hari lagi (Future tasks)
-  // 3. Terlambat (Overdue) 
-  // 4. Selesai (Completed)
+  // 2. Besok (Tomorrow) 
+  // 3. Upcoming (Future tasks)
+  // 4. Terlambat (Overdue) - hanya untuk filter "Semua"
+  // 5. Selesai (Completed)
   int _compareTasksByPriority(Task a, Task b) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     
     // Get priority for each task
-    final priorityA = _getTaskPriority(a, today);
-    final priorityB = _getTaskPriority(b, today);
+    final priorityA = _getTaskPriority(a, today, now);
+    final priorityB = _getTaskPriority(b, today, now);
     
     // Sort by priority first
     if (priorityA != priorityB) {
@@ -96,9 +101,9 @@ class _TaskListViewState extends State<TaskListView>
     return a.deadline.compareTo(b.deadline);
   }
   
-  int _getTaskPriority(Task task, DateTime today) {
-    // Completed tasks have lowest priority (4)
-    if (task.isCompleted) return 4;
+  int _getTaskPriority(Task task, DateTime today, DateTime now) {
+    // Completed tasks have lowest priority (5)
+    if (task.isCompleted) return 5;
     
     final taskDate = DateTime(
       task.deadline.year, 
@@ -109,11 +114,17 @@ class _TaskListViewState extends State<TaskListView>
     // Today's tasks have highest priority (1)
     if (taskDate.isAtSameMomentAs(today)) return 1;
     
-    // Overdue tasks have priority 3
-    if (taskDate.isBefore(today)) return 3;
+    // Tomorrow's tasks have priority 2
+    final tomorrow = today.add(const Duration(days: 1));
+    if (taskDate.isAtSameMomentAs(tomorrow)) return 2;
     
-    // Future tasks have priority 2
-    return 2;
+    // Future tasks have priority 3
+    if (taskDate.isAfter(today)) return 3;
+    
+    // Overdue tasks have priority 4 (hanya untuk filter "Semua")
+    if (taskDate.isBefore(today)) return 4;
+    
+    return 3; // default untuk upcoming
   }
 
   @override
@@ -206,7 +217,6 @@ class _TaskListViewState extends State<TaskListView>
           task: task,
           currentFilter: widget.currentFilter,
           showCheckbox: !isSelesai,
-          showPopupMenu: !isSelesai,
           onToggleCompletion: isSelesai
               ? () {}
               : () async {
@@ -241,13 +251,13 @@ class _TaskListViewState extends State<TaskListView>
                       showCustomTopSnackbar(
                         context: context,
                         message: task.isCompleted 
-                            ? 'Task dikembalikan ke status belum selesai'
-                            : 'Task berhasil diselesaikan!',
+                            ? 'Tugas dikembalikan ke status belum selesai'
+                            : 'Tugas berhasil diselesaikan!',
                         isError: false,
                       );
 
                       if (widget.onShowSuccess != null) {
-                        widget.onShowSuccess!('Task status updated');
+                        widget.onShowSuccess!('Status tugas berhasil diperbarui');
                       }
                     } else {
                       showCustomTopSnackbar(
@@ -264,7 +274,7 @@ class _TaskListViewState extends State<TaskListView>
                     if (mounted) {
                       showCustomTopSnackbar(
                         context: context,
-                        message: 'Error: $e',
+                        message: 'Terjadi kesalahan: $e',
                         isError: true,
                       );
                       setState(() {
@@ -302,7 +312,7 @@ class _TaskListViewState extends State<TaskListView>
               if (mounted) {
                 showCustomTopSnackbar(
                   context: context,
-                  message: 'Error deleting task: $e',
+                  message: 'Gagal menghapus tugas: $e',
                   isError: true,
                 );
               }
@@ -320,7 +330,7 @@ class _TaskListViewState extends State<TaskListView>
               await taskApiService.fetchTasks(forceRefresh: true);
 
               if (widget.onShowSuccess != null) {
-                widget.onShowSuccess!('Alarm updated successfully');
+                widget.onShowSuccess!('Alarm berhasil diperbarui');
               }
             } catch (e) {
               debugPrint('Error refreshing tasks after alarm toggle: $e');

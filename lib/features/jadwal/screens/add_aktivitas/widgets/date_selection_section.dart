@@ -10,6 +10,7 @@ class DateSelectionSection extends StatelessWidget {
   final Function(DateTime selectedDay, DateTime focusedDay) onDateSelected;
   final Function(DateTime focusedDay) onPageChanged;
   final Function(CalendarFormat format) onFormatChanged;
+  final DateTime? firstAllowedDate;
 
   const DateSelectionSection({
     super.key,
@@ -19,6 +20,7 @@ class DateSelectionSection extends StatelessWidget {
     required this.onDateSelected,
     required this.onPageChanged,
     required this.onFormatChanged,
+    this.firstAllowedDate,
   });
 
   @override
@@ -46,6 +48,7 @@ class DateSelectionSection extends StatelessWidget {
           onDateSelected: onDateSelected,
           onPageChanged: onPageChanged,
           onFormatChanged: onFormatChanged,
+          firstAllowedDate: firstAllowedDate, 
         ),
       ],
     );

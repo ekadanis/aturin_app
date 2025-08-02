@@ -57,8 +57,82 @@ class ProfileService extends ChangeNotifier {
     debugPrint('🗄️ Cache: Semua cache terkait profil telah dibersihkan');
   }
 
+  // Public method to reset all profile data (untuk logout)
+  // Public method to reset ALL app data (untuk logout)
+  // Public method to reset ALL app data (untuk logout)
+    // Public method to reset ALL app data (untuk logout)
+  Future<void> clearAllAppCache() async {
+    // Reset internal state
+    _currentUser = null;
+    _isGlobalAlarmEnabled = null;
+    _dataChanged = true;
+    
+    // Daftar semua cache keys yang ingin dibersihkan dari CacheManager
+    final cacheKeysToRemove = [
+      // Profile related
+      'user_profile',
+      'global_alarm_setting',
+      'profile_cache',
+      'profile_banner_cache',
+      
+      // Task related
+      'tasks_cache',
+      'completed_tasks_cache',
+      'uncompleted_tasks_cache',
+      'overdue_tasks_cache',
+      'all_tasks_cache',
+      
+      // Activity related
+      'activities_cache',
+      'today_activities_cache',
+      'activity_categories_cache',
+      
+      // Home widget related
+      'widget_data_cache',
+      'home_widget_cache',
+      
+      // Other app caches
+      'app_settings_cache',
+      'notification_cache',
+      'theme_cache',
+    ];
+    
+    // Clear individual cache keys dari CacheManager
+    try {
+      await _cacheService.removeMultipleData(cacheKeysToRemove);
+    } catch (e) {
+      debugPrint('⚠️ Error removing individual cache: $e');
+    }
+    
+    // Clear semua cache di CacheManager
+    try {
+      await _cacheService.clearAll();
+    } catch (e) {
+      debugPrint('⚠️ CacheService clearAll error: $e');
+    }
+    
+    // Untuk SharedPreferences, hanya hapus cache-related, bukan auth data
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final keysToRemoveFromPrefs = [
+        'global_alarm_enabled', // Setting alarm disimpan di SharedPreferences
+      ];
+      
+      for (String key in keysToRemoveFromPrefs) {
+        if (await prefs.containsKey(key)) {
+          await prefs.remove(key);
+          debugPrint('🗑️ Removed from SharedPreferences: $key');
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ Error clearing SharedPreferences cache: $e');
+    }
+    
+    notifyListeners();
+    debugPrint('🧹 ProfileService: SEMUA cache aplikasi telah dibersihkan!');
+  }
   Future<User?> me({bool forceRefresh = false}) async {
-    // Check if cache is valid and data hasn't changed
+    // Jika forceRefresh=true, langsung ambil dari server tanpa cek cache
     if (!forceRefresh && !_dataChanged && await _cacheService.isCacheValid(_profileCacheKey)) {
       try {
         final cachedData = await _cacheService.getData(_profileCacheKey);
@@ -74,13 +148,14 @@ class ProfileService extends ChangeNotifier {
       }
     }
 
+    // Ambil data fresh dari server
     debugPrint('🗄️ Cache: Mengambil data profil dari server (forceRefresh=$forceRefresh)');
     try {
       _setLoading(true);
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString(
-        'token',
-      ); // Ambil token yang disimpan saat login
+      final token = prefs.getString('token');
+
+      debugPrint('🔑 Token: ${token != null ? "Token ditemukan" : "Token TIDAK ditemukan"}');
 
       if (token == null) {
         _setError("Token tidak ditemukan.");
@@ -97,8 +172,8 @@ class ProfileService extends ChangeNotifier {
         },
       );
 
-      debugPrint('Profile response status: ${response.statusCode}');
-      debugPrint('Profile response body: ${response.body}');
+      debugPrint('🌐 Profile API response status: ${response.statusCode}');
+      debugPrint('🌐 Profile API response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -110,13 +185,14 @@ class ProfileService extends ChangeNotifier {
         }
 
         final userData = responseData['data'];
+        debugPrint('📦 User data dari server: Name=${userData['name']}, Email=${userData['email']}');
 
         final user = User(
           id: userData['id'],
           name: userData['name'],
           email: userData['email'],
           avatar: userData['avatar'] ?? 'assets/avatars/profile1.jpg',
-          slug: userData['slug'] ??  '',
+          slug: userData['slug'] ?? '',
           createdAt:
               userData['created_at'] != null
                   ? DateTime.tryParse(userData['created_at'])
@@ -127,35 +203,40 @@ class ProfileService extends ChangeNotifier {
                   : null,
         );
 
-        // Save to cache
-        await _cacheService.saveData(
-          key: _profileCacheKey,
-          data: user.toJson(),
-          maxAge: _cacheValidityDuration,
-        );
+        debugPrint('✅ User object dibuat: Name=${user.name}, Email=${user.email}');
+
+        // Save to cache hanya jika bukan forceRefresh
+        if (!forceRefresh) {
+          await _cacheService.saveData(
+            key: _profileCacheKey,
+            data: user.toJson(),
+            maxAge: _cacheValidityDuration,
+          );
+        }
         
         _currentUser = user;
         _dataChanged = false;
         notifyListeners();
         return user;
       } else {
+        debugPrint('❌ Profile API Error: Status ${response.statusCode}');
         _setError("Gagal mengambil profil (Status: ${response.statusCode})");
         return null;
       }
     } catch (e) {
+      debugPrint('❌ Profile API Exception: $e');
       _setError("Terjadi kesalahan: $e");
       return null;
     } finally {
       _setLoading(false);
     }
   }
+
   Future<User?> editProfile(String name, String avatar) async {
     try {
       _setLoading(true);
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString(
-        'token',
-      ); // Ambil token yang disimpan saat login
+      final token = prefs.getString('token');
 
       if (token == null) {
         _setError("Token tidak ditemukan.");
@@ -192,7 +273,7 @@ class ProfileService extends ChangeNotifier {
           name: userData['name'],
           email: '', // atau gunakan default / kosong jika tidak tersedia
           avatar: userData['avatar'] ?? 'assets/avatars/profile1.jpg',
-          slug: userData['slug'] ??  '',
+          slug: userData['slug'] ?? '',
           createdAt: DateTime.tryParse(userData['created_at'] ?? ''),
           updatedAt: DateTime.tryParse(userData['updated_at'] ?? ''),
         );
@@ -211,13 +292,13 @@ class ProfileService extends ChangeNotifier {
     } finally {
       _setLoading(false);
     }
-  }  Future<User?> getBannerProfile() async {
+  }
+
+  Future<User?> getBannerProfile() async {
     try {
       _setLoading(true);
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString(
-        'token',
-      ); // Ambil token yang disimpan saat login
+      final token = prefs.getString('token');
 
       debugPrint('getBannerProfile: Checking token...');
       if (token == null) {
@@ -260,7 +341,7 @@ class ProfileService extends ChangeNotifier {
           name: userData['name'],
           email: userData['email'] ?? '',
           avatar: userData['avatar'] ?? 'assets/avatars/profile1.jpg',
-          slug: userData['slug'] ??  '',
+          slug: userData['slug'] ?? '',
           createdAt: null,
           updatedAt: null,
         );
@@ -380,5 +461,4 @@ class ProfileService extends ChangeNotifier {
       _setLoading(false);
     }
   }
-
 }
