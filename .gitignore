@@ -46,3 +46,9 @@ app.*.map.json
 
 #VS Code settings
 .vscode/*
+
+# Flutter plugin registrants (generated)
+linux/flutter/generated_plugin_registrant.*
+macos/Flutter/GeneratedPluginRegistrant.*
+windows/flutter/generated_plugin_registrant.*
+**/generated_plugins.cmake
