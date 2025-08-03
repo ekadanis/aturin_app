@@ -146,142 +146,139 @@ class _TaskListScreenState extends State<TaskListScreen>
           bottomNavigationBar: const BottomNavbar(currentIndex: 2),
           body: SafeArea(
             bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: NotificationListener<ScrollNotification>(
-                onNotification: (notification) {
-                  return false;
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Transform.translate(
-                      offset: const Offset(0, -8),
-                      child: FilterTabs(
-                        filters: _filters,
-                        selectedFilter: _selectedFilter,
-                        overdueTasksCount: _overdueTasksCount,
-                        onFilterSelected: (filter) async {
-                          setState(() {
-                            _selectedFilter = filter;
-                          });
-                          // Refresh data when filter changes
-                          final taskService = Provider.of<TaskApiService>(
-                            context,
-                            listen: false,
-                          );
-                          await taskService.fetchTasks(forceRefresh: true);
-                        },
-                      ),
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                return false;
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Transform.translate(
+                    offset: const Offset(0, -8),
+                    child: FilterTabs(
+                      filters: _filters,
+                      selectedFilter: _selectedFilter,
+                      overdueTasksCount: _overdueTasksCount,
+                      onFilterSelected: (filter) async {
+                        setState(() {
+                          _selectedFilter = filter;
+                        });
+                        // Refresh data when filter changes
+                        final taskService = Provider.of<TaskApiService>(
+                          context,
+                          listen: false,
+                        );
+                        await taskService.fetchTasks(forceRefresh: true);
+                      },
                     ),
-                    Expanded(
-                      child: Consumer<TaskApiService>(
-                        builder: (context, taskApiService, child) {
-                          // Trigger refresh ketika Consumer di-rebuild
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (mounted) {
+                  ),
+                  Expanded(
+                    child: Consumer<TaskApiService>(
+                      builder: (context, taskApiService, child) {
+                        // Trigger refresh ketika Consumer di-rebuild
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) {
+                            _refreshData();
+                          }
+                        });
+            
+                        return RefreshIndicator(
+                          onRefresh: _refreshData,
+                          child: TaskListView(
+                            currentFilter: _selectedFilter,
+                            onShowSuccess: (message) {
+                              // Refresh all data including overdue count and task list
                               _refreshData();
-                            }
-                          });
-
-                          return RefreshIndicator(
-                            onRefresh: _refreshData,
-                            child: TaskListView(
-                              currentFilter: _selectedFilter,
-                              onShowSuccess: (message) {
-                                // Refresh all data including overdue count and task list
-                                _refreshData();
-                                showCustomTopSnackbar(
-                                  context: context,
-                                  message: message,
-                                );
-                              },
-                              onTapTask: (task) {
-                                safeOnTap(() async {
-                                  final taskApiService =
-                                      Provider.of<TaskApiService>(
-                                        context,
-                                        listen: false,
-                                      );
-                                  List<Task> allTasks = [];
-                                  int taskIndex = 0;
-                                  try {
-                                    if (_selectedFilter == 'Semua') {
-                                      allTasks =
-                                          await taskApiService.getAllTasks();
-                                    } else if (_selectedFilter == 'Terlambat') {
-                                      final data = await taskApiService
-                                          .getTasksByStatus('terlambat');
-                                      if (data != null &&
-                                          data['tasks'] != null) {
-                                        allTasks = List<Task>.from(
-                                          data['tasks'].map(
-                                            (e) => Task.fromMap(e),
-                                          ),
-                                        );
-                                      }
-                                    } else if (_selectedFilter ==
-                                        'Belum Selesai') {
-                                      // Filter untuk belum selesai: ambil yang statusnya belum_selesai
-                                      // dan deadline masih di masa depan (tidak terlambat)
-                                      final data = await taskApiService
-                                          .getTasksByStatus('belum_selesai');
-                                      if (data != null &&
-                                          data['tasks'] != null) {
-                                        final allBelumSelesai = List<Task>.from(
-                                          data['tasks'].map(
-                                            (e) => Task.fromMap(e),
-                                          ),
-                                        );
-                                        // Filter out yang terlambat
-                                        final now = DateTime.now();
-                                        allTasks = allBelumSelesai
-                                            .where((task) => !task.deadline.isBefore(now))
-                                            .toList();
-                                      }
-                                    } else if (_selectedFilter == 'Selesai') {
-                                      final data = await taskApiService
-                                          .getTasksByStatus('selesai');
-                                      if (data != null &&
-                                          data['tasks'] != null) {
-                                        allTasks = List<Task>.from(
-                                          data['tasks'].map(
-                                            (e) => Task.fromMap(e),
-                                          ),
-                                        );
-                                      }
-                                    }
-                                    taskIndex = allTasks.indexWhere(
-                                      (t) => t.id == task.id,
+                              showCustomTopSnackbar(
+                                context: context,
+                                message: message,
+                              );
+                            },
+                            onTapTask: (task) {
+                              safeOnTap(() async {
+                                final taskApiService =
+                                    Provider.of<TaskApiService>(
+                                      context,
+                                      listen: false,
                                     );
-                                    if (taskIndex == -1) taskIndex = 0;
-                                  } catch (e) {
-                                    allTasks = [task];
-                                    taskIndex = 0;
+                                List<Task> allTasks = [];
+                                int taskIndex = 0;
+                                try {
+                                  if (_selectedFilter == 'Semua') {
+                                    allTasks =
+                                        await taskApiService.getAllTasks();
+                                  } else if (_selectedFilter == 'Terlambat') {
+                                    final data = await taskApiService
+                                        .getTasksByStatus('terlambat');
+                                    if (data != null &&
+                                        data['tasks'] != null) {
+                                      allTasks = List<Task>.from(
+                                        data['tasks'].map(
+                                          (e) => Task.fromMap(e),
+                                        ),
+                                      );
+                                    }
+                                  } else if (_selectedFilter ==
+                                      'Belum Selesai') {
+                                    // Filter untuk belum selesai: ambil yang statusnya belum_selesai
+                                    // dan deadline masih di masa depan (tidak terlambat)
+                                    final data = await taskApiService
+                                        .getTasksByStatus('belum_selesai');
+                                    if (data != null &&
+                                        data['tasks'] != null) {
+                                      final allBelumSelesai = List<Task>.from(
+                                        data['tasks'].map(
+                                          (e) => Task.fromMap(e),
+                                        ),
+                                      );
+                                      // Filter out yang terlambat
+                                      final now = DateTime.now();
+                                      allTasks = allBelumSelesai
+                                          .where((task) => !task.deadline.isBefore(now))
+                                          .toList();
+                                    }
+                                  } else if (_selectedFilter == 'Selesai') {
+                                    final data = await taskApiService
+                                        .getTasksByStatus('selesai');
+                                    if (data != null &&
+                                        data['tasks'] != null) {
+                                      allTasks = List<Task>.from(
+                                        data['tasks'].map(
+                                          (e) => Task.fromMap(e),
+                                        ),
+                                      );
+                                    }
                                   }
-
-                                  if (!mounted) return;
-
-                                  final result = await context.router.push(
-                                    TaskDetailListRoute(
-                                      tasks: allTasks,
-                                      initialIndex: taskIndex,
-                                    ),
+                                  taskIndex = allTasks.indexWhere(
+                                    (t) => t.id == task.id,
                                   );
-                                  if (result == true) {
-                                    _fetchOverdueCount();
-                                  }
-                                });
-                              },
-                            ),
-                          );
-                        },
-                      ),
+                                  if (taskIndex == -1) taskIndex = 0;
+                                } catch (e) {
+                                  allTasks = [task];
+                                  taskIndex = 0;
+                                }
+            
+                                if (!mounted) return;
+            
+                                final result = await context.router.push(
+                                  TaskDetailListRoute(
+                                    tasks: allTasks,
+                                    initialIndex: taskIndex,
+                                  ),
+                                );
+                                if (result == true) {
+                                  _fetchOverdueCount();
+                                }
+                              });
+                            },
+                          ),
+                        );
+                      },
                     ),
-                    // Spacer agar konten tidak ketutupan bottom nav
-                    SizedBox(height: bottomNavHeight + 24),
-                  ],
-                ),
+                  ),
+                  // Spacer agar konten tidak ketutupan bottom nav
+                  SizedBox(height: bottomNavHeight + 24),
+                ],
               ),
             ),
           ),

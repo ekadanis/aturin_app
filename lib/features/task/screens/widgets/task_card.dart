@@ -21,6 +21,7 @@ class TaskCard extends StatefulWidget {
   final bool showCheckbox;
   final bool showStatus;
   final bool showPopupMenu;
+   final bool removeMargin;
 
   const TaskCard({
     Key? key,
@@ -30,9 +31,11 @@ class TaskCard extends StatefulWidget {
     required this.onViewDetails,
     required this.onToggleAlarm,
     required this.currentFilter,
+      required this.removeMargin,
     this.showCheckbox = true, // default aktif
     this.showStatus = true, // default aktif
     this.showPopupMenu = true, // <-- tambahkan ini
+  
   }) : super(key: key);
 
   @override
@@ -97,7 +100,9 @@ class _TaskCardState extends State<TaskCard> {
       },
       child: Container(
         key: ValueKey(widget.task.id),
-        margin: EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 3.w),
+         margin: widget.removeMargin 
+            ? EdgeInsets.zero 
+            : EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 3.w),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),

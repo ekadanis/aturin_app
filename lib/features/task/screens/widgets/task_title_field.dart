@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:aturin_app/core/theme/app_theme.dart';
-
+import 'package:google_fonts/google_fonts.dart';
 class TaskTitleField extends StatefulWidget {
   final TextEditingController controller;
   final int currentWordCount;
@@ -43,8 +43,29 @@ class _TaskTitleFieldState extends State<TaskTitleField> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Row(
+          children: [
+             Text(
+              'Judul Tugas',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            const Text(
+              ' *',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.red,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
         TextFormField(
           controller: widget.controller,
           focusNode: _focusNode,
@@ -70,9 +91,12 @@ class _TaskTitleFieldState extends State<TaskTitleField> {
         ),
         Padding(
           padding: const EdgeInsets.only(top: 4, right: 4),
-          child: Text(
-            '${widget.currentWordCount}/20 karakter',
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              '${widget.currentWordCount}/20 karakter',
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
           ),
         ),
       ],

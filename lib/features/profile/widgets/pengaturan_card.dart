@@ -107,7 +107,7 @@ class _PengaturanCardState extends State<PengaturanCard> {
           width: 1,
         ),
       ),
-      margin: const EdgeInsets.all(16),
+      //margin: const EdgeInsets.all(8),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(

@@ -11,26 +11,23 @@ class LogoutButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: SizedBox(
-        width: double.infinity, // agar tombol selebar layar (dengan padding 16)
-        height: 48,
-        child: ElevatedButton(
-          onPressed: onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.red,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: Text(
-            'Keluar',
-            style: GoogleFonts.plusJakartaSans(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+        ),
+        child: Text(
+          'Keluar',
+          style: GoogleFonts.plusJakartaSans(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),

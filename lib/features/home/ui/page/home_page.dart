@@ -38,62 +38,75 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     debugPrint('🏠 HomePage: initState() called');
     homeService = Provider.of<HomeService>(context, listen: false);
-    
+
     // Note: fetchData() is already called by DataPrefetchGuard before navigation
     // so we don't need to call it again here to avoid duplicate API calls
     debugPrint(
       '🏠 HomePage: Skipping fetchData() - already called by DataPrefetchGuard',
     );
-    
+
     // Check for widget navigation request
     _checkWidgetNavigation();
-    
+
     // Check if app was opened from widget click
     _checkWidgetLaunch();
   }
-  
+
   void _checkWidgetLaunch() {
     // Check if app was opened from widget
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Auto-initialize dan update widget provider
-      final homeWidgetProvider = Provider.of<HomeWidgetProvider>(context, listen: false);
-      final globalState = Provider.of<GlobalStateService>(context, listen: false);
-      
+      final homeWidgetProvider = Provider.of<HomeWidgetProvider>(
+        context,
+        listen: false,
+      );
+      final globalState = Provider.of<GlobalStateService>(
+        context,
+        listen: false,
+      );
+
       // Initialize widget jika belum
       if (!homeWidgetProvider.isInitialized) {
         homeWidgetProvider.initialize();
       }
-      
+
       // Auto-update widget dengan data terbaru
       final allActivities = globalState.allActivities;
       final allTasks = globalState.allTasks;
-      
+
       if (allActivities.isNotEmpty || allTasks.isNotEmpty) {
         homeWidgetProvider.updateWidget(
           activities: allActivities.map((a) => a.toMap()).toList(),
           tasks: allTasks.map((t) => t.toMap()).toList(),
         );
-        debugPrint('🏠 HomePage: Auto-updated widget with ${allActivities.length} activities, ${allTasks.length} tasks');
+        debugPrint(
+          '🏠 HomePage: Auto-updated widget with ${allActivities.length} activities, ${allTasks.length} tasks',
+        );
       }
-      
+
       // Use background service to check and update if needed
       WidgetBackgroundService.checkAndUpdate(homeWidgetProvider);
-      
+
       debugPrint('🏠 HomePage: Auto-initialized widget and updated data');
     });
   }
-  
+
   void _checkWidgetNavigation() {
     // Delayed to ensure context is ready
     Future.delayed(const Duration(milliseconds: 500), () {
       if (!mounted) return;
-      
-      final homeWidgetProvider = Provider.of<HomeWidgetProvider>(context, listen: false);
+
+      final homeWidgetProvider = Provider.of<HomeWidgetProvider>(
+        context,
+        listen: false,
+      );
       final pendingNavigation = homeWidgetProvider.pendingNavigation;
-      
+
       if (pendingNavigation != null) {
-        debugPrint('🏠 HomePage: Processing widget navigation: $pendingNavigation');
-        
+        debugPrint(
+          '🏠 HomePage: Processing widget navigation: $pendingNavigation',
+        );
+
         // Handle different navigation requests
         switch (pendingNavigation) {
           case 'view_schedule':
@@ -102,9 +115,8 @@ class _HomePageState extends State<HomePage> {
               _selectedView = TaskViewType.aktivitas;
             });
             break;
-          
         }
-        
+
         // Clear the pending navigation
         homeWidgetProvider.clearPendingNavigation();
       }
@@ -122,7 +134,8 @@ class _HomePageState extends State<HomePage> {
         appBar: GreetingHeader(),
         // Mengaktifkan extendBody agar body dapat memperluas hingga di bawah bottom navigation bar
         extendBody: true,
-        bottomNavigationBar: const BottomNavbar(currentIndex: 0),        body: Consumer4<
+        bottomNavigationBar: const BottomNavbar(currentIndex: 0),
+        body: Consumer4<
           GlobalStateService,
           HomeService,
           TaskService,
@@ -158,10 +171,9 @@ class _HomePageState extends State<HomePage> {
                       width: 100.w,
                       fit: BoxFit.contain,
                     ),
-                    
+
                     // Home Widget Control Card
                     //const HomeWidgetControlCard(),
-                    
                     SizedBox(height: 2.h),
                     Row(
                       children: [
@@ -230,13 +242,18 @@ class _HomePageState extends State<HomePage> {
                                       task: task,
                                       index: index,
                                       isLast: isLast,
-                                      previousIsFlagged: previousIsFlagged,                                      onToggleCompletion: () async {
-                                        final success = await taskService.toggleTaskCompletion(task.slug);
+                                      previousIsFlagged: previousIsFlagged,
+                                      onToggleCompletion: () async {
+                                        final success = await taskService
+                                            .toggleTaskCompletion(task.slug);
                                         if (success) {
                                           globalState.onTasksChanged();
                                           // Update home widget ketika ada perubahan tugas
-                                          final homeWidgetProvider = context.read<HomeWidgetProvider>();
-                                          await homeWidgetProvider.forceRefresh();
+                                          final homeWidgetProvider =
+                                              context
+                                                  .read<HomeWidgetProvider>();
+                                          await homeWidgetProvider
+                                              .forceRefresh();
                                         }
                                       },
                                       onDelete: () async {
@@ -245,10 +262,13 @@ class _HomePageState extends State<HomePage> {
                                         );
                                         globalState.onTasksChanged();
                                         // Update home widget ketika ada penghapusan tugas
-                                        final homeWidgetProvider = context.read<HomeWidgetProvider>();
+                                        final homeWidgetProvider =
+                                            context.read<HomeWidgetProvider>();
                                         await homeWidgetProvider.forceRefresh();
-                                      },                                      onToggleAlarm: () async {
-                                        final success = await taskService.toggleTaskAlarmStatus(task.slug!);
+                                      },
+                                      onToggleAlarm: () async {
+                                        final success = await taskService
+                                            .toggleTaskAlarmStatus(task.slug!);
                                         if (success) {
                                           globalState.onTasksChanged();
                                         }

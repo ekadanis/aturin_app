@@ -216,7 +216,9 @@ class _TaskListViewState extends State<TaskListView>
         child: TaskCard(
           task: task,
           currentFilter: widget.currentFilter,
+            removeMargin: true,
           showCheckbox: !isSelesai,
+        
           onToggleCompletion: isSelesai
               ? () {}
               : () async {

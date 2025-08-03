@@ -304,7 +304,5 @@ class TaskDetailCard extends StatelessWidget {
         
       ),
     );
-
-    // Isi (fill
   }
 }

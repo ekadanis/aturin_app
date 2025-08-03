@@ -83,6 +83,7 @@ class TimelineWidget extends StatelessWidget {
           onViewDetails: onViewDetails,
           onToggleAlarm: onToggleAlarm,
           showCheckbox: false,
+          removeMargin: false,
         ),
       ),
     );

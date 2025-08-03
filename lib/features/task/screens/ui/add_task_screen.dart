@@ -391,7 +391,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     showCustomTopSnackbar(context: context, message: message, isError: true);
   }
 
-
   // Event Handlers
   Future<void> _onDeadlineChanged() async {
     final result = await showDeadlinePickerBottomSheet(context);
@@ -557,12 +556,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               onTap: _onCategoryChanged,
               error: _errors['category'],
             ),
-            const SizedBox(height: 32),            // Alarm Configuration
+            const SizedBox(height: 32), // Alarm Configuration
             AlarmConfigurationSection(
               isEnabled: _isAlarmEnabled,
               alarmDateTime: _alarmDateTime,
               selectedDate: _deadline ?? DateTime.now(),
-              maxDate: _deadline ?? DateTime.now(), // Gunakan deadline sebagai maxDate
+              maxDate:
+                  _deadline ??
+                  DateTime.now(), // Gunakan deadline sebagai maxDate
               startTime:
                   _deadline != null ? TimeOfDay.fromDateTime(_deadline!) : null,
               isEditing: widget.existingTask != null, // Pass editing mode
@@ -593,9 +594,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         TextFormField(
           controller: _descriptionController,
           maxLines: 4,
-          maxLength: 200,
+          maxLength: 50,
           decoration: InputDecoration(
-            hintText: 'Tambahkan deskripsi tugas (maksimal 200 karakter)',
+            hintText: 'Tambahkan deskripsi tugas (maksimal 50 karakter)',
             hintStyle: GoogleFonts.plusJakartaSans(
               fontSize: 14,
               color: Colors.grey[500],
@@ -634,7 +635,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Text(
-              '$_currentDescriptionWordCount/200 karakter',
+              '$_currentDescriptionWordCount/50 karakter',
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 12,
                 color:

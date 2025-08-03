@@ -44,13 +44,25 @@ class _ActivityNameFieldState extends State<ActivityNameField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Nama aktivitas',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Colors.black,
-          ),
+        Row(
+          children: [
+            Text(
+              'Nama aktivitas',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
+              ),
+            ),
+            Text(
+              ' *',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.red,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         TextFormField(
@@ -120,13 +132,25 @@ class TimeField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Colors.black,
-          ),
+        Row(
+          children: [
+            Text(
+              title,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
+              ),
+            ),
+            Text(
+              ' *',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.red,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         GestureDetector(
@@ -192,13 +216,25 @@ class CategorySelectionField extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Kategori',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black,
-                ),
+              Row(
+                children: [
+                  Text(
+                    'Kategori',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                    ),
+                  ),
+                  Text(
+                    ' *',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.red,
+                    ),
+                  ),
+                ],
               ),
               Row(
                 children: [
