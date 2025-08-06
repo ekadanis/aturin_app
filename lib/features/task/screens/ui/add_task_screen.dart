@@ -17,6 +17,7 @@ import 'package:aturin_app/core/services/api/task/task_api_service.dart';
 import 'package:aturin_app/core/services/api/alarm/alarm_api_service.dart';
 import 'package:aturin_app/features/alarm/model/alarm.dart';
 import 'package:aturin_app/features/alarm/services/alarm_service.dart';
+import 'package:provider/provider.dart';
 import 'dart:async';
 
 @RoutePage()
@@ -58,13 +59,15 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   };
 
   // Services
-  final TaskApiService _taskService = TaskApiService();
+  // Services
+  late final TaskApiService _taskService;
   final AlarmApiService _alarmApiService = AlarmApiService();
   final AlarmService _localAlarmService = AlarmService();
 
   @override
   void initState() {
     super.initState();
+    _taskService = Provider.of<TaskApiService>(context, listen: false);
     _initializeTask();
     _setupListeners();
   }
@@ -173,7 +176,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         }
       }
     } catch (e) {
-      debugPrint('Gagal mengambil alarm: $e');
       if (mounted) {
         _showErrorSnackbar('Gagal memuat data alarm');
       }
@@ -237,7 +239,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           }
         }
       } catch (e) {
-        debugPrint('Gagal mematikan alarm: $e');
       }
       return null;
     }
@@ -292,7 +293,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         return resultAlarm?.id;
       }
     } catch (e) {
-      debugPrint('Gagal mengelola alarm: $e');
       // Return a fallback ID for local alarm
       if (_isAlarmEnabled) {
         final fallbackId = DateTime.now().millisecondsSinceEpoch;
@@ -361,11 +361,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         _showSuccessSnackbar(result.message);
         _navigateToTaskList();
       } else {
-        debugPrint('Task update/create failed:  {result.message}');
         _showErrorSnackbar(result.message);
       }
     } catch (e) {
-      debugPrint('Error saving task: $e');
       _showErrorSnackbar('Terjadi kesalahan: $e');
     } finally {
       if (mounted) {
@@ -378,7 +376,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   void _navigateToTaskList() {
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
-        AutoRouter.of(context).replaceAll([const TaskListRoute()]);
+        context.router.pushAndPopUntil(
+          const TaskListRoute(),
+          predicate: (_) => false,
+        );
       }
     });
   }

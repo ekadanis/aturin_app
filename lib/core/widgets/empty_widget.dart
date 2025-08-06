@@ -16,7 +16,7 @@ class EmptyWidget extends StatelessWidget {
         Lottie.asset(
           'assets/icons/NoData.json',
           height: 25.h,
-          width: 60.w,
+          width: 40.w,
           fit: BoxFit.contain,
           repeat: true,
           animate: true,

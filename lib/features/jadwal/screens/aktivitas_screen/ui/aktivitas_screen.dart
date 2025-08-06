@@ -80,9 +80,7 @@ class _AktivitasPageState extends State<AktivitasPage> {
       if (ModalRoute.of(context)?.isCurrent == true) {
         // User pull-to-refresh, paksa update dari server
         forceRefresh = true;
-        debugPrint('🔄 Refresh: Memaksa refresh dari server (pull-to-refresh)');
       } else {
-        debugPrint('🔄 Refresh: Menggunakan cache jika valid (initial load)');
       }
       
       await Future.wait([
@@ -91,7 +89,6 @@ class _AktivitasPageState extends State<AktivitasPage> {
         taskApiService.fetchUncompletedTasksToday(forceRefresh: forceRefresh),
       ]);
     } catch (e) {
-      debugPrint('Error during data refresh: $e');
       if (mounted) {
         showCustomTopSnackbar(
           context: context,
@@ -151,7 +148,6 @@ class _AktivitasPageState extends State<AktivitasPage> {
           });
         }
       } catch (e) {
-        debugPrint('Error fetching data for date change: $e');
       }
     });
   }
@@ -440,7 +436,6 @@ class _AktivitasPageState extends State<AktivitasPage> {
               );
             }
           } catch (e) {
-            debugPrint('Error deleting aktivitas: $e');
             if (mounted) {
               showCustomTopSnackbar(
                 context: context,

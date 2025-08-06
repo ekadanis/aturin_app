@@ -184,7 +184,6 @@ class _ScheduleListViewState extends State<ScheduleListView>
                     try {
                       await Alarm.stop(aktivitas.alarmId!);
                     } catch (e) {
-                      debugPrint('Error stopping alarm: $e');
                     }
                   }
                   
@@ -213,7 +212,6 @@ class _ScheduleListViewState extends State<ScheduleListView>
                 },
               );
             } catch (e) {
-              debugPrint('Error deleting aktivitas: $e');
               if (mounted) {
                 setState(() {
                   _animatingItemSlug = null;
@@ -273,7 +271,6 @@ class _ScheduleListViewState extends State<ScheduleListView>
                     try {
                       await Alarm.stop(task.alarmId!);
                     } catch (e) {
-                      debugPrint('Error stopping task alarm: $e');
                     }
                   }
                   
@@ -302,7 +299,6 @@ class _ScheduleListViewState extends State<ScheduleListView>
                 },
               );
             } catch (e) {
-              debugPrint('Error deleting task: $e');
               if (mounted) {
                 setState(() {
                   _animatingItemSlug = null;

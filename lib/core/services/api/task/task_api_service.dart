@@ -51,10 +51,9 @@ class TaskApiService extends ChangeNotifier {
   // Metode untuk menandai data telah berubah (dipanggil setelah update/delete/create)
   void _markDataChanged() {
     _dataChanged = true;
-    debugPrint('🗄️ Cache: Data telah ditandai berubah, membersihkan cache...');
-    _clearRelatedCaches();
-    // fetchTasks(forceRefresh: true) akan dipanggil di create/update/delete agar _tasks dan UI pasti update
-    // notifyListeners(); // Tidak perlu di sini, cukup di fetchTasks
+    debugPrint('🗄️ Cache: Data telah ditandai berubah');
+    // Tidak perlu clear cache di sini karena sudah di-handle di _updateCachesAfterChange
+    // notifyListeners(); // Sudah dipanggil di method yang memanggil ini
   }
   
   // Metode untuk membersihkan cache yang terkait saat data berubah
@@ -71,6 +70,69 @@ class TaskApiService extends ChangeNotifier {
     await _cacheService.removeData('${_tasksByStatusCacheKey}selesai');
     
     debugPrint('🗄️ Cache: Semua cache terkait task telah dibersihkan');
+  }
+  
+  // Metode untuk update cache setelah perubahan data (create/update/delete)
+  Future<void> _updateCachesAfterChange() async {
+    try {
+      // Update cache _allTasksCacheKey dengan data lokal terbaru
+      final List<Map<String, dynamic>> tasksAsMap = _tasks
+          .map((task) => task.toMap())
+          .toList();
+      await _cacheService.saveData(
+        key: _allTasksCacheKey, 
+        data: tasksAsMap,
+        maxAge: _cacheValidityDuration,
+      );
+      
+      // Update cache untuk today tasks
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final todayTasks = _tasks.where((task) {
+        final taskDate = DateTime(
+          task.deadline.year,
+          task.deadline.month,
+          task.deadline.day,
+        );
+        return taskDate.isAtSameMomentAs(today);
+      }).toList();
+      
+      final todayTasksAsMap = todayTasks.map((task) => task.toMap()).toList();
+      await _cacheService.saveData(
+        key: _todayTasksCacheKey, 
+        data: todayTasksAsMap,
+        maxAge: _cacheValidityDuration,
+      );
+      
+      // Update cache untuk uncompleted today tasks
+      final uncompletedTodayTasks = todayTasks.where((task) => !task.isCompleted).toList();
+      final uncompletedTodayTasksAsMap = uncompletedTodayTasks.map((task) => task.toMap()).toList();
+      await _cacheService.saveData(
+        key: _uncompletedTodayCacheKey, 
+        data: uncompletedTodayTasksAsMap,
+        maxAge: _cacheValidityDuration,
+      );
+      
+      // Update cache untuk late tasks count
+      final lateTasks = _tasks.where((task) => 
+        task.deadline.isBefore(now) && !task.isCompleted
+      ).length;
+      final lateTasksData = {
+        'overdue_tasks': lateTasks,
+        'completed_late_tasks': 0, // Will be calculated when needed
+      };
+      await _cacheService.saveData(
+        key: _lateTasksCountCacheKey, 
+        data: lateTasksData,
+        maxAge: _cacheValidityDuration,
+      );
+      
+      debugPrint('🗄️ Cache: Semua cache terkait telah diperbarui secara sinkron');
+    } catch (e) {
+      debugPrint('🗄️ Cache: Error updating caches after change: $e');
+      // Fallback: clear caches if update fails
+      await _clearRelatedCaches();
+    }
   }
 
   Future<String?> _getToken() async {
@@ -131,11 +193,32 @@ class TaskApiService extends ChangeNotifier {
       );
       final data = jsonDecode(response.body);
       if (response.statusCode == 201 || response.statusCode == 200) {
-        _markDataChanged();
-        await fetchTasks(forceRefresh: true);
-        debugPrint('🗄️ Cache: Data task berhasil diperbarui setelah createTask');
+        final newTask = Task.fromMap(data['data']);
+        
+        // Update local cache dengan menambahkan task baru
+        _tasks.add(newTask);
+        debugPrint('🔄 TaskApiService: Task berhasil ditambahkan ke local cache. Total tasks: ${_tasks.length}');
+        debugPrint('🔄 TaskApiService: Current _tasks IDs after add: ${_tasks.map((t) => t.id).toList()}');
+        
+        // IMMEDIATE UI UPDATE - panggil notifyListeners() SEBELUM update cache untuk responsivitas
+        debugPrint('🔄 TaskApiService: Triggering IMMEDIATE UI update setelah create task');
+        notifyListeners(); // Trigger UI update segera
+        
+        // Update all related caches secara asinkron di background
+        _updateCachesAfterChange().then((_) {
+          debugPrint('🗄️ Cache: Background cache update completed');
+        }).catchError((e) {
+          debugPrint('�️ Cache: Error updating background cache: $e');
+        });
+        
+        // Reset data changed flag setelah local update berhasil
+        _dataChanged = false;
+        
+        debugPrint('�️ Cache: Data task berhasil diperbarui setelah createTask');
+        debugPrint('🔄 TaskApiService: notifyListeners() called successfully');
+        
         return TaskResult.success(
-          task: Task.fromMap(data['data']),
+          task: newTask,
           message: data['message'],
         );
       } else {
@@ -181,11 +264,34 @@ class TaskApiService extends ChangeNotifier {
       );
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        _markDataChanged();
-        await fetchTasks(forceRefresh: true);
+        final updatedTask = Task.fromMap(data['data']);
+        
+        // Update local cache dengan task yang diupdate
+        final index = _tasks.indexWhere((task) => task.slug == slug);
+        if (index != -1) {
+          _tasks[index] = updatedTask;
+        }
+        
+        // IMMEDIATE UI UPDATE - panggil notifyListeners() SEBELUM update cache
+        debugPrint('🔄 TaskApiService: Triggering IMMEDIATE UI update setelah update task');
+        notifyListeners(); // Trigger UI update segera
+        
+        // Update all related caches secara asinkron di background
+        _updateCachesAfterChange().then((_) {
+          debugPrint('🗄️ Cache: Background cache update completed after updateTask');
+        }).catchError((e) {
+          debugPrint('🗄️ Cache: Error updating background cache after updateTask: $e');
+        });
+        
+        // Reset data changed flag setelah local update berhasil
+        _dataChanged = false;
+        
         debugPrint('🗄️ Cache: Data task berhasil diperbarui setelah updateTask');
+        debugPrint('🔄 TaskApiService: Triggering UI update setelah update task');
+        // notifyListeners() sudah dipanggil di atas
+        
         return TaskResult.success(
-          task: Task.fromMap(data['data']),
+          task: updatedTask,
           message: data['message'],
         );
       } else {
@@ -207,9 +313,26 @@ class TaskApiService extends ChangeNotifier {
       
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 || response.statusCode == 204) {
-        _markDataChanged();
-        await fetchTasks(forceRefresh: true);
+        // Update local cache dengan menghapus task
+        _tasks.removeWhere((task) => task.slug == slug);
+        
+        // IMMEDIATE UI UPDATE - panggil notifyListeners() SEBELUM update cache
+        debugPrint('🔄 TaskApiService: Triggering IMMEDIATE UI update setelah delete task');
+        notifyListeners(); // Trigger UI update segera
+        
+        // Update all related caches secara asinkron di background
+        _updateCachesAfterChange().then((_) {
+          debugPrint('🗄️ Cache: Background cache update completed after deleteTask');
+        }).catchError((e) {
+          debugPrint('🗄️ Cache: Error updating background cache after deleteTask: $e');
+        });
+        
+        // Reset data changed flag setelah local update berhasil
+        _dataChanged = false;
+        
         debugPrint('🗄️ Cache: Data task berhasil diperbarui setelah deleteTask');
+        // notifyListeners() sudah dipanggil di atas
+        
         return TaskResult.success(message: data['message'] ?? 'Tugas berhasil dihapus');
       } else {
         return _handleErrorResponse(response);
@@ -223,6 +346,17 @@ class TaskApiService extends ChangeNotifier {
   // FETCH
 
   Future<void> fetchTasks({bool forceRefresh = false}) async {
+    // Enhanced Debug info
+    debugPrint('🗄️ Cache: fetchTasks called with forceRefresh=$forceRefresh, dataChanged=$_dataChanged');
+    debugPrint('🗄️ Cache: Current _tasks.length = ${_tasks.length} before fetchTasks');
+    
+    // Jika _tasks sudah ada data dan tidak ada force refresh, gunakan data lokal
+    if (!forceRefresh && _tasks.isNotEmpty) {
+      debugPrint('🗄️ Cache: ✅ fetchTasks - Using existing _tasks data, no fetch needed');
+      // Tidak perlu fetch, data lokal sudah ter-update
+      return;
+    }
+    
     // Periksa jika cache valid dan data tidak berubah, gunakan cache
     // Skip cache jika forceRefresh = true atau data telah berubah (_dataChanged = true)
     if (!forceRefresh && !_dataChanged && await _cacheService.isCacheValid(_allTasksCacheKey)) {
@@ -234,8 +368,9 @@ class TaskApiService extends ChangeNotifier {
               .toList();
           _tasks = cachedTasks;
           _dataChanged = false;
+          debugPrint('🗄️ Cache: ⚠️ fetchTasks - Data berhasil diambil dari cache untuk key $_allTasksCacheKey');
+          debugPrint('🗄️ Cache: Menggunakan data task dari cache (${_tasks.length} tasks)');
           notifyListeners();
-          debugPrint('🗄️ Cache: Menggunakan data task dari cache');
           return;
         }
       } catch (e) {
@@ -243,13 +378,14 @@ class TaskApiService extends ChangeNotifier {
       }
     }
     
-    debugPrint('🗄️ Cache: Mengambil data task dari server (forceRefresh=$forceRefresh, dataChanged=$_dataChanged)');
+    debugPrint('🗄️ Cache: 🌐 fetchTasks - Mengambil data task dari server (forceRefresh=$forceRefresh, dataChanged=$_dataChanged)');
     _setLoading(true);
     try {
       final tasks = await getAllTasks(forceRefresh: forceRefresh);
-      _tasks = tasks;
+      // _tasks sudah di-update di getAllTasks(), tidak perlu assign lagi
       _setError(null);
       _dataChanged = false;
+      debugPrint('🗄️ Cache: ✅ fetchTasks completed successfully via getAllTasks (${_tasks.length} tasks)');
     } catch (e) {
       _setError('Gagal mengambil data tugas');
       debugPrint('Error in fetchTasks: $e');
@@ -285,8 +421,20 @@ class TaskApiService extends ChangeNotifier {
   }
 
   Future<List<Task>> getAllTasks({bool forceRefresh = false}) async {
-    // Periksa apakah data sudah ada di cache
-    // Skip cache jika forceRefresh = true atau data telah berubah (_dataChanged = true)
+    // Enhanced Debug info
+    debugPrint('🗄️ Cache: getAllTasks called with forceRefresh=$forceRefresh, dataChanged=$_dataChanged');
+    debugPrint('🗄️ Cache: Current _tasks.length = ${_tasks.length}');
+    debugPrint('🗄️ Cache: Current _tasks IDs = ${_tasks.map((t) => t.id).toList()}');
+    
+    // PRIORITAS 1: Jika _tasks sudah ter-populate dan tidak ada force refresh, gunakan data lokal
+    if (!forceRefresh && _tasks.isNotEmpty) {
+      debugPrint('🗄️ Cache: ✅ Using PRIORITAS 1 - Returning data from local _tasks (${_tasks.length} tasks)');
+      return List<Task>.from(_tasks); // Return copy untuk safety
+    }
+    
+    debugPrint('🗄️ Cache: ❌ PRIORITAS 1 tidak terpenuhi. Checking cache... (forceRefresh=$forceRefresh, _tasks.isEmpty=${_tasks.isEmpty})');
+    
+    // PRIORITAS 2: Periksa cache jika _tasks kosong dan tidak ada force refresh
     if (!forceRefresh && !_dataChanged && await _cacheService.isCacheValid(_allTasksCacheKey)) {
       try {
         final cachedData = await _cacheService.getData(_allTasksCacheKey);
@@ -294,14 +442,19 @@ class TaskApiService extends ChangeNotifier {
           final List<Task> cachedTasks = List<Map<String, dynamic>>.from(cachedData)
               .map((taskMap) => Task.fromMap(taskMap))
               .toList();
-          debugPrint('🗄️ Cache: Berhasil mendapatkan tasks dari cache');
-          return cachedTasks;
+          
+          // Update _tasks dengan data dari cache
+          _tasks = cachedTasks;
+          debugPrint('🗄️ Cache: ⚠️ Using PRIORITAS 2 - Data berhasil diambil dari cache untuk key $_allTasksCacheKey');
+          debugPrint('🗄️ Cache: Berhasil mendapatkan tasks dari cache dan update _tasks (${_tasks.length} tasks)');
+          return List<Task>.from(cachedTasks);
         }
       } catch (e) {
         debugPrint('🗄️ Cache: Error mendapatkan tasks dari cache: $e');
       }
     }
     
+    // PRIORITAS 3: Fetch dari server jika cache tidak valid atau force refresh
     debugPrint('🗄️ Cache: Mengambil semua task dari server (forceRefresh=$forceRefresh, dataChanged=$_dataChanged)');
     
     try {
@@ -343,6 +496,12 @@ class TaskApiService extends ChangeNotifier {
           maxAge: _cacheValidityDuration,
         );
         
+        // Update _tasks dengan data terbaru dari server
+        _tasks = tasksWithAlarms;
+        _dataChanged = false; // Reset flag setelah data fresh dari server
+        
+        debugPrint('🗄️ Cache: Data tersimpan untuk key $_allTasksCacheKey');
+        debugPrint('🗄️ Cache: _tasks updated with fresh data from server (${_tasks.length} tasks)');
         return tasksWithAlarms;
       }
     } catch (e) {
@@ -522,12 +681,16 @@ class TaskApiService extends ChangeNotifier {
   }
 
   Future<Map<String, dynamic>?> countLateTasks({bool forceRefresh = false}) async {
+    // Debug info
+    debugPrint('🗄️ Cache: countLateTasks called with forceRefresh=$forceRefresh, dataChanged=$_dataChanged');
+    
     // Periksa apakah data sudah ada di cache
     // Skip cache jika forceRefresh = true atau data telah berubah (_dataChanged = true)
     if (!forceRefresh && !_dataChanged && await _cacheService.isCacheValid(_lateTasksCountCacheKey)) {
       try {
         final cachedData = await _cacheService.getData(_lateTasksCountCacheKey);
         if (cachedData != null) {
+          debugPrint('🗄️ Cache: Data berhasil diambil dari cache untuk key $_lateTasksCountCacheKey');
           debugPrint('🗄️ Cache: Berhasil mendapatkan jumlah tasks terlambat dari cache');
           return cachedData as Map<String, dynamic>;
         }
@@ -535,6 +698,8 @@ class TaskApiService extends ChangeNotifier {
         debugPrint('🗄️ Cache: Error mendapatkan jumlah tasks terlambat dari cache: $e');
       }
     }
+    
+    debugPrint('🗄️ Cache: Mengambil count late tasks dari server (forceRefresh=$forceRefresh, dataChanged=$_dataChanged)');
     
     try {
       final headers = await _getHeaders();
@@ -552,6 +717,7 @@ class TaskApiService extends ChangeNotifier {
           data: data['data'],
           maxAge: _cacheValidityDuration,
         );
+        debugPrint('🗄️ Cache: Data tersimpan untuk key $_lateTasksCountCacheKey');
         return data['data'];
       }
     } catch (e) {
@@ -603,11 +769,47 @@ class TaskApiService extends ChangeNotifier {
     notifyListeners();
   }
   
-  /// Memaksa pembaruan data dan UI
-  Future<void> refreshDataAndUI() async {
-    debugPrint('🔄 TaskApiService: Menyegarkan data dan UI');
-    await fetchTasks(forceRefresh: true);
+  /// Memaksa pembaruan data dan UI hanya jika diperlukan
+  Future<void> refreshDataAndUI({bool force = false}) async {
+    debugPrint('🔄 TaskApiService: Menyegarkan data dan UI (force=$force)');
+    if (force) {
+      await fetchTasks(forceRefresh: true);
+    } else {
+      await fetchTasks(forceRefresh: false);
+    }
     notifyListeners();
+  }
+  
+  /// Method untuk update task status tanpa full refresh
+  void updateTaskStatusLocally(String slug, String newStatus) {
+    final index = _tasks.indexWhere((task) => task.slug == slug);
+    if (index != -1) {
+      // Update task locally for immediate UI feedback
+      _tasks[index] = _tasks[index].copyWith(
+        taskStatus: TaskDatabaseStatus.values.firstWhere(
+          (status) => status.value == newStatus,
+          orElse: () => TaskDatabaseStatus.belumSelesai,
+        ),
+      );
+      notifyListeners();
+      
+      // Update caches asynchronously
+      _updateCachesAfterChange();
+    }
+  }
+  
+  /// Method untuk menambah task baru secara lokal
+  void addTaskLocally(Task task) {
+    _tasks.add(task);
+    notifyListeners();
+    _updateCachesAfterChange();
+  }
+  
+  /// Method untuk remove task secara lokal
+  void removeTaskLocally(String slug) {
+    _tasks.removeWhere((task) => task.slug == slug);
+    notifyListeners();
+    _updateCachesAfterChange();
   }
 
   // HANDLERS

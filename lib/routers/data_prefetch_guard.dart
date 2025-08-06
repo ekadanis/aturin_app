@@ -32,7 +32,6 @@ class DataPrefetchGuard extends AutoRouteGuard {
               .timeout(
                 const Duration(seconds: 3),
                 onTimeout: () {
-                  debugPrint('HomeRoute data fetch timeout, continuing navigation');
                   return;
                 },
               );
@@ -42,13 +41,11 @@ class DataPrefetchGuard extends AutoRouteGuard {
               .timeout(
                 const Duration(seconds: 3),
                 onTimeout: () {
-                  debugPrint('TaskListRoute data fetch timeout, continuing navigation');
                   return [];
                 },
               );
         }
       } catch (e) {
-        debugPrint('Error during data prefetch: $e');
       }
     }
 
@@ -71,7 +68,6 @@ class DataPrefetchGuard extends AutoRouteGuard {
               .timeout(const Duration(seconds: 5));
         }
       } catch (e) {
-        debugPrint('Background data fetch error: $e');
       }
     });
   }

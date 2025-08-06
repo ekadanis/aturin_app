@@ -42,10 +42,8 @@ class HomeWidgetProvider extends ChangeNotifier {
       WidgetBackgroundService.startDailyUpdate(this);
       
       notifyListeners();
-      debugPrint('🏠 HomeWidgetProvider: Initialized successfully with background service');
     } catch (e) {
       _error = e.toString();
-      debugPrint('🏠 HomeWidgetProvider: Initialization error: $e');
       notifyListeners();
     }
   }
@@ -55,7 +53,6 @@ class HomeWidgetProvider extends ChangeNotifier {
     try {
       final pendingAction = await _homeWidgetService.checkPendingInteractions();
       if (pendingAction != null) {
-        debugPrint('🏠 HomeWidgetProvider: Processing pending action: $pendingAction');
         await _homeWidgetService.handleWidgetInteraction(pendingAction);
         
         // Set pending navigation request (akan diproses oleh HomePage)
@@ -63,7 +60,6 @@ class HomeWidgetProvider extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      debugPrint('🏠 HomeWidgetProvider: Error processing pending interactions: $e');
     }
   }
   
@@ -93,11 +89,9 @@ class HomeWidgetProvider extends ChangeNotifier {
       final List<ScheduleItem> activityItems = [];
       final List<ScheduleItem> taskItems = [];
       
-      debugPrint('🏠 Processing data: ${activities?.length ?? 0} activities, ${tasks?.length ?? 0} tasks');
       
       // Process activities
       if (activities != null) {
-        debugPrint('🏠 Raw activities data: $activities');
         for (var activity in activities) {
           try {
             final scheduleItem = ScheduleItem(
@@ -109,16 +103,13 @@ class HomeWidgetProvider extends ChangeNotifier {
               category: activity['activity_category'] ?? 'umum',
             );
             activityItems.add(scheduleItem);
-            debugPrint('🏠 Added activity: ${scheduleItem.title} on ${scheduleItem.date} at ${scheduleItem.time}');
           } catch (e) {
-            debugPrint('🏠 Error processing activity: $e, data: $activity');
           }
         }
       }
       
       // Process tasks
       if (tasks != null) {
-        debugPrint('🏠 Raw tasks data: ${tasks.take(3)}'); // Show first 3 tasks only
         for (var task in tasks) {
           try {
             final taskDate = _parseDate(task['task_deadline']);
@@ -132,9 +123,7 @@ class HomeWidgetProvider extends ChangeNotifier {
               category: task['task_category'] ?? 'umum',
             );
             taskItems.add(scheduleItem);
-            debugPrint('🏠 Added task: ${scheduleItem.title} on ${scheduleItem.date} at ${scheduleItem.time}');
           } catch (e) {
-            debugPrint('🏠 Error processing task: $e, data: $task');
           }
         }
       }
@@ -147,10 +136,8 @@ class HomeWidgetProvider extends ChangeNotifier {
       _lastUpdate = DateTime.now();
       _lastWidgetData = await _homeWidgetService.getWidgetData();
       
-      debugPrint('🏠 HomeWidgetProvider: Widget updated - ${activityItems.length} activities, ${taskItems.length} tasks');
     } catch (e) {
       _error = e.toString();
-      debugPrint('🏠 HomeWidgetProvider: Update error: $e');
     } finally {
       _isUpdating = false;
       notifyListeners();
@@ -169,10 +156,8 @@ class HomeWidgetProvider extends ChangeNotifier {
         final parsedDate = DateTime.parse(dateValue);
         // Convert UTC to local time
         final localDate = parsedDate.toLocal();
-        debugPrint('🏠 Parsed date: $dateValue -> $localDate (local)');
         return localDate;
       } catch (e) {
-        debugPrint('🏠 Error parsing date: $dateValue');
         return DateTime.now();
       }
     }
@@ -206,7 +191,6 @@ class HomeWidgetProvider extends ChangeNotifier {
         // Format waktu lain
         return DateTime.parse(timeValue);
       } catch (e) {
-        debugPrint('🏠 Error parsing time: $timeValue');
         return now;
       }
     }
@@ -227,7 +211,6 @@ class HomeWidgetProvider extends ChangeNotifier {
         final minute = int.parse(parts[1]);
         return baseDate.copyWith(hour: hour, minute: minute, second: 0, millisecond: 0);
       } catch (e) {
-        debugPrint('🏠 Error parsing activity time: $timeValue');
         return baseDate;
       }
     }
@@ -237,10 +220,8 @@ class HomeWidgetProvider extends ChangeNotifier {
 
   /// Force refresh widget (untuk manual trigger)
   Future<void> forceRefresh() async {
-    debugPrint('🏠 HomeWidgetProvider: Force refresh triggered');
     
     try {
-      debugPrint('🏠 Fetching data from API...');
       
       // Fetch data dari server
       await _activityApiService.fetchActivities(forceRefresh: true);
@@ -250,11 +231,9 @@ class HomeWidgetProvider extends ChangeNotifier {
       final activitiesData = _activityApiService.activities.map((a) => a.toMap()).toList();
       final tasksData = _taskApiService.tasks.map((t) => t.toMap()).toList();
       
-      debugPrint('🏠 API returned ${activitiesData.length} activities, ${tasksData.length} tasks');
       
       await updateWidget(activities: activitiesData, tasks: tasksData);
     } catch (e) {
-      debugPrint('🏠 Error fetching data: $e');
       await updateWidget(activities: [], tasks: []);
     }
   }
@@ -275,6 +254,5 @@ class HomeWidgetProvider extends ChangeNotifier {
     // Stop background service
     WidgetBackgroundService.stop();
     super.dispose();
-    debugPrint('🏠 HomeWidgetProvider: Disposed with background service stopped');
   }
 }

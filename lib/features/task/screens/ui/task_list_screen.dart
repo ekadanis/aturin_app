@@ -31,35 +31,35 @@ class _TaskListScreenState extends State<TaskListScreen>
   ];
 
   int _overdueTasksCount = 0;
-  Timer? _refreshTimer;
-  Timer? _debounceTimer;
+  bool _isInitialLoading = true;
+
+  // Force task list rebuild counter - increment after delete operations (sama seperti aktivitas)
+  int _taskListRebuildCounter = 0;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Initial data fetch
-    _refreshData();
+
+    // Load initial data (sama seperti aktivitas screen)
+    Future.microtask(() => _refreshData());
   }
 
   @override
   void dispose() {
-    // Cancel all timers before dispose
-    _refreshTimer?.cancel();
-    _debounceTimer?.cancel();
     // Remove observer
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  Future<void> _fetchOverdueCount() async {
+  Future<void> _fetchOverdueCount({bool useCache = true}) async {
     // Check if widget is still mounted to avoid accessing deactivated widget
     if (!mounted) return;
 
     try {
       final taskService = Provider.of<TaskApiService>(context, listen: false);
-      final data = await taskService.countLateTasks();
-      print('Data dari API: $data');
+      // Gunakan cache kecuali force refresh
+      final data = await taskService.countLateTasks(forceRefresh: !useCache);
 
       // Check again if widget is still mounted before calling setState
       if (!mounted) return;
@@ -71,42 +71,56 @@ class _TaskListScreenState extends State<TaskListScreen>
       }
     } catch (e) {
       // Handle error silently if widget is disposed
-      if (mounted) {
-        print('Error fetching overdue count: $e');
-      }
+      if (mounted) {}
     }
   }
 
-  // Method to refresh all data dengan debouncing
-  Future<void> _refreshData() async {
+  // Simple refresh method - sama persis dengan aktivitas screen
+  Future<void> _refreshData({bool forceRefresh = false}) async {
     if (!mounted) return;
 
-    // Cancel previous debounce timer
-    _debounceTimer?.cancel();
+    try {
+      final taskApiService = Provider.of<TaskApiService>(
+        context,
+        listen: false,
+      );
 
-    // Debounce untuk menghindari multiple rapid calls
-    _debounceTimer = Timer(const Duration(milliseconds: 300), () async {
-      if (!mounted) return;
+      // Hanya tampilkan loading screen jika belum ada data sama sekali
+      // Ini mencegah tampilan loading ketika data sudah ada di cache
+      final bool shouldShowLoading = taskApiService.tasks.isEmpty;
 
-      try {
-        final taskService = Provider.of<TaskApiService>(context, listen: false);
-        await Future.wait([
-          _fetchOverdueCount(),
-          taskService.fetchTasks(forceRefresh: true),
-        ]);
-      } catch (e) {
-        if (mounted) {
-          print('Error refreshing data: $e');
-        }
+      if (shouldShowLoading) {
+        setState(() {
+          _isInitialLoading = true;
+        });
       }
-    });
+
+      await Future.wait([
+        _fetchOverdueCount(useCache: !forceRefresh),
+        taskApiService.fetchTasks(forceRefresh: forceRefresh),
+      ]);
+    } catch (e) {
+      if (mounted) {
+        showCustomTopSnackbar(
+          context: context,
+          message: 'Gagal memuat ulang data',
+          isError: true,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isInitialLoading = false;
+        });
+      }
+    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && mounted) {
-      // Ketika app kembali ke foreground, refresh data
-      _refreshData();
+      // Ketika app kembali ke foreground, refresh data dari server untuk sinkronisasi
+      _refreshData(forceRefresh: true);
     }
   }
 
@@ -163,35 +177,79 @@ class _TaskListScreenState extends State<TaskListScreen>
                         setState(() {
                           _selectedFilter = filter;
                         });
-                        // Refresh data when filter changes
-                        final taskService = Provider.of<TaskApiService>(
-                          context,
-                          listen: false,
-                        );
-                        await taskService.fetchTasks(forceRefresh: true);
+                        // Tidak perlu refresh data saat filter berubah
+                        // karena data sudah ada di Provider, cukup setState untuk rebuild UI
                       },
                     ),
                   ),
                   Expanded(
                     child: Consumer<TaskApiService>(
                       builder: (context, taskApiService, child) {
-                        // Trigger refresh ketika Consumer di-rebuild
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted) {
-                            _refreshData();
-                          }
-                        });
-            
+                        // Only show loading indicator during initial loading AND when we have no cached data
+                        // If we have ANY cached data (tasks), don't show loading
+                        if (_isInitialLoading &&
+                            taskApiService.tasks.isEmpty &&
+                            taskApiService.isLoading) {
+                          return Center(child: CircularProgressIndicator());
+                        }
+
+                        if (taskApiService.errorMessage != null &&
+                            taskApiService.tasks.isEmpty) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  size: 64,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Gagal memuat tugas',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  taskApiService.errorMessage!,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 14,
+                                    color: Colors.grey[500],
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: () => _refreshData(forceRefresh: true),
+                                  child: const Text('Coba Lagi'),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
                         return RefreshIndicator(
-                          onRefresh: _refreshData,
+                          onRefresh: () => _refreshData(forceRefresh: true),
                           child: TaskListView(
+                            key: ValueKey(
+                              'task_list_${taskApiService.tasks.length}_${_taskListRebuildCounter}',
+                            ),
                             currentFilter: _selectedFilter,
                             onShowSuccess: (message) {
-                              // Refresh all data including overdue count and task list
+                              // Refresh all data and force rebuild after any CRUD operation - SAMA SEPERTI AKTIVITAS
                               _refreshData();
+                              // Force task list rebuild for instant update
+                              setState(() {
+                                _taskListRebuildCounter++;
+                              });
                               showCustomTopSnackbar(
                                 context: context,
                                 message: message,
+                                isError: false,
                               );
                             },
                             onTapTask: (task) {
@@ -210,8 +268,7 @@ class _TaskListScreenState extends State<TaskListScreen>
                                   } else if (_selectedFilter == 'Terlambat') {
                                     final data = await taskApiService
                                         .getTasksByStatus('terlambat');
-                                    if (data != null &&
-                                        data['tasks'] != null) {
+                                    if (data != null && data['tasks'] != null) {
                                       allTasks = List<Task>.from(
                                         data['tasks'].map(
                                           (e) => Task.fromMap(e),
@@ -224,8 +281,7 @@ class _TaskListScreenState extends State<TaskListScreen>
                                     // dan deadline masih di masa depan (tidak terlambat)
                                     final data = await taskApiService
                                         .getTasksByStatus('belum_selesai');
-                                    if (data != null &&
-                                        data['tasks'] != null) {
+                                    if (data != null && data['tasks'] != null) {
                                       final allBelumSelesai = List<Task>.from(
                                         data['tasks'].map(
                                           (e) => Task.fromMap(e),
@@ -233,15 +289,20 @@ class _TaskListScreenState extends State<TaskListScreen>
                                       );
                                       // Filter out yang terlambat
                                       final now = DateTime.now();
-                                      allTasks = allBelumSelesai
-                                          .where((task) => !task.deadline.isBefore(now))
-                                          .toList();
+                                      allTasks =
+                                          allBelumSelesai
+                                              .where(
+                                                (task) =>
+                                                    !task.deadline.isBefore(
+                                                      now,
+                                                    ),
+                                              )
+                                              .toList();
                                     }
                                   } else if (_selectedFilter == 'Selesai') {
                                     final data = await taskApiService
                                         .getTasksByStatus('selesai');
-                                    if (data != null &&
-                                        data['tasks'] != null) {
+                                    if (data != null && data['tasks'] != null) {
                                       allTasks = List<Task>.from(
                                         data['tasks'].map(
                                           (e) => Task.fromMap(e),
@@ -257,9 +318,9 @@ class _TaskListScreenState extends State<TaskListScreen>
                                   allTasks = [task];
                                   taskIndex = 0;
                                 }
-            
+
                                 if (!mounted) return;
-            
+
                                 final result = await context.router.push(
                                   TaskDetailListRoute(
                                     tasks: allTasks,
@@ -267,7 +328,8 @@ class _TaskListScreenState extends State<TaskListScreen>
                                   ),
                                 );
                                 if (result == true) {
-                                  _fetchOverdueCount();
+                                  // Refresh data setelah perubahan dari detail view - SAMA SEPERTI AKTIVITAS
+                                  _refreshData();
                                 }
                               });
                             },

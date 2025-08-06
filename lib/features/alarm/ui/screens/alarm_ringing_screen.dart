@@ -61,28 +61,24 @@ class _AlarmRingingScreenState extends State<AlarmRingingScreen> {
         });
       }
     } catch (e) {
-      debugPrint('Error loading task/aktivitas: $e');
+    
     }
   }
 
   void _stopAlarm() {
     try {
-      debugPrint(
-        'Mencoba menghentikan alarm dengan ID: ${widget.alarmSettings.id}',
-      );
+   
       Alarm.stop(widget.alarmSettings.id);
 
       if (widget.onDismiss != null) {
-        debugPrint(
-          'Menggunakan onDismiss callback untuk kembali ke aplikasi utama',
-        );
+      
         widget.onDismiss!();
       } else {
-        debugPrint('Kembali dengan Navigator.pop');
+        
         context.router.pop();
       }
     } catch (e) {
-      debugPrint('Error stopping alarm: $e');
+    
       if (widget.onDismiss != null) {
         widget.onDismiss!();
       } else if (mounted) {

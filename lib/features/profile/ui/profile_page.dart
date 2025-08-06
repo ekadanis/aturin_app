@@ -32,9 +32,7 @@ class _ProfilePageState extends State<ProfilePage> {
     super.initState();
     // Load user data hanya sekali saat pertama kali inisialisasi
     if (!_isInitialized) {
-      _loadUser(
-        forceRefresh: true,
-      ); // Force refresh sekali di awal untuk memastikan data terbaru
+      _loadUser(); // Gunakan cache terlebih dahulu, tidak perlu force refresh di awal
       _isInitialized = true;
     }
   }

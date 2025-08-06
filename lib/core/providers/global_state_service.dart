@@ -122,12 +122,10 @@ class GlobalStateService extends ChangeNotifier {
   
   Future<User?> getUser({bool forceRefresh = false}) async {
     if (!forceRefresh && isUserCacheValid && _currentUser != null) {
-      debugPrint('📋 GlobalStateService: Returning cached user data');
       return _currentUser;
     }
     
     if (_isLoadingUser) {
-      debugPrint('📋 GlobalStateService: User already loading, waiting...');
       // Wait for current loading to complete
       while (_isLoadingUser) {
         await Future.delayed(const Duration(milliseconds: 100));
@@ -139,18 +137,15 @@ class GlobalStateService extends ChangeNotifier {
     notifyListeners();
     
     try {
-      debugPrint('📋 GlobalStateService: Fetching fresh user data...');
       final user = await _profileService.getBannerProfile();
       
       if (user != null) {
         _currentUser = user;
         _userLastFetched = DateTime.now();
-        debugPrint('✅ GlobalStateService: User data updated - ${user.name}');
       }
       
       return user;
     } catch (e) {
-      debugPrint('❌ GlobalStateService: Error fetching user: $e');
       return _currentUser; // Return cached data on error
     } finally {
       _isLoadingUser = false;
@@ -164,12 +159,10 @@ class GlobalStateService extends ChangeNotifier {
   
   Future<List<Task>> getTasks({bool forceRefresh = false}) async {
     if (!forceRefresh && isTasksCacheValid && _allTasks.isNotEmpty) {
-      debugPrint('📋 GlobalStateService: Returning cached tasks data');
       return _allTasks;
     }
     
     if (_isLoadingTasks) {
-      debugPrint('📋 GlobalStateService: Tasks already loading, waiting...');
       while (_isLoadingTasks) {
         await Future.delayed(const Duration(milliseconds: 100));
       }
@@ -180,18 +173,15 @@ class GlobalStateService extends ChangeNotifier {
     notifyListeners();
     
     try {
-      debugPrint('📋 GlobalStateService: Fetching fresh tasks data...');
       final tasks = await _taskApiService.getAllTasks();
       
       _allTasks = tasks;
       _updateTodayTasks();
       _tasksLastFetched = DateTime.now();
       
-      debugPrint('✅ GlobalStateService: Tasks data updated - ${tasks.length} tasks');
       
       return tasks;
     } catch (e) {
-      debugPrint('❌ GlobalStateService: Error fetching tasks: $e');
       return _allTasks; // Return cached data on error
     } finally {
       _isLoadingTasks = false;
@@ -224,12 +214,10 @@ class GlobalStateService extends ChangeNotifier {
   
   Future<List<AktivitasModel>> getActivities({bool forceRefresh = false}) async {
     if (!forceRefresh && isActivitiesCacheValid && _allActivities.isNotEmpty) {
-      debugPrint('📋 GlobalStateService: Returning cached activities data');
       return _allActivities;
     }
     
     if (_isLoadingActivities) {
-      debugPrint('📋 GlobalStateService: Activities already loading, waiting...');
       while (_isLoadingActivities) {
         await Future.delayed(const Duration(milliseconds: 100));
       }
@@ -240,18 +228,15 @@ class GlobalStateService extends ChangeNotifier {
     notifyListeners();
     
     try {
-      debugPrint('📋 GlobalStateService: Fetching fresh activities data...');
       final activities = await _activityApiService.getAllActivities();
       
       _allActivities = activities;
       _updateTodayActivities();
       _activitiesLastFetched = DateTime.now();
       
-      debugPrint('✅ GlobalStateService: Activities data updated - ${activities.length} activities');
       
       return activities;
     } catch (e) {
-      debugPrint('❌ GlobalStateService: Error fetching activities: $e');
       return _allActivities; // Return cached data on error
     } finally {
       _isLoadingActivities = false;
@@ -284,7 +269,6 @@ class GlobalStateService extends ChangeNotifier {
   
   /// Force refresh all data
   Future<void> refreshAllData() async {
-    debugPrint('🔄 GlobalStateService: Force refreshing all data...');
     
     await Future.wait([
       getUser(forceRefresh: true),
@@ -292,24 +276,20 @@ class GlobalStateService extends ChangeNotifier {
       getActivities(forceRefresh: true),
     ]);
     
-    debugPrint('✅ GlobalStateService: All data refreshed');
   }
   
   /// Call this when tasks are modified (create/update/delete)
   Future<void> onTasksChanged() async {
-    debugPrint('🔄 GlobalStateService: Tasks changed - refreshing...');
     await getTasks(forceRefresh: true);
   }
   
   /// Call this when activities are modified (create/update/delete)
   Future<void> onActivitiesChanged() async {
-    debugPrint('🔄 GlobalStateService: Activities changed - refreshing...');
     await getActivities(forceRefresh: true);
   }
   
   /// Call this when user profile is modified
   Future<void> onUserChanged() async {
-    debugPrint('🔄 GlobalStateService: User changed - refreshing...');
     await getUser(forceRefresh: true);
   }
   
@@ -319,7 +299,6 @@ class GlobalStateService extends ChangeNotifier {
   
   /// Initialize with cached data for instant UI
   Future<void> initialize() async {
-    debugPrint('🚀 GlobalStateService: Initializing...');
     
     // Load all data in parallel for fast startup
     unawaited(Future.wait([
@@ -334,7 +313,6 @@ class GlobalStateService extends ChangeNotifier {
   // ============================
   
   void clearCache() {
-    debugPrint('🗑️ GlobalStateService: Clearing all cache...');
     
     _currentUser = null;
     _userLastFetched = null;

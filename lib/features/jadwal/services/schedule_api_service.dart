@@ -22,7 +22,6 @@ class ScheduleApiService {
     try {
       return await _activityApiService.getAllActivities();
     } catch (e) {
-      debugPrint('Error fetching aktivitas: $e');
       rethrow;
     }
   }
@@ -32,7 +31,6 @@ class ScheduleApiService {
     try {
       return await _activityApiService.getActivitiesByDate(date);
     } catch (e) {
-      debugPrint('Error fetching aktivitas by date: $e');
       rethrow;
     }
   }
@@ -42,7 +40,6 @@ class ScheduleApiService {
     try {
       return await _activityApiService.createActivity(aktivitas);
     } catch (e) {
-      debugPrint('Error creating aktivitas: $e');
       rethrow;
     }
   }
@@ -57,7 +54,6 @@ class ScheduleApiService {
     try {
       return await _activityApiService.updateActivity(slug, data!);
     } catch (e) {
-      debugPrint('Error updating aktivitas: $e');
       rethrow;
     }
   }
@@ -79,13 +75,11 @@ class ScheduleApiService {
             await _alarmApiService.deleteAlarm(existingAlarm.slug);
           }
         } catch (e) {
-          debugPrint('Error deleting aktivitas alarm: $e');
         }
       }
 
       return await _activityApiService.deleteActivity(slug);
     } catch (e) {
-      debugPrint('Error deleting aktivitas: $e');
       rethrow;
     }
   }
@@ -99,7 +93,6 @@ class ScheduleApiService {
     try {
       return await _taskApiService.getAllTasks();
     } catch (e) {
-      debugPrint('Error fetching tasks: $e');
       rethrow;
     }
   }
@@ -109,7 +102,6 @@ class ScheduleApiService {
     try {
       return await _taskApiService.getTasksByStatus(status);
     } catch (e) {
-      debugPrint('Error fetching tasks by status: $e');
       rethrow;
     }
   }
@@ -127,7 +119,6 @@ class ScheduleApiService {
       );
       return result.isSuccess;
     } catch (e) {
-      debugPrint('Error updating task: $e');
       rethrow;
     }
   }
@@ -150,14 +141,12 @@ class ScheduleApiService {
             await _alarmApiService.deleteAlarm(existingAlarm.slug);
           }
         } catch (e) {
-          debugPrint('Error deleting task alarm: $e');
         }
       }
 
       final result = await _taskApiService.deleteTask(slug);
       return result.isSuccess;
     } catch (e) {
-      debugPrint('Error deleting task: $e');
       rethrow;
     }
   }
@@ -189,7 +178,6 @@ class ScheduleApiService {
         'date': date,
       };
     } catch (e) {
-      debugPrint('Error getting schedule by date: $e');
       rethrow;
     }
   }
@@ -224,7 +212,6 @@ class ScheduleApiService {
         'endDate': endDate,
       };
     } catch (e) {
-      debugPrint('Error getting schedule by date range: $e');
       rethrow;
     }
   }
@@ -239,7 +226,6 @@ class ScheduleApiService {
         'total_overdue': taskData?['overdue_tasks'] ?? 0,
       };
     } catch (e) {
-      debugPrint('Error counting overdue schedule items: $e');
       return null;
     }
   }

@@ -20,7 +20,6 @@ class ProviderRegistry {
     try {
       return Provider.of<GlobalStateService>(context, listen: false);
     } catch (e) {
-      debugPrint('$_tag: Failed to get GlobalStateService: $e');
       rethrow;
     }
   }
@@ -30,7 +29,6 @@ class ProviderRegistry {
     try {
       return Provider.of<ConnectivityService>(context, listen: false);
     } catch (e) {
-      debugPrint('$_tag: Failed to get ConnectivityService: $e');
       rethrow;
     }
   }
@@ -40,7 +38,6 @@ class ProviderRegistry {
     try {
       return Provider.of<AuthService>(context, listen: false);
     } catch (e) {
-      debugPrint('$_tag: Failed to get AuthService: $e');
       rethrow;
     }
   }
@@ -50,7 +47,6 @@ class ProviderRegistry {
     try {
       return Provider.of<ProfileService>(context, listen: false);
     } catch (e) {
-      debugPrint('$_tag: Failed to get ProfileService: $e');
       rethrow;
     }
   }
@@ -60,7 +56,6 @@ class ProviderRegistry {
     try {
       return Provider.of<task.TaskService>(context, listen: false);
     } catch (e) {
-      debugPrint('$_tag: Failed to get TaskService: $e');
       rethrow;
     }
   }
@@ -70,7 +65,6 @@ class ProviderRegistry {
     try {
       return Provider.of<TaskApiService>(context, listen: false);
     } catch (e) {
-      debugPrint('$_tag: Failed to get TaskApiService: $e');
       rethrow;
     }
   }
@@ -80,7 +74,6 @@ class ProviderRegistry {
     try {
       return Provider.of<ActivityApiService>(context, listen: false);
     } catch (e) {
-      debugPrint('$_tag: Failed to get ActivityApiService: $e');
       rethrow;
     }
   }
@@ -90,7 +83,6 @@ class ProviderRegistry {
     try {
       return Provider.of<AktivitasService>(context, listen: false);
     } catch (e) {
-      debugPrint('$_tag: Failed to get AktivitasService: $e');
       rethrow;
     }
   }
@@ -100,7 +92,6 @@ class ProviderRegistry {
     try {
       return Provider.of<HomeService>(context, listen: false);
     } catch (e) {
-      debugPrint('$_tag: Failed to get HomeService: $e');
       rethrow;
     }
   }
@@ -110,7 +101,6 @@ class ProviderRegistry {
     try {
       return Provider.of<T>(context, listen: true);
     } catch (e) {
-      debugPrint('$_tag: Failed to watch service ${T.toString()}: $e');
       rethrow;
     }
   }
@@ -120,7 +110,6 @@ class ProviderRegistry {
     try {
       return Provider.of<T>(context, listen: false);
     } catch (e) {
-      debugPrint('$_tag: Failed to read service ${T.toString()}: $e');
       rethrow;
     }
   }
@@ -131,7 +120,6 @@ class ProviderRegistry {
       Provider.of<T>(context, listen: false);
       return true;
     } catch (e) {
-      debugPrint('$_tag: Service ${T.toString()} not available: $e');
       return false;
     }
   }

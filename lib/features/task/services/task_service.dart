@@ -72,7 +72,6 @@ class TaskService extends ChangeNotifier {
       }
       return false;
     } catch (e) {
-      debugPrint('Error toggling task completion: $e');
       return false;
     }
   }
@@ -94,7 +93,6 @@ class TaskService extends ChangeNotifier {
       }
       return false;
     } catch (e) {
-      debugPrint('Error toggling task alarm: $e');
       return false;
     }
   }
@@ -131,7 +129,6 @@ class TaskService extends ChangeNotifier {
       }
       return false;
     } catch (e) {
-      debugPrint('Error adding task: $e');
       return false;
     }
   }
@@ -190,7 +187,6 @@ class TaskService extends ChangeNotifier {
       }
       return false;
     } catch (e) {
-      debugPrint('Error updating task: $e');
       return false;
     }
   }
@@ -208,7 +204,6 @@ class TaskService extends ChangeNotifier {
       }
       return false;
     } catch (e) {
-      debugPrint('Error deleting task: $e');
       return false;
     }
   }
@@ -285,7 +280,6 @@ class TaskService extends ChangeNotifier {
       // Refresh data
       await fetchTasks();
     } catch (e) {
-      debugPrint('Error enabling all alarms: $e');
     }
   }
   
@@ -311,7 +305,6 @@ class TaskService extends ChangeNotifier {
       // Refresh data
       await fetchTasks();
     } catch (e) {
-      debugPrint('Error disabling all alarms: $e');
     }
   }
 

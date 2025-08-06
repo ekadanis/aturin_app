@@ -37,7 +37,6 @@ class BackgroundPreloader extends ChangeNotifier {
   Future<void> startBackgroundPreloading() async {
     // Jika sudah preloading atau sudah selesai, jangan lakukan lagi
     if (_isPreloading || _isCompleted) {
-      debugPrint('🚀 Background Preloader: Preloading sudah berjalan atau selesai');
       return;
     }
     
@@ -47,11 +46,9 @@ class BackgroundPreloader extends ChangeNotifier {
     _progress = 0.0;
     notifyListeners();
     
-    debugPrint('🚀 Background Preloader: Memulai background preloading...');
     
     try {
       // Memulai background preloading data
-      debugPrint('🗄️ Preloader: Memulai background preloading');
       
       // Load profile
       _updateProgress(0.1);
@@ -70,11 +67,9 @@ class BackgroundPreloader extends ChangeNotifier {
       _progress = 1.0;
       notifyListeners();
       
-      debugPrint('✅ Background Preloader: Background preloading selesai!');
     } catch (e) {
       _hasError = true;
       _errorMessage = e.toString();
-      debugPrint('❌ Background Preloader: Error during background preloading: $e');
       notifyListeners();
     } finally {
       _isPreloading = false;
@@ -85,34 +80,25 @@ class BackgroundPreloader extends ChangeNotifier {
   /// Preload profile data
   Future<void> _preloadUserProfile() async {
     try {
-      debugPrint('🔄 Background Preloader: Memuat data profil...');
       await _profileService.me(forceRefresh: true);
-      debugPrint('✅ Background Preloader: Data profil berhasil dimuat');
     } catch (e) {
-      debugPrint('❌ Background Preloader: Gagal memuat data profil: $e');
     }
   }
   
   /// Preload tasks data
   Future<void> _preloadTasks() async {
     try {
-      debugPrint('🔄 Background Preloader: Memuat data tugas...');
       await _taskApiService.fetchTasks(forceRefresh: true);
       await _taskApiService.fetchUncompletedTasksToday(forceRefresh: true);
-      debugPrint('✅ Background Preloader: Data tugas berhasil dimuat');
     } catch (e) {
-      debugPrint('❌ Background Preloader: Gagal memuat data tugas: $e');
     }
   }
   
   /// Preload activities data
   Future<void> _preloadActivities() async {
     try {
-      debugPrint('🔄 Background Preloader: Memuat data aktivitas...');
       await _activityApiService.fetchActivities(forceRefresh: true);
-      debugPrint('✅ Background Preloader: Data aktivitas berhasil dimuat');
     } catch (e) {
-      debugPrint('❌ Background Preloader: Gagal memuat data aktivitas: $e');
     }
   }
   
@@ -129,7 +115,6 @@ class BackgroundPreloader extends ChangeNotifier {
     _hasError = false;
     _errorMessage = null;
     _progress = 0.0;
-    debugPrint('🔄 Background Preloader: Status di-reset');
     notifyListeners();
   }
 }
