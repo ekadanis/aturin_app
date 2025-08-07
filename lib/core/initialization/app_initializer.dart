@@ -19,16 +19,13 @@ class AppInitializer {
   /// Main initialize method - lightweight initialization only
   Future<void> initialize() async {
     try {
-      debugPrint('🚀 App: Starting lightweight initialization');
       
       // Initialize core services
       await _initializeAlarmService();
       await _initializeHomeWidgetService();
       await _initializeSystemSettings();
       
-      debugPrint('🚀 App: Initialization completed successfully');
     } catch (e) {
-      debugPrint('🚀 App: Error during initialization: $e');
       rethrow;
     }
   }
@@ -37,9 +34,7 @@ class AppInitializer {
   Future<void> _initializeAlarmService() async {
     try {
       await _alarmManager.initialize();
-      debugPrint('✅ Alarm service initialized');
     } catch (e) {
-      debugPrint('❌ Error initializing alarm service: $e');
       rethrow;
     }
   }
@@ -48,9 +43,7 @@ class AppInitializer {
   Future<void> _initializeHomeWidgetService() async {
     try {
       await _homeWidgetService.initialize();
-      debugPrint('✅ Home widget service initialized');
     } catch (e) {
-      debugPrint('❌ Error initializing home widget service: $e');
       rethrow;
     }
   }
@@ -64,9 +57,7 @@ class AppInitializer {
       // Request necessary permissions
       await PermissionsService.requestAllPermissions();
       
-      debugPrint('✅ System settings initialized');
     } catch (e) {
-      debugPrint('❌ Error initializing system settings: $e');
       rethrow;
     }
   }

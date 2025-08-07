@@ -56,7 +56,6 @@ class ActivityApiService extends ChangeNotifier {
   // Mark data as changed (called after update/delete/create)
   void _markDataChanged() {
     _dataChanged = true;
-    debugPrint('🗄️ Cache: Data aktivitas telah ditandai berubah, membersihkan cache...');
     _clearRelatedCaches();
     
     // Force data refresh from server on next fetch
@@ -72,9 +71,7 @@ class ActivityApiService extends ChangeNotifier {
     // Clear caches with prefixes - implemented manually since removePrefixedData doesn't exist
     // Note: flutter_cache_manager doesn't support prefix removal natively
     // These would need to be cleared individually if we had stored them with individual keys
-    debugPrint('🗄️ Cache: Cache dengan prefix tidak bisa dihapus secara batch');
     
-    debugPrint('🗄️ Cache: Semua cache terkait aktivitas telah dibersihkan');
   }
 
   // Fetch activities with automatic state management and caching
@@ -90,15 +87,12 @@ class ActivityApiService extends ChangeNotifier {
               .toList();
           _setActivities(cachedActivities);
           _dataChanged = false;
-          debugPrint('🗄️ Cache: Menggunakan data aktivitas dari cache');
           return;
         }
       } catch (e) {
-        debugPrint('🗄️ Cache: Error menggunakan cache untuk aktivitas: $e');
       }
     }
     
-    debugPrint('🗄️ Cache: Mengambil data aktivitas dari server (forceRefresh=$forceRefresh, dataChanged=$_dataChanged)');
     _setLoading(true);
     _setError(null);
 
@@ -150,15 +144,12 @@ class ActivityApiService extends ChangeNotifier {
           final List<AktivitasModel> cachedActivities = List<Map<String, dynamic>>.from(cachedData)
               .map((activityMap) => AktivitasModel.fromJson(activityMap))
               .toList();
-          debugPrint('🗄️ Cache: Berhasil mendapatkan aktivitas dari cache');
           return cachedActivities;
         }
       } catch (e) {
-        debugPrint('🗄️ Cache: Error mendapatkan aktivitas dari cache: $e');
       }
     }
     
-    debugPrint('🗄️ Cache: Mengambil semua aktivitas dari server (forceRefresh=$forceRefresh)');
     
     try {
       final headers = await _getHeaders();
@@ -216,9 +207,7 @@ class ActivityApiService extends ChangeNotifier {
                   data: activitiesAsMap,
                   maxAge: _cacheValidityDuration,
                 );
-                debugPrint('🗄️ Cache: Data aktivitas berhasil disimpan ke cache');
               } catch (e) {
-                debugPrint('🗄️ Cache: Error menyimpan aktivitas ke cache: $e');
               }
 
               return activitiesWithAlarms;
@@ -237,9 +226,7 @@ class ActivityApiService extends ChangeNotifier {
               data: activitiesAsMap,
               maxAge: _cacheValidityDuration,
             );
-            debugPrint('🗄️ Cache: Data aktivitas berhasil disimpan ke cache');
           } catch (e) {
-            debugPrint('🗄️ Cache: Error menyimpan aktivitas ke cache: $e');
           }
           
           return activities;
@@ -264,15 +251,12 @@ class ActivityApiService extends ChangeNotifier {
           final List<AktivitasModel> cachedActivities = List<Map<String, dynamic>>.from(cachedData)
               .map((activityMap) => AktivitasModel.fromJson(activityMap))
               .toList();
-          debugPrint('🗄️ Cache: Berhasil mendapatkan aktivitas hari ini dari cache');
           return cachedActivities;
         }
       } catch (e) {
-        debugPrint('🗄️ Cache: Error mendapatkan aktivitas hari ini dari cache: $e');
       }
     }
     
-    debugPrint('🗄️ Cache: Mengambil aktivitas hari ini dari server (forceRefresh=$forceRefresh)');
     
     try {
       final headers = await _getHeaders();
@@ -333,9 +317,7 @@ class ActivityApiService extends ChangeNotifier {
                   data: activitiesAsMap,
                   maxAge: _cacheValidityDuration,
                 );
-                debugPrint('🗄️ Cache: Data aktivitas hari ini berhasil disimpan ke cache');
               } catch (e) {
-                debugPrint('🗄️ Cache: Error menyimpan aktivitas hari ini ke cache: $e');
               }
 
               return activitiesWithAlarms;
@@ -354,9 +336,7 @@ class ActivityApiService extends ChangeNotifier {
               data: activitiesAsMap,
               maxAge: _cacheValidityDuration,
             );
-            debugPrint('🗄️ Cache: Data aktivitas hari ini berhasil disimpan ke cache');
           } catch (e) {
-            debugPrint('🗄️ Cache: Error menyimpan aktivitas hari ini ke cache: $e');
           }
 
           return activities;
@@ -474,15 +454,12 @@ class ActivityApiService extends ChangeNotifier {
         final cachedData = await _cacheService.getData(cacheKey);
         if (cachedData != null) {
           final activity = AktivitasModel.fromJson(cachedData);
-          debugPrint('🗄️ Cache: Berhasil mendapatkan aktivitas dengan slug $slug dari cache');
           return activity;
         }
       } catch (e) {
-        debugPrint('🗄️ Cache: Error mendapatkan aktivitas dengan slug $slug dari cache: $e');
       }
     }
     
-    debugPrint('🗄️ Cache: Mengambil aktivitas dengan slug $slug dari server');
     
     try {
       final headers = await _getHeaders();
@@ -518,9 +495,7 @@ class ActivityApiService extends ChangeNotifier {
                     data: activityWithAlarm.toJson(),
                     maxAge: _cacheValidityDuration,
                   );
-                  debugPrint('🗄️ Cache: Aktivitas dengan slug $slug berhasil disimpan ke cache');
                 } catch (e) {
-                  debugPrint('🗄️ Cache: Error menyimpan aktivitas ke cache: $e');
                 }
                 
                 return activityWithAlarm;
@@ -539,9 +514,7 @@ class ActivityApiService extends ChangeNotifier {
               data: activity.toJson(),
               maxAge: _cacheValidityDuration,
             );
-            debugPrint('🗄️ Cache: Aktivitas dengan slug $slug berhasil disimpan ke cache');
           } catch (e) {
-            debugPrint('🗄️ Cache: Error menyimpan aktivitas ke cache: $e');
           }
 
           return activity;
@@ -713,15 +686,12 @@ class ActivityApiService extends ChangeNotifier {
           final List<AktivitasModel> cachedActivities = List<Map<String, dynamic>>.from(cachedData)
               .map((activityMap) => AktivitasModel.fromJson(activityMap))
               .toList();
-          debugPrint('🗄️ Cache: Berhasil mendapatkan aktivitas rentang tanggal dari cache');
           return cachedActivities;
         }
       } catch (e) {
-        debugPrint('🗄️ Cache: Error mendapatkan aktivitas rentang tanggal dari cache: $e');
       }
     }
     
-    debugPrint('🗄️ Cache: Mengambil aktivitas rentang tanggal dari server');
     
     try {
       final headers = await _getHeaders();
@@ -774,9 +744,7 @@ class ActivityApiService extends ChangeNotifier {
                   data: activitiesAsMap,
                   maxAge: _cacheValidityDuration,
                 );
-                debugPrint('🗄️ Cache: Data aktivitas rentang tanggal berhasil disimpan ke cache');
               } catch (e) {
-                debugPrint('🗄️ Cache: Error menyimpan aktivitas rentang tanggal ke cache: $e');
               }
 
               return activitiesWithAlarms;
@@ -795,9 +763,7 @@ class ActivityApiService extends ChangeNotifier {
               data: activitiesAsMap,
               maxAge: _cacheValidityDuration,
             );
-            debugPrint('🗄️ Cache: Data aktivitas rentang tanggal berhasil disimpan ke cache');
           } catch (e) {
-            debugPrint('🗄️ Cache: Error menyimpan aktivitas rentang tanggal ke cache: $e');
           }
 
           return activities;
@@ -831,15 +797,12 @@ class ActivityApiService extends ChangeNotifier {
           final List<AktivitasModel> cachedActivities = List<Map<String, dynamic>>.from(cachedData)
               .map((activityMap) => AktivitasModel.fromJson(activityMap))
               .toList();
-          debugPrint('🗄️ Cache: Berhasil mendapatkan aktivitas kategori dari cache');
           return cachedActivities;
         }
       } catch (e) {
-        debugPrint('🗄️ Cache: Error mendapatkan aktivitas kategori dari cache: $e');
       }
     }
     
-    debugPrint('🗄️ Cache: Mengambil aktivitas kategori dari server');
     
     try {
       final headers = await _getHeaders();
@@ -890,9 +853,7 @@ class ActivityApiService extends ChangeNotifier {
                   data: activitiesAsMap,
                   maxAge: _cacheValidityDuration,
                 );
-                debugPrint('🗄️ Cache: Data aktivitas kategori berhasil disimpan ke cache');
               } catch (e) {
-                debugPrint('🗄️ Cache: Error menyimpan aktivitas kategori ke cache: $e');
               }
 
               return activitiesWithAlarms;
@@ -911,9 +872,7 @@ class ActivityApiService extends ChangeNotifier {
               data: activitiesAsMap,
               maxAge: _cacheValidityDuration,
             );
-            debugPrint('🗄️ Cache: Data aktivitas kategori berhasil disimpan ke cache');
           } catch (e) {
-            debugPrint('🗄️ Cache: Error menyimpan aktivitas kategori ke cache: $e');
           }
 
           return activities;
@@ -947,15 +906,12 @@ class ActivityApiService extends ChangeNotifier {
           final List<AktivitasModel> cachedActivities = List<Map<String, dynamic>>.from(cachedData)
               .map((activityMap) => AktivitasModel.fromJson(activityMap))
               .toList();
-          debugPrint('🗄️ Cache: Berhasil mendapatkan aktivitas tanggal dari cache');
           return cachedActivities;
         }
       } catch (e) {
-        debugPrint('🗄️ Cache: Error mendapatkan aktivitas tanggal dari cache: $e');
       }
     }
     
-    debugPrint('🗄️ Cache: Mengambil aktivitas tanggal dari server');
     
     try {
       final headers = await _getHeaders();
@@ -1007,9 +963,7 @@ class ActivityApiService extends ChangeNotifier {
                   data: activitiesAsMap,
                   maxAge: _cacheValidityDuration,
                 );
-                debugPrint('🗄️ Cache: Data aktivitas tanggal berhasil disimpan ke cache');
               } catch (e) {
-                debugPrint('🗄️ Cache: Error menyimpan aktivitas tanggal ke cache: $e');
               }
 
               return activitiesWithAlarms;
@@ -1028,9 +982,7 @@ class ActivityApiService extends ChangeNotifier {
               data: activitiesAsMap,
               maxAge: _cacheValidityDuration,
             );
-            debugPrint('🗄️ Cache: Data aktivitas tanggal berhasil disimpan ke cache');
           } catch (e) {
-            debugPrint('🗄️ Cache: Error menyimpan aktivitas tanggal ke cache: $e');
           }
 
           return activities;

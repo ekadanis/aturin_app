@@ -10,9 +10,7 @@ class HomeWidgetService {
   Future<void> initialize() async {
     try {
       await HomeWidget.setAppGroupId('group.com.aturinjaya.pdbl');
-      debugPrint('🏠 HomeWidget: Calendar widget initialized');
     } catch (e) {
-      debugPrint('🏠 HomeWidget: Initialization error: $e');
     }
   }
 
@@ -26,13 +24,10 @@ class HomeWidgetService {
       final dateFormat = DateFormat('EEEE, d MMM', 'id_ID');
       final todayString = dateFormat.format(now);
       
-      debugPrint('🏠 Widget Service: Processing ${activities?.length ?? 0} activities, ${tasks?.length ?? 0} tasks');
-      debugPrint('🏠 Widget Service: Today is ${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}');
       
       // Debug: Print all activities with their dates
       if (activities != null) {
         for (var activity in activities) {
-          debugPrint('🏠 Activity: ${activity.title} - Date: ${activity.date.year}-${activity.date.month.toString().padLeft(2, '0')}-${activity.date.day.toString().padLeft(2, '0')}');
         }
       }
       
@@ -49,7 +44,6 @@ class HomeWidgetService {
         item.date.year == now.year
       ).toList() ?? [];
       
-      debugPrint('🏠 Widget Service: After filtering - ${todayActivities.length} activities today, ${todayTasks.length} tasks today');
       
       final totalActivities = todayActivities.length;
       final totalTasks = todayTasks.length;
@@ -92,16 +86,13 @@ class HomeWidgetService {
         androidName: 'AturinAppHomeWidget',
       );
       
-      debugPrint('🏠 Widget updated: $totalActivities activities, $totalTasks tasks for today');
       
     } catch (e) {
-      debugPrint('🏠 HomeWidget: Update error: $e');
     }
   }
 
   /// Handle widget interaction
   Future<void> handleWidgetInteraction(String? action) async {
-    debugPrint('🏠 HomeWidget: Interaction received: $action');
     // Handle click actions from widget
   }
 
@@ -110,7 +101,6 @@ class HomeWidgetService {
     try {
       return await HomeWidget.getWidgetData<String>('action');
     } catch (e) {
-      debugPrint('🏠 HomeWidget: Error checking interactions: $e');
       return null;
     }
   }
@@ -126,7 +116,6 @@ class HomeWidgetService {
         'isEmpty': await HomeWidget.getWidgetData<bool>('isEmpty') ?? true,
       };
     } catch (e) {
-      debugPrint('🏠 HomeWidget: Error getting data: $e');
       return null;
     }
   }
@@ -138,9 +127,7 @@ class HomeWidgetService {
         name: 'AturinAppHomeWidget',
         androidName: 'AturinAppHomeWidget',
       );
-      debugPrint('🏠 HomeWidget: Force refresh completed');
     } catch (e) {
-      debugPrint('🏠 HomeWidget: Force refresh error: $e');
     }
   }
 }

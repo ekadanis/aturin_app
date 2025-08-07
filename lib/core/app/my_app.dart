@@ -25,8 +25,6 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    // Background preloading akan ditangani oleh AppBootstrap
-    debugPrint('🚀 MyApp: App initialized, preloading handled by AppBootstrap');
   }
 
   @override

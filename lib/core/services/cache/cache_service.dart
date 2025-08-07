@@ -28,9 +28,7 @@ class CacheService {
         maxAge: maxAge ?? const Duration(hours: 2),
         key: key,
       );
-      debugPrint('🗄️ Cache: Data tersimpan untuk key $key');
     } catch (e) {
-      debugPrint('🗄️ Cache: Error menyimpan data untuk key $key: $e');
     }
   }
   
@@ -39,7 +37,6 @@ class CacheService {
     try {
       final fileInfo = await _cacheManager.getFileFromCache(key);
       if (fileInfo == null) {
-        debugPrint('🗄️ Cache: Cache tidak ditemukan untuk key $key');
         return null;
       }
       
@@ -47,10 +44,8 @@ class CacheService {
       final content = await file.readAsString();
       final data = jsonDecode(content);
       
-      debugPrint('🗄️ Cache: Data berhasil diambil dari cache untuk key $key');
       return data;
     } catch (e) {
-      debugPrint('🗄️ Cache: Error membaca data untuk key $key: $e');
       return null;
     }
   }
@@ -64,26 +59,22 @@ class CacheService {
   /// Menghapus cache dengan key tertentu
   Future<void> removeData(String key) async {
     await _cacheManager.removeFile(key);
-    debugPrint('🗄️ Cache: Cache dihapus untuk key $key');
   }
   
   /// Menghapus beberapa cache berdasarkan daftar keys
   Future<void> removeMultipleData(List<String> keys) async {
     for (String key in keys) {
       await _cacheManager.removeFile(key);
-      debugPrint('🗑️ Cache: Cache dihapus untuk key $key');
     }
   }
   
   /// Membersihkan semua cache CacheManager
   Future<void> clearCache() async {
     await _cacheManager.emptyCache();
-    debugPrint('🗄️ Cache: Semua cache CacheManager dibersihkan');
   }
   
   /// Membersihkan semua cache aplikasi (hanya CacheManager)
   Future<void> clearAll() async {
     await _cacheManager.emptyCache();
-    debugPrint('🧹 CacheService: Semua cache aplikasi telah dibersihkan');
   }
 }

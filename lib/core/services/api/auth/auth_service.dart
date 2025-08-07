@@ -64,15 +64,6 @@ class AuthService extends ChangeNotifier {
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        debugPrint('DEBUG: Parsed data: $data');
-        debugPrint('DEBUG: data is null? ${data == null}');
-        debugPrint(
-          'DEBUG: data["data"] exists? ${data != null ? data.containsKey("data") : "data is null"}',
-        );
-        debugPrint(
-          'DEBUG: data["data"]["user"] exists? ${data != null && data["data"] != null ? data["data"].containsKey("user") : "data or data[\"data\"] is null"}',
-        );
-
         // Validate response structure - check for both possible structures
         Map<String, dynamic>? userData;
 
@@ -80,45 +71,24 @@ class AuthService extends ChangeNotifier {
             data['data'] != null &&
             data['data']['user'] != null) {
           // New API format: data.data.user
-          debugPrint('DEBUG: Using new API format (data.data.user)');
           userData = data['data']['user'] as Map<String, dynamic>;
-          debugPrint('DEBUG: userData: $userData');
         } else if (data != null && data['user'] != null) {
           // Old API format: data.user
-          debugPrint('DEBUG: Using old API format (data.user)');
           userData = data['user'] as Map<String, dynamic>;
-          debugPrint('DEBUG: userData: $userData');
         } else {
-          debugPrint('DEBUG: Neither format found! data structure:');
-          debugPrint('DEBUG: data keys: ${data?.keys.toList()}');
-          if (data?['data'] != null) {
-            debugPrint(
-              'DEBUG: data["data"] keys: ${data["data"]?.keys?.toList()}',
-            );
-          }
           _setError('Response data tidak valid');
           _setLoading(false);
           return AuthResult.failure('Data registrasi tidak valid dari server');
         }
 
         // Ensure required fields exist
-        debugPrint('DEBUG: Checking required fields...');
-        debugPrint('DEBUG: userData["id"]: ${userData['id']}');
-        debugPrint('DEBUG: userData["name"]: ${userData['name']}');
-        debugPrint('DEBUG: userData["email"]: ${userData['email']}');
-
         if (userData['id'] == null ||
             userData['name'] == null ||
             userData['email'] == null) {
-          debugPrint('DEBUG: Required fields missing!');
           _setError('Data user tidak lengkap');
           _setLoading(false);
           return AuthResult.failure('Data user tidak lengkap dari server');
         }
-
-        debugPrint(
-          'DEBUG: All required fields present, creating User object...',
-        );
 
         // Create user object from response
         final user = User(
@@ -136,12 +106,6 @@ class AuthService extends ChangeNotifier {
                   ? DateTime.tryParse(userData['updated_at'])
                   : null,
         );
-
-        debugPrint(
-          'DEBUG: User object created successfully: ${user.toString()}',
-        );
-        debugPrint('DEBUG: Token from response: ${data['token']}');
-        debugPrint('DEBUG: Message from response: ${data['message']}');
 
         _setLoading(false);
         return AuthResult.success(
@@ -181,7 +145,6 @@ class AuthService extends ChangeNotifier {
           return AuthResult.failure(errorMessage);
         } catch (e) {
           // If we can't parse the error response, use a generic message
-          debugPrint('Error parsing error response: $e');
           String errorMessage =
               'Pendaftaran gagal (Status: ${response.statusCode})';
           _setError(errorMessage);
@@ -202,7 +165,6 @@ class AuthService extends ChangeNotifier {
         errorMessage = 'Terjadi kesalahan: ${e.toString()}';
       }
 
-      debugPrint('Registration error: $e');
       _setError(errorMessage);
       _setLoading(false);
       return AuthResult.failure(errorMessage);
@@ -241,8 +203,6 @@ class AuthService extends ChangeNotifier {
         }),
       );
 
-      debugPrint('Login response status: ${response.statusCode}');
-      debugPrint('Login response body: ${response.body}');
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
 
@@ -304,7 +264,6 @@ class AuthService extends ChangeNotifier {
           return AuthResult.failure(errorMessage);
         } catch (e) {
           // If we can't parse the error response, use a generic message
-          debugPrint('Error parsing login error response: $e');
           String errorMessage = 'Login gagal (Status: ${response.statusCode})';
           _setError(errorMessage);
           _setLoading(false);
@@ -324,7 +283,6 @@ class AuthService extends ChangeNotifier {
         errorMessage = 'Terjadi kesalahan: ${e.toString()}';
       }
 
-      debugPrint('Login error: $e');
       _setError(errorMessage);
       _setLoading(false);
       return AuthResult.failure(errorMessage);

@@ -17,7 +17,6 @@ class AlarmService {
     if (!_initialized) {
       await Alarm.init();
       _initialized = true;
-      debugPrint('Alarm package berhasil diinisialisasi');
     }
   }
 
@@ -30,29 +29,22 @@ class AlarmService {
   // Mengatur status alarm global (sinkron ke API dan lokal)
   Future<void> setGlobalAlarmEnabled(bool value) async {
     final apiResult = await _profileService.switchGlobalAlarmStatus();
-    debugPrint('[AlarmService] Request setGlobalAlarmEnabled($value)');
     if (apiResult != null && apiResult == value) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_globalAlarmKey, value);
-      debugPrint('[AlarmService] Status alarm global diatur ke: $value (sinkron dengan API)');
       if (!value) {
         // Jika global alarm dimatikan, cancel semua alarm lokal
         final alarms = await getActiveAlarms();
         for (final alarm in alarms) {
           await Alarm.stop(alarm.id);
-          debugPrint('[AlarmService] Alarm lokal dengan id ${alarm.id} dinonaktifkan');
         }
-        debugPrint('[AlarmService] Semua alarm lokal dinonaktifkan karena global alarm OFF');
       } else {
         // Jika global alarm diaktifkan, tampilkan status semua alarm lokal
         final alarms = await getActiveAlarms();
-        debugPrint('[AlarmService] Status alarm lokal setelah global ON:');
         for (final alarm in alarms) {
-          debugPrint('[AlarmService] Alarm id: ${alarm.id}, waktu: ${alarm.dateTime}, aktif: true');
         }
       }
     } else {
-      debugPrint('[AlarmService] Gagal sinkron ke API atau status tidak sesuai.');
     }
   }
 
@@ -62,9 +54,7 @@ class AlarmService {
     if (apiStatus != null) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_globalAlarmKey, apiStatus);
-      debugPrint('Status alarm global lokal disinkronkan dari API: $apiStatus');
     } else {
-      debugPrint('Gagal mengambil status alarm global dari API');
     }
   }
 
@@ -79,7 +69,6 @@ class AlarmService {
     await ensureInitialized();
     final now = DateTime.now();
     if (dateTime.isBefore(now)) {
-      debugPrint('Alarm waktu sudah lewat, tidak diatur: $dateTime');
       return;
     }
 
@@ -87,11 +76,9 @@ class AlarmService {
       final alarms = await Alarm.getAlarms();
       if (alarms.any((alarm) => alarm.id == id)) {
         await Alarm.stop(id);
-        debugPrint('Alarm lama dengan ID $id dihentikan');
         await Future.delayed(const Duration(milliseconds: 200));
       }
     } catch (e) {
-      debugPrint('Tidak ada alarm sebelumnya dengan ID $id atau error: $e');
     }
 
     final alarmSettings = AlarmSettings(
@@ -118,7 +105,6 @@ class AlarmService {
     );
 
     await Alarm.set(alarmSettings: alarmSettings);
-    debugPrint('Alarm berhasil diatur untuk aktivitas: $title pada $dateTime (enabled: $enabled)');
   }
 
   // Menghapus alarm berdasarkan ID (untuk aktivitas dan task)
@@ -129,12 +115,9 @@ class AlarmService {
       final alarms = await Alarm.getAlarms();
       if (alarms.any((alarm) => alarm.id == alarmId)) {
         await Alarm.stop(alarmId);
-        debugPrint('Alarm berhasil dihapus untuk ID: $alarmId');
       } else {
-        debugPrint('Tidak ada alarm aktif dengan ID: $alarmId');
       }
     } catch (e) {
-      debugPrint('Error saat menghapus alarm: $e');
     }
   }
 
@@ -144,7 +127,6 @@ class AlarmService {
       await ensureInitialized();
       return await Alarm.getAlarms();
     } catch (e) {
-      debugPrint('Error saat mendapatkan alarm aktif: $e');
       return [];
     }
   }
@@ -156,7 +138,6 @@ class AlarmService {
       final alarms = await Alarm.getAlarms();
       return alarms.any((alarm) => alarm.id == taskId);
     } catch (e) {
-      debugPrint('Error saat cek status alarm: $e');
       return false;
     }
   }

@@ -7,15 +7,15 @@ import 'package:aturin_app/core/services/cache/cache_service.dart';
 
 class ProfileService extends ChangeNotifier {
   static const String baseUrl = 'https://aturin-app.com/api/v1';
-  
+
   // Cache keys
   static const String _profileCacheKey = 'user_profile';
   static const String _globalAlarmSettingCacheKey = 'global_alarm_setting';
   static const Duration _cacheValidityDuration = Duration(minutes: 30);
-  
+
   // Cache service instance
   final CacheService _cacheService = CacheService();
-  
+
   // Flag to track if data has changed
   bool _dataChanged = false;
 
@@ -38,35 +38,32 @@ class ProfileService extends ChangeNotifier {
     _errorMessage = error;
     notifyListeners();
   }
-  
+
   // Mark data as changed (called after update operations)
   void _markDataChanged() {
     _dataChanged = true;
-    debugPrint('🗄️ Cache: Data profil telah ditandai berubah, membersihkan cache...');
     _clearRelatedCaches();
-    
+
     // Force data refresh from server on next fetch
-    notifyListeners(); 
+    notifyListeners();
   }
-  
+
   // Clear all related caches when data changes
   Future<void> _clearRelatedCaches() async {
     await _cacheService.removeData(_profileCacheKey);
     await _cacheService.removeData(_globalAlarmSettingCacheKey);
-    
-    debugPrint('🗄️ Cache: Semua cache terkait profil telah dibersihkan');
   }
 
   // Public method to reset all profile data (untuk logout)
   // Public method to reset ALL app data (untuk logout)
   // Public method to reset ALL app data (untuk logout)
-    // Public method to reset ALL app data (untuk logout)
+  // Public method to reset ALL app data (untuk logout)
   Future<void> clearAllAppCache() async {
     // Reset internal state
     _currentUser = null;
     _isGlobalAlarmEnabled = null;
     _dataChanged = true;
-    
+
     // Daftar semua cache keys yang ingin dibersihkan dari CacheManager
     final cacheKeysToRemove = [
       // Profile related
@@ -74,88 +71,77 @@ class ProfileService extends ChangeNotifier {
       'global_alarm_setting',
       'profile_cache',
       'profile_banner_cache',
-      
+
       // Task related
       'tasks_cache',
       'completed_tasks_cache',
       'uncompleted_tasks_cache',
       'overdue_tasks_cache',
       'all_tasks_cache',
-      
+
       // Activity related
       'activities_cache',
       'today_activities_cache',
       'activity_categories_cache',
-      
+
       // Home widget related
       'widget_data_cache',
       'home_widget_cache',
-      
+
       // Other app caches
       'app_settings_cache',
       'notification_cache',
       'theme_cache',
     ];
-    
+
     // Clear individual cache keys dari CacheManager
     try {
       await _cacheService.removeMultipleData(cacheKeysToRemove);
-    } catch (e) {
-      debugPrint('⚠️ Error removing individual cache: $e');
-    }
-    
+    } catch (e) {}
+
     // Clear semua cache di CacheManager
     try {
       await _cacheService.clearAll();
-    } catch (e) {
-      debugPrint('⚠️ CacheService clearAll error: $e');
-    }
-    
+    } catch (e) {}
+
     // Untuk SharedPreferences, hanya hapus cache-related, bukan auth data
     try {
       final prefs = await SharedPreferences.getInstance();
       final keysToRemoveFromPrefs = [
         'global_alarm_enabled', // Setting alarm disimpan di SharedPreferences
       ];
-      
+
       for (String key in keysToRemoveFromPrefs) {
         if (await prefs.containsKey(key)) {
           await prefs.remove(key);
-          debugPrint('🗑️ Removed from SharedPreferences: $key');
         }
       }
-    } catch (e) {
-      debugPrint('⚠️ Error clearing SharedPreferences cache: $e');
-    }
-    
+    } catch (e) {}
+
     notifyListeners();
-    debugPrint('🧹 ProfileService: SEMUA cache aplikasi telah dibersihkan!');
   }
+
   Future<User?> me({bool forceRefresh = false}) async {
     // Jika forceRefresh=true, langsung ambil dari server tanpa cek cache
-    if (!forceRefresh && !_dataChanged && await _cacheService.isCacheValid(_profileCacheKey)) {
+    if (!forceRefresh &&
+        !_dataChanged &&
+        await _cacheService.isCacheValid(_profileCacheKey)) {
       try {
         final cachedData = await _cacheService.getData(_profileCacheKey);
         if (cachedData != null) {
           final user = User.fromJson(cachedData);
           _currentUser = user;
           _dataChanged = false;
-          debugPrint('🗄️ Cache: Menggunakan data profil dari cache');
           return user;
         }
-      } catch (e) {
-        debugPrint('🗄️ Cache: Error menggunakan cache untuk profil: $e');
-      }
+      } catch (e) {}
     }
 
     // Ambil data fresh dari server
-    debugPrint('🗄️ Cache: Mengambil data profil dari server (forceRefresh=$forceRefresh)');
     try {
       _setLoading(true);
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
-
-      debugPrint('🔑 Token: ${token != null ? "Token ditemukan" : "Token TIDAK ditemukan"}');
 
       if (token == null) {
         _setError("Token tidak ditemukan.");
@@ -172,9 +158,6 @@ class ProfileService extends ChangeNotifier {
         },
       );
 
-      debugPrint('🌐 Profile API response status: ${response.statusCode}');
-      debugPrint('🌐 Profile API response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
 
@@ -185,7 +168,6 @@ class ProfileService extends ChangeNotifier {
         }
 
         final userData = responseData['data'];
-        debugPrint('📦 User data dari server: Name=${userData['name']}, Email=${userData['email']}');
 
         final user = User(
           id: userData['id'],
@@ -203,8 +185,6 @@ class ProfileService extends ChangeNotifier {
                   : null,
         );
 
-        debugPrint('✅ User object dibuat: Name=${user.name}, Email=${user.email}');
-
         // Save to cache hanya jika bukan forceRefresh
         if (!forceRefresh) {
           await _cacheService.saveData(
@@ -213,18 +193,16 @@ class ProfileService extends ChangeNotifier {
             maxAge: _cacheValidityDuration,
           );
         }
-        
+
         _currentUser = user;
         _dataChanged = false;
         notifyListeners();
         return user;
       } else {
-        debugPrint('❌ Profile API Error: Status ${response.statusCode}');
         _setError("Gagal mengambil profil (Status: ${response.statusCode})");
         return null;
       }
     } catch (e) {
-      debugPrint('❌ Profile API Exception: $e');
       _setError("Terjadi kesalahan: $e");
       return null;
     } finally {
@@ -253,9 +231,6 @@ class ProfileService extends ChangeNotifier {
         },
         body: jsonEncode({'name': name, 'avatar': avatar}),
       );
-
-      debugPrint('Profile response status: ${response.statusCode}');
-      debugPrint('Profile response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -300,15 +275,12 @@ class ProfileService extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
 
-      debugPrint('getBannerProfile: Checking token...');
       if (token == null) {
-        debugPrint('getBannerProfile: Token tidak ditemukan.');
         _setError("Token tidak ditemukan.");
         _setLoading(false);
         return null;
       }
 
-      debugPrint('getBannerProfile: Token found, making API call...');
       final response = await http.get(
         Uri.parse('$baseUrl/profile/banner'),
         headers: {
@@ -318,16 +290,12 @@ class ProfileService extends ChangeNotifier {
         },
       );
 
-      debugPrint('getBannerProfile response status: ${response.statusCode}');
-      debugPrint('getBannerProfile response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
 
         if (responseData == null ||
             responseData['data'] == null ||
             responseData['data']['user'] == null) {
-          debugPrint('getBannerProfile: Data profil tidak valid dari server');
           _setError('Data profil tidak valid dari server');
           _setLoading(false);
           return null;
@@ -346,17 +314,14 @@ class ProfileService extends ChangeNotifier {
           updatedAt: null,
         );
 
-        debugPrint('getBannerProfile: User berhasil dibuat: ${user.name}');
         _currentUser = user;
         notifyListeners();
         return user;
       } else {
-        debugPrint('getBannerProfile: Error status ${response.statusCode}');
         _setError("Gagal mengambil profil (Status: ${response.statusCode})");
         return null;
       }
     } catch (e) {
-      debugPrint('getBannerProfile: Exception caught: $e');
       _setError("Terjadi kesalahan: $e");
       return null;
     } finally {
@@ -385,9 +350,6 @@ class ProfileService extends ChangeNotifier {
         },
       );
 
-      debugPrint('Global alarm status response status: ${response.statusCode}');
-      debugPrint('Global alarm status response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
 
@@ -397,12 +359,15 @@ class ProfileService extends ChangeNotifier {
           return null;
         }
 
-        final isEnabled = responseData['data']['is_global_alarm_enabled'] as bool;
+        final isEnabled =
+            responseData['data']['is_global_alarm_enabled'] as bool;
         _isGlobalAlarmEnabled = isEnabled;
         notifyListeners();
         return isEnabled;
       } else {
-        _setError("Gagal mengambil status alarm global (Status: ${response.statusCode})");
+        _setError(
+          "Gagal mengambil status alarm global (Status: ${response.statusCode})",
+        );
         return null;
       }
     } catch (e) {
@@ -434,9 +399,6 @@ class ProfileService extends ChangeNotifier {
         },
       );
 
-      debugPrint('Switch global alarm response status: ${response.statusCode}');
-      debugPrint('Switch global alarm response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
 
@@ -446,12 +408,15 @@ class ProfileService extends ChangeNotifier {
           return null;
         }
 
-        final isEnabled = responseData['data']['is_global_alarm_enabled'] as bool;
+        final isEnabled =
+            responseData['data']['is_global_alarm_enabled'] as bool;
         _isGlobalAlarmEnabled = isEnabled;
         notifyListeners();
         return isEnabled;
       } else {
-        _setError("Gagal mengubah status alarm global (Status: ${response.statusCode})");
+        _setError(
+          "Gagal mengubah status alarm global (Status: ${response.statusCode})",
+        );
         return null;
       }
     } catch (e) {

@@ -43,7 +43,6 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() {
       _userFuture = newUserFuture;
     });
-    print('🔄 ProfilePage: Loading user data (forceRefresh=$forceRefresh)');
   }
 
   @override
@@ -87,7 +86,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: CircularProgressIndicator(color: AppTheme.primaryColor),
               );
             } else if (snapshot.hasError) {
-              print('❌ ProfilePage Error: ${snapshot.error}');
               return Center(
                 child: Text(
                   'Error: ${snapshot.error}',
@@ -108,9 +106,7 @@ class _ProfilePageState extends State<ProfilePage> {
             }
 
             User user = snapshot.data!;
-            print(
-              '✅ ProfilePage: User loaded - Name: ${user.name}, Email: ${user.email}',
-            );
+             
 
             return SafeArea(
               bottom: false,
@@ -141,21 +137,17 @@ class _ProfilePageState extends State<ProfilePage> {
                     const SizedBox(height: 8),
                     LogoutButton(
                       onPressed: () async {
-                        print('🚪 Logout button pressed!');
                         try {
                           final confirm = await showDialog<bool>(
                             context: context,
                             barrierDismissible: false,
                             builder: (context) {
-                              print('🔧 Building ConfirmExitDialog...');
                               return const ConfirmExitDialog();
                             },
                           );
 
-                          print('🚪 Dialog result: $confirm');
 
                           if (confirm == true) {
-                            print('🔄 Starting logout process...');
                             final authService = AuthService();
                             final profileService = Provider.of<ProfileService>(
                               context,
@@ -167,7 +159,6 @@ class _ProfilePageState extends State<ProfilePage> {
                             final result = await authService.logout();
                             
                             if (result.isSuccess) {
-                              print('✅ Logout successful, navigating to login...');
                               if (context.mounted) {
                                 // Gunakan custom SnackBar untuk success
                                 showCustomTopSnackbar(
@@ -187,7 +178,6 @@ class _ProfilePageState extends State<ProfilePage> {
                                 }
                               }
                             } else {
-                              print('❌ Logout failed: ${result.message}');
                               if (context.mounted) {
                                 // Gunakan custom SnackBar untuk error
                                 showCustomTopSnackbar(
@@ -200,10 +190,8 @@ class _ProfilePageState extends State<ProfilePage> {
                               }
                             }
                           } else {
-                            print('🚫 Logout cancelled by user');
                           }
                         } catch (e) {
-                          print('❌ Error in logout process: $e');
                           if (context.mounted) {
                             // Gunakan custom SnackBar untuk exception
                             showCustomTopSnackbar(

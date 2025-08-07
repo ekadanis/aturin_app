@@ -36,14 +36,11 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    debugPrint('🏠 HomePage: initState() called');
     homeService = Provider.of<HomeService>(context, listen: false);
 
     // Note: fetchData() is already called by DataPrefetchGuard before navigation
     // so we don't need to call it again here to avoid duplicate API calls
-    debugPrint(
-      '🏠 HomePage: Skipping fetchData() - already called by DataPrefetchGuard',
-    );
+  
 
     // Check for widget navigation request
     _checkWidgetNavigation();
@@ -79,15 +76,12 @@ class _HomePageState extends State<HomePage> {
           activities: allActivities.map((a) => a.toMap()).toList(),
           tasks: allTasks.map((t) => t.toMap()).toList(),
         );
-        debugPrint(
-          '🏠 HomePage: Auto-updated widget with ${allActivities.length} activities, ${allTasks.length} tasks',
-        );
+      
       }
 
       // Use background service to check and update if needed
       WidgetBackgroundService.checkAndUpdate(homeWidgetProvider);
 
-      debugPrint('🏠 HomePage: Auto-initialized widget and updated data');
     });
   }
 
@@ -103,10 +97,7 @@ class _HomePageState extends State<HomePage> {
       final pendingNavigation = homeWidgetProvider.pendingNavigation;
 
       if (pendingNavigation != null) {
-        debugPrint(
-          '🏠 HomePage: Processing widget navigation: $pendingNavigation',
-        );
-
+       
         // Handle different navigation requests
         switch (pendingNavigation) {
           case 'view_schedule':

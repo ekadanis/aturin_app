@@ -31,14 +31,11 @@ class AlarmDatabase {
   /// Create a new alarm using API
   Future<AlarmModel?> createAlarm(AlarmModel alarm) async {
     try {
-      debugPrint('Creating alarm via API: \\${alarm.alarmDateTime}');
       
       final result = await _apiService.createAlarm(alarm);
       
-      debugPrint('Alarm created with ID: \\${result?.id}');
       return result;
     } catch (e) {
-      debugPrint('Error creating alarm: $e');
       return null;
     }
   }
@@ -48,7 +45,6 @@ class AlarmDatabase {
       final allAlarms = await _apiService.getAllAlarms();
       return allAlarms.where((alarm) => alarm.id == id).firstOrNull;
     } catch (e) {
-      debugPrint('Error getting alarm by ID: $e');
       return null;
     }
   }
@@ -58,7 +54,6 @@ class AlarmDatabase {
     try {
       return await _apiService.getAllAlarms();
     } catch (e) {
-      debugPrint('Error getting all alarms: $e');
       return [];
     }
   }
@@ -68,7 +63,6 @@ class AlarmDatabase {
     try {
       return await _apiService.getEnabledAlarms();
     } catch (e) {
-      debugPrint('Error getting enabled alarms: $e');
       return [];
     }
   }
@@ -78,7 +72,6 @@ class AlarmDatabase {
     try {
       return await _apiService.getAlarmsByDate(date);
     } catch (e) {
-      debugPrint('Error getting alarms by date: $e');
       return [];
     }
   }
@@ -86,16 +79,13 @@ class AlarmDatabase {
   Future<bool> updateAlarm(AlarmModel alarm) async {
     try {
       if (alarm.slug.isEmpty) {
-        debugPrint('Cannot update alarm: slug is empty');
         return false;
       }
       
       final result = await _apiService.updateAlarm(alarm.slug, alarm);
       
-      debugPrint('Alarm updated: \\${result != null}');
       return result != null;
     } catch (e) {
-      debugPrint('Error updating alarm: $e');
       return false;
     }
   }
@@ -106,16 +96,13 @@ class AlarmDatabase {
       // First get the alarm to get its slug
       final alarm = await getAlarmById(id);
       if (alarm == null || alarm.slug.isEmpty) {
-        debugPrint('Cannot delete alarm: alarm not found or slug is empty');
         return false;
       }
       
       final result = await _apiService.deleteAlarm(alarm.slug);
       
-      debugPrint('Alarm deleted: $result');
       return result;
     } catch (e) {
-      debugPrint('Error deleting alarm: $e');
       return false;
     }
   }
@@ -126,16 +113,13 @@ class AlarmDatabase {
       // First get the alarm to get its slug
       final alarm = await getAlarmById(id);
       if (alarm == null || alarm.slug.isEmpty) {
-        debugPrint('Cannot toggle alarm: alarm not found or slug is empty');
         return false;
       }
       
       final result = await _apiService.toggleAlarmEnabled(alarm.slug, enabled);
       
-      debugPrint('Toggled alarm enabled status: $result');
       return result;
     } catch (e) {
-      debugPrint('Error toggling alarm enabled: $e');
       return false;
     }
   }
@@ -145,10 +129,8 @@ class AlarmDatabase {
     try {
       // For safety, this method is not implemented for API
       // Individual alarms should be deleted one by one
-      debugPrint('Delete all alarms not implemented for API safety');
       return false;
     } catch (e) {
-      debugPrint('Error deleting all alarms: $e');
       return false;
     }
   }
@@ -158,7 +140,6 @@ class AlarmDatabase {
     try {
       return await _apiService.getUpcomingAlarms();
     } catch (e) {
-      debugPrint('Error getting upcoming alarms: $e');
       return [];
     }
   }
@@ -168,7 +149,6 @@ class AlarmDatabase {
     try {
       return await _apiService.getOverdueAlarms();
     } catch (e) {
-      debugPrint('Error getting overdue alarms: $e');
       return [];
     }
   }

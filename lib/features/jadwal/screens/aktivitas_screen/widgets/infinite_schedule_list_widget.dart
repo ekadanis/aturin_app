@@ -167,10 +167,6 @@ class _InfiniteScheduleListWidgetState
       return categoryMatch && dateMatch;
     }).toList();
 
-    print('📋 InfiniteScheduleList - Schedule filtering for ${date.toString().split(' ')[0]}:');
-    print('   Total schedules available: ${widget.schedules.length}');
-    print('   Selected category: ${widget.selectedCategory}');
-    print('   Filtered schedules: ${filteredSchedules.length}');
 
     return filteredSchedules;
   }  
@@ -196,10 +192,6 @@ class _InfiniteScheduleListWidgetState
       return categoryMatch && dateMatch;
     }).toList();
 
-    print('📋 InfiniteScheduleList - Task filtering for ${date.toString().split(' ')[0]}:');
-    print('   Total tasks available: ${widget.tasks.length}');
-    print('   Selected category: ${widget.selectedCategory}');
-    print('   Filtered tasks: ${filteredTasks.length}');
 
     return filteredTasks;
   }
@@ -412,7 +404,6 @@ class _InfiniteScheduleListWidgetState
         
         // For now, let's try to use the date but with a reasonable default time
         // You should modify this to use actual start time from your model
-        print('⚠️ Activity "${item.activityTitle}" has no time info, using date: ${activityDate}');
         
         // If your AktivitasModel has startTime field, use it like:
         // if (item.startTime != null) {
@@ -447,15 +438,12 @@ class _InfiniteScheduleListWidgetState
     
     final hour = time.hour;
     
-    print('\n🕐 Checking time: ${time.toString()}');
-    print('   Hour: $hour');
     
     for (int i = 0; i < config.length; i++) {
       final start = config[i]['start'] as int;
       final end = config[i]['end'] as int;
       final label = config[i]['label'] as String;
       
-      print('   Checking section: $label ($start:00-$end:59)');
       
       bool isInRange = false;
       
@@ -468,12 +456,10 @@ class _InfiniteScheduleListWidgetState
       }
       
       if (isInRange) {
-        print('   ✅ Matched section: $label');
         return i;
       }
     }
     
-    print('   ❌ No section matched for hour $hour, defaulting to first section');
     return 0; // Default to first section instead of -1
   }
 
@@ -516,8 +502,6 @@ class _InfiniteScheduleListWidgetState
               }),
         ];
         
-        // Debug: Print processed times
-        print('\n📅 DEBUG: Processing ${allItems.length} items for ${date.toString().split(' ')[0]}:');
         for (var item in allItems) {
           final DateTime time = item['time'] as DateTime;
           final String type = item['type'] as String;
@@ -525,10 +509,8 @@ class _InfiniteScheduleListWidgetState
           
           if (type == 'aktivitas') {
             final aktivitas = data as AktivitasModel;
-            print('   📌 Activity: "${aktivitas.activityTitle}" at ${time.toString()} (${time.hour}:${time.minute.toString().padLeft(2, '0')})');
           } else {
             final task = data as Task;
-            print('   ✔️ Task: "${task.title}" deadline ${time.toString()} (${time.hour}:${time.minute.toString().padLeft(2, '0')})');
           }
         }
 

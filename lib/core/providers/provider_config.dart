@@ -19,7 +19,7 @@ import 'package:aturin_app/core/services/cache/cache_service.dart';
 class ProviderConfig {
   /// Mendapatkan daftar semua Provider yang diperlukan aplikasi
   ///
-  /// [connectivityService] - Instance ConnectivityService yang sudah diinisialisasi
+  /// [connectivityService]
   ///   /// Returns List<SingleChildWidget> - Daftar provider yang siap digunakan
   static List<SingleChildWidget> getProviders({
     required ConnectivityService connectivityService,

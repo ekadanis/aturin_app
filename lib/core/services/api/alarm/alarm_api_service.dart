@@ -43,10 +43,6 @@ class AlarmApiService {
         final result = AlarmModel.fromJson(data['data']);
         
         // Enhanced debug logging
-        print('=== ALARM CREATION SUCCESS ===');
-        print('Created alarm ID: ${result.id}');
-        print('Created alarm data: ${json.encode(data['data'])}');
-        print('AlarmModel object: ${result.toString()}');
         
         return result;
       }
