@@ -18,7 +18,7 @@ import 'package:aturin_app/core/services/cache/cache_service.dart';
 /// Digunakan untuk memisahkan Provider setup dari main.dart agar lebih terorganisir
 class ProviderConfig {
   /// Mendapatkan daftar semua Provider yang diperlukan aplikasi
-  /// 
+  ///
   /// [connectivityService] - Instance ConnectivityService yang sudah diinisialisasi
   ///   /// Returns List<SingleChildWidget> - Daftar provider yang siap digunakan
   static List<SingleChildWidget> getProviders({
@@ -29,38 +29,27 @@ class ProviderConfig {
       ChangeNotifierProvider<ConnectivityService>.value(
         value: connectivityService,
       ),
-      
+
       // Cache Service (Single instance)
-      Provider<CacheService>(
-        create: (_) => CacheService(),
-      ),
-      
+      Provider<CacheService>(create: (_) => CacheService()),
+
       // Authentication & User Management
-      ChangeNotifierProvider<AuthService>(
-        create: (_) => AuthService(),
-      ),
-      ChangeNotifierProvider<ProfileService>(
-        create: (_) => ProfileService(),
-      ),
-      
+      ChangeNotifierProvider<AuthService>(create: (_) => AuthService()),
+      ChangeNotifierProvider<ProfileService>(create: (_) => ProfileService()),
+
       // Task Management Services (Must be before GlobalStateService)
-      ChangeNotifierProvider<TaskApiService>(
-        create: (_) => TaskApiService(),
-      ),
-      Provider<AlarmApiService>(
-        create: (_) => AlarmApiService(),
-      ),
-      Provider<TaskUtilityService>(
-        create: (_) => TaskUtilityService(),
-      ),
+      ChangeNotifierProvider<TaskApiService>(create: (_) => TaskApiService()),
+      Provider<AlarmApiService>(create: (_) => AlarmApiService()),
+      Provider<TaskUtilityService>(create: (_) => TaskUtilityService()),
       ChangeNotifierProvider<TaskService>(
-        create: (context) => TaskService(
-          taskApiService: context.read<TaskApiService>(),
-          alarmApiService: context.read<AlarmApiService>(),
-          utilityService: context.read<TaskUtilityService>(),
-        ),
+        create:
+            (context) => TaskService(
+              taskApiService: context.read<TaskApiService>(),
+              alarmApiService: context.read<AlarmApiService>(),
+              utilityService: context.read<TaskUtilityService>(),
+            ),
       ),
-      
+
       // Activity Management Services
       ChangeNotifierProvider<ActivityApiService>(
         create: (_) => ActivityApiService(),
@@ -68,19 +57,18 @@ class ProviderConfig {
       ChangeNotifierProvider<AktivitasService>(
         create: (_) => AktivitasService(),
       ),
-      
+
       // Global State Management (Must be after TaskApiService)
       ChangeNotifierProvider<GlobalStateService>(
-        create: (context) => GlobalStateService(
-          taskApiService: context.read<TaskApiService>(),
-        )..initialize(),
+        create:
+            (context) => GlobalStateService(
+              taskApiService: context.read<TaskApiService>(),
+            )..initialize(),
       ),
-      
+
       // Home Services
-      Provider<HomeService>(
-        create: (_) => HomeService(),
-      ),
-      
+      Provider<HomeService>(create: (_) => HomeService()),
+
       // Home Widget Provider
       ChangeNotifierProvider<HomeWidgetProvider>(
         create: (_) => HomeWidgetProvider()..initialize(),
