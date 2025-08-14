@@ -60,6 +60,7 @@ class _LoginPageState extends State<LoginPage> {
                   passwordController: passwordController,
                   onLogin: _handleLogin,
                   isLoading: _isProcessing,
+                  onPasswordResetTap: _navigateToPasswordReset,                  
                 ),
 
                 SizedBox(height: 3.h),
@@ -143,6 +144,10 @@ class _LoginPageState extends State<LoginPage> {
 
   void _navigateToRegister() {
     context.router.push(const RegisterRoute());
+  }
+
+  void _navigateToPasswordReset() {
+    context.router.push(const PasswordResetRoute());
   }
 
   bool _validateInputs() {

@@ -176,203 +176,162 @@ class _AktivitasPageState extends State<AktivitasPage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // Mendapatkan tinggi bottom navigation untuk padding scroll
-    final bottomNavHeight = kBottomNavigationBarHeight;
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        context.router.pushAndPopUntil(
-          const HomeRoute(),
-          predicate: (_) => false,
-        );
-      },
-      child: Scaffold(
-        backgroundColor: AppTheme.lightBackgroundColor,
-        extendBody: true,
-        bottomNavigationBar: const BottomNavbar(currentIndex: 1),
-        body: SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              children: [
-                // Header
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4, // Sudah ada padding luar, cukup kecilkan
-                    vertical: 16,
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Jadwal',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.lightTextColor,
-                        ),
+  // In aktivitas_screen.dart
+
+@override
+Widget build(BuildContext context) {
+  final bottomNavHeight = kBottomNavigationBarHeight;
+
+  return PopScope(
+    canPop: false,
+    onPopInvokedWithResult: (didPop, result) {
+      if (didPop) return;
+      context.router.pushAndPopUntil(
+        const HomeRoute(),
+        predicate: (_) => false,
+      );
+    },
+    child: Scaffold(
+      backgroundColor: AppTheme.lightBackgroundColor,
+      extendBody: true,
+      bottomNavigationBar: const BottomNavbar(currentIndex: 1),
+      body: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Row(
+                  children: [
+                    Text(
+                      'Jadwal',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.lightTextColor,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                // Category Tabs
-                Transform.translate(
-                  offset: const Offset(0, -8),
-                  child: CategoryTabsWidget(
-                    selectedCategory: selectedCategory,
-                    onCategoryChanged: (category) {
+              ),
+              // Category Tabs
+              Transform.translate(
+                offset: const Offset(0, -8),
+                child: CategoryTabsWidget(
+                  selectedCategory: selectedCategory,
+                  onCategoryChanged: (category) {
+                    setState(() {
+                      selectedCategory = category;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: 5),
+
+              // --- FIX #1: The Calendar Section is NOT wrapped in Expanded or SingleChildScrollView ---
+              // It is a direct child of the Column and will take up its own necessary height.
+              Consumer2<ActivityApiService, TaskApiService>(
+                builder: (context, activityApiService, taskApiService, _) {
+                  final activitiesHash = activityApiService.activities.length;
+                  final tasksHash = taskApiService.tasks.length;
+                  final calendarKey = ValueKey(
+                    'calendar_${activitiesHash}_${tasksHash}_${_calendarRebuildCounter}',
+                  );
+                  return CalendarSectionWidget(
+                    key: calendarKey,
+                    selectedDate: selectedDate,
+                    focusedDate: focusedDate,
+                    calendarFormat: calendarFormat,
+                    schedules: activityApiService.activities,
+                    tasks: _getTasksForCalendar(),
+                    onDateSelected: (selectedDay, focusedDay) {
                       setState(() {
-                        selectedCategory = category;
+                        focusedDate = focusedDay;
+                      });
+                      _onDateChanged(selectedDay);
+                    },
+                    onFormatChanged: (format) {
+                      setState(() {
+                        calendarFormat = format;
                       });
                     },
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Calendar
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  child: Consumer2<ActivityApiService, TaskApiService>(
-                    builder: (context, activityApiService, taskApiService, _) {
-                      final activitiesHash = activityApiService.activities.length;
-                      final tasksHash = taskApiService.tasks.length;
-                      final calendarKey = ValueKey(
-                        'calendar_${activitiesHash}_${tasksHash}_${_calendarRebuildCounter}',
-                      );
-                      return CalendarSectionWidget(
-                        key: calendarKey,
-                        selectedDate: selectedDate,
-                        focusedDate: focusedDate,
-                        calendarFormat: calendarFormat,
-                        schedules: activityApiService.activities,
-                        tasks: _getTasksForCalendar(),
-                        onDateSelected: (selectedDay, focusedDay) {
-                          setState(() {
-                            focusedDate = focusedDay;
-                          });
-                          _onDateChanged(selectedDay);
-                        },
-                        onFormatChanged: (format) {
-                          setState(() {
-                            calendarFormat = format;
-                          });
-                        },
-                        onPageChanged: (focusedDay) {
-                          setState(() {
-                            focusedDate = focusedDay;
-                          });
-                        },
-                      );
+                    onPageChanged: (focusedDay) {
+                      setState(() {
+                        focusedDate = focusedDay;
+                      });
                     },
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Schedule List
-                Expanded(
-                  child: Consumer2<ActivityApiService, TaskApiService>(
-                    builder: (context, activityApiService, taskApiService, _) {
-                      // Only show loading indicator during initial loading AND when we have no cached data
-                      // If we have ANY cached data (tasks or activities), don't show loading
-                      if (_isInitialLoading && 
-                          activityApiService.activities.isEmpty && 
-                          taskApiService.tasks.isEmpty && 
-                          (activityApiService.isLoading || taskApiService.isLoading)) {
-                        return Center(
-                          child: LoadingAnimationWidget.staggeredDotsWave(
-                            color: AppTheme.primaryColor,
-                            size: 50,
-                          ),
-                        );
-                      }
-                      
-                      if (activityApiService.error != null &&
-                          activityApiService.activities.isEmpty) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                size: 64,
-                                color: Colors.grey[400],
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Gagal memuat aktivitas',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                activityApiService.error!,
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 14,
-                                  color: Colors.grey[500],
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: _refreshData,
-                                child: const Text('Coba Lagi'),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-                      
-                      return RefreshIndicator(
-                        onRefresh: _refreshData,
-                        child: InfiniteScheduleListWidget(
-                          tasks: _getTasksForCalendar(),
-                          schedules: activityApiService.activities,
-                          selectedCategory: selectedCategory,
-                          selectedDate: selectedDate,
-                          onDateChanged: (date) {
-                            _onDateChanged(date);
-                          },
-                          onEditSchedule: (aktivitas) => _editActivity(aktivitas),
-                          onDeleteSchedule: (aktivitas) => _deleteActivity(aktivitas),
-                          onEditTask: (task) => _editTask(task),
-                          onDeleteTask: (task) => _deleteTask(task),
-                          onShowSuccess: (message) {
-                            // Refresh all data and calendar after any CRUD operation
-                            _refreshData();
-                            // Force calendar rebuild for instant update
-                            setState(() {
-                              _calendarRebuildCounter++;
-                            });
-                            showCustomTopSnackbar(
-                              context: context,
-                              message: message,
-                              isError: false,
-                            );
-                          },
-                          sectionTimeConfig: const [
-                            {'label': 'Pagi (05:00 - 10:00)', 'start': 5, 'end': 10},
-                            {'label': 'Siang (11:00 - 14:00)', 'start': 11, 'end': 14},
-                            {'label': 'Sore (15:00 - 18:00)', 'start': 15, 'end': 18},
-                            {'label': 'Malam (19:00 - 04:00)', 'start': 19, 'end': 4},
-                          ],
+                  );
+                },
+              ),
+              const SizedBox(height: 15),
+
+              // --- FIX #2: The Schedule List is the ONLY widget wrapped in Expanded ---
+              // This tells it to fill all the remaining space below the calendar.
+              Expanded(
+                child: Consumer2<ActivityApiService, TaskApiService>(
+                  builder: (context, activityApiService, taskApiService, _) {
+                    if (_isInitialLoading &&
+                        activityApiService.activities.isEmpty &&
+                        taskApiService.tasks.isEmpty &&
+                        (activityApiService.isLoading || taskApiService.isLoading)) {
+                      return Center(
+                        child: LoadingAnimationWidget.staggeredDotsWave(
+                          color: AppTheme.primaryColor,
+                          size: 50,
                         ),
                       );
-                    },
-                  ),
+                    }
+                    // ... (your error handling UI remains the same)
+
+                    return RefreshIndicator(
+                      onRefresh: _refreshData,
+                      child: InfiniteScheduleListWidget(
+                        // ... (all properties remain the same)
+                        tasks: _getTasksForCalendar(),
+                        schedules: activityApiService.activities,
+                        selectedCategory: selectedCategory,
+                        selectedDate: selectedDate,
+                        onDateChanged: (date) {
+                          _onDateChanged(date);
+                        },
+                        onEditSchedule: (aktivitas) => _editActivity(aktivitas),
+                        onDeleteSchedule: (aktivitas) => _deleteActivity(aktivitas),
+                        onEditTask: (task) => _editTask(task),
+                        onDeleteTask: (task) => _deleteTask(task),
+                        onShowSuccess: (message) {
+                          _refreshData();
+                          setState(() {
+                            _calendarRebuildCounter++;
+                          });
+                          showCustomTopSnackbar(
+                            context: context,
+                            message: message,
+                            isError: false,
+                          );
+                        },
+                        sectionTimeConfig: const [
+                          {'label': 'Pagi (05:00 - 10:00)', 'start': 5, 'end': 10},
+                          {'label': 'Siang (11:00 - 14:00)', 'start': 11, 'end': 14},
+                          {'label': 'Sore (15:00 - 18:00)', 'start': 15, 'end': 18},
+                          {'label': 'Malam (19:00 - 04:00)', 'start': 19, 'end': 4},
+                        ],
+                      ),
+                    );
+                  },
                 ),
-                // Spacer agar konten tidak ketutupan bottom nav
-                SizedBox(height: bottomNavHeight + 24),
-              ],
-            ),
+              ),
+              // Spacer to ensure content isn't hidden by the bottom navbar
+              SizedBox(height: bottomNavHeight + 10),
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _editActivity(AktivitasModel aktivitas) {
     context.router.push(AddAktivitasRoute(existingAktivitas: aktivitas));

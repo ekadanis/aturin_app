@@ -16,15 +16,22 @@ class CategoryTabsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final availableCategories = CategoryHelper.getAllCategories();
     
+    final allTabs = ['Semua', ...availableCategories.map((c) => c.name)];
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      // This padding now controls the space at the very beginning and end.
+      padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 8.0),
       child: Row(
         children: [
-          _buildCategoryTab('Semua', true),
-          ...availableCategories.map(
-            (category) => _buildCategoryTab(category.name, false),
-          ),
+          for (int i = 0; i < allTabs.length; i++) ...[
+            // Build the tab
+            _buildCategoryTab(allTabs[i], allTabs[i] == 'Semua'),
+            
+            // Add spacing AFTER the tab, but NOT for the last one
+            if (i < allTabs.length - 1)
+              const SizedBox(width: 10),
+          ],
         ],
       ),
     );
@@ -50,37 +57,34 @@ class CategoryTabsWidget extends StatelessWidget {
       }
     }
 
-    return Padding(
-      padding: const EdgeInsets.only(right: 12),
-      child: GestureDetector(
-        onTap: () => onCategoryChanged(name),
-        child: Container(
-          height: 50,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (!isAll && category != null) ...[
-                SvgPicture.asset(
-                  category.iconPath,
-                  width: 16,
-                  height: 16,
-                  colorFilter: ColorFilter.mode(textColor, BlendMode.srcIn),
-                ),
-                const SizedBox(width: 4),
-              ],              Text(
-                name,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: textColor,
-                ),
-              ),],
-          ),
+    return GestureDetector(
+      onTap: () => onCategoryChanged(name),
+      child: Container(
+        height: 50,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!isAll && category != null) ...[
+              SvgPicture.asset(
+                category.iconPath,
+                width: 16,
+                height: 16,
+                colorFilter: ColorFilter.mode(textColor, BlendMode.srcIn),
+              ),
+              const SizedBox(width: 4),
+            ],              Text(
+              name,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: textColor,
+              ),
+            ),],
         ),
       ),
     );
