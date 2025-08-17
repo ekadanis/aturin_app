@@ -529,7 +529,7 @@ class _InfiniteScheduleListWidgetState
         return RefreshIndicator(
           onRefresh: () async => setState(() {}),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(4),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

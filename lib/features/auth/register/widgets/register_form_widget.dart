@@ -2,7 +2,7 @@ import 'package:aturin_app/core/theme/app_theme.dart';
 import 'package:aturin_app/features/auth/login/widgets/custom_text_field.dart';
 import 'package:aturin_app/features/auth/register/widgets/confirm_password_field_widget.dart';
 import 'package:aturin_app/features/auth/register/widgets/password_field_widget.dart';
-import 'package:aturin_app/features/auth/register/widgets/password_stregth_widget.dart';
+import 'package:aturin_app/features/auth/register/widgets/password_strength_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';

@@ -327,6 +327,22 @@ class OnboardingRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [PasswordResetPage]
+class PasswordResetRoute extends PageRouteInfo<void> {
+  const PasswordResetRoute({List<PageRouteInfo>? children})
+    : super(PasswordResetRoute.name, initialChildren: children);
+
+  static const String name = 'PasswordResetRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const PasswordResetPage();
+    },
+  );
+}
+
+/// generated route for
 /// [ProfileEditPage]
 class ProfileEditRoute extends PageRouteInfo<ProfileEditRouteArgs> {
   ProfileEditRoute({
@@ -496,6 +512,22 @@ class TaskListRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return const TaskListScreen();
+    },
+  );
+}
+
+/// generated route for
+/// [UserPreferencePage]
+class UserPreferenceRoute extends PageRouteInfo<void> {
+  const UserPreferenceRoute({List<PageRouteInfo>? children})
+    : super(UserPreferenceRoute.name, initialChildren: children);
+
+  static const String name = 'UserPreferenceRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const UserPreferencePage();
     },
   );
 }

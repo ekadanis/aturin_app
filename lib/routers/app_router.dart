@@ -1,4 +1,6 @@
+import 'package:aturin_app/features/auth/password_reset/ui/password_reset_page.dart';
 import 'package:aturin_app/features/jadwal/model/aktivitas_model.dart';
+import 'package:aturin_app/features/user_preference/ui/user_preference_page.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
@@ -37,6 +39,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/onboarding', page: OnboardingRoute.page),
     AutoRoute(path: '/login', page: LoginRoute.page),
     AutoRoute(path: '/register', page: RegisterRoute.page),
+    AutoRoute(path: '/password_reset', page: PasswordResetRoute.page),
 
     CustomRoute(
       path: '/home',
@@ -109,6 +112,12 @@ class AppRouter extends RootStackRouter {
     CustomRoute(
       path: '/no-internet',
       page: NoInternetRoute.page,
+      transitionsBuilder: (_, __, ___, child) => child,
+      duration: Duration.zero,
+    ),
+    CustomRoute(
+      path: '/user_preference',
+      page: UserPreferenceRoute.page,
       transitionsBuilder: (_, __, ___, child) => child,
       duration: Duration.zero,
     ),

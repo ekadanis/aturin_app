@@ -1,5 +1,6 @@
 import 'package:aturin_app/core/services/api/auth/auth_service.dart';
 import 'package:aturin_app/core/services/api/profile/profile_service.dart';
+import 'package:aturin_app/features/profile/widgets/user_preference_card.dart';
 import 'package:flutter/material.dart';
 import 'package:aturin_app/features/profile/models/user_model.dart';
 import 'package:aturin_app/features/profile/widgets/profile_card.dart';
@@ -134,6 +135,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       title: 'Alarm',
                       description: 'Atur Alarm kamu',
                     ),
+                    UserPreferenceCard(
+                      onPressed: _navigateToUserPreferencePage,
+                    ),
                     const SizedBox(height: 8),
                     LogoutButton(
                       onPressed: () async {
@@ -225,5 +229,20 @@ class _ProfilePageState extends State<ProfilePage> {
       // Reload user data setelah edit dengan force refresh
       _loadUser(forceRefresh: true);
     }
+  }
+
+  // Future<void> _navigateToUserPreferencePage(BuildContext context, User user) async {
+  //   final result = await Navigator.push<bool>(
+  //     context,
+  //     MaterialPageRoute(builder: (context) => ProfileEditPage(user: user)),
+  //   );
+  //   if (result == true) {
+  //     // Reload user data setelah edit dengan force refresh
+  //     _loadUser(forceRefresh: true);
+  //   }
+  // }
+
+  void _navigateToUserPreferencePage() {
+    context.router.push(const UserPreferenceRoute());
   }
 }
