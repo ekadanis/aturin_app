@@ -172,53 +172,53 @@ aturin_app/
 │   ├── integration/                      # Integration tests
 │   └── widget/                           # Widget tests
 ├── 📚 lib/                               # Main Dart code
-│   ├── main.dart                         # 🚀 Entry point aplikasi
-│   ├── my_app.dart                       # ⚙️ App configuration & themes
-│   ├── app/                              # 📱 App-level components
+│   ├── main.dart                         # Entry point aplikasi
+│   ├── my_app.dart                       # App configuration & themes
+│   ├── app/                              # App-level components
 │   │   └── bottom_navbar.dart            # Main navigation bar
-│   ├── features/                         # 🎯 Feature-based modules
-│   │   ├── alarm/                        # ⏰ Alarm management
+│   ├── features/                         # Feature-based modules
+│   │   ├── alarm/                        # Alarm management
 │   │   │   ├── data/                     # Data layer (models, databases)
 │   │   │   ├── presentation/             # UI layer (screens, widgets)
 │   │   │   └── services/                 # Business logic
-│   │   ├── animated_splash_screen/       # 🎬 Splash screen
-│   │   ├── auth/                         # 🔐 Authentication (legacy)
-│   │   ├── device/                       # 📱 Device & FCM management
+│   │   ├── animated_splash_screen/       # Splash screen
+│   │   ├── auth/                         #  Authentication (legacy)
+│   │   ├── device/                       # Device & FCM management
 │   │   │   ├── models/                   # Device models
 │   │   │   ├── services/                 # Device services
 │   │   │   └── widgets/                  # Device-related widgets
-│   │   ├── home/                         # 🏠 Home dashboard
+│   │   ├── home/                         # Home dashboard
 │   │   │   ├── presentation/
 │   │   │   │   ├── screens/              # Home screens
 │   │   │   │   ├── widgets/              # Home widgets
 │   │   │   │   └── providers/            # Home state management
 │   │   │   └── ui/                       # UI components
-│   │   ├── login/                        # 🔑 Login functionality
+│   │   ├── login/                        # Login functionality
 │   │   │   └── presentation/
 │   │   │       ├── screens/              # Login screens
 │   │   │       └── widgets/              # Login widgets
-│   │   ├── onboarding/                   # 👋 User onboarding
-│   │   ├── password_reset/               # 🔄 Password recovery
-│   │   ├── profile/                      # 👤 User profile
+│   │   ├── onboarding/                   # User onboarding
+│   │   ├── password_reset/               # Password recovery
+│   │   ├── profile/                      #  User profile
 │   │   │   ├── data/models/              # User data models
 │   │   │   ├── models/                   # Profile models
 │   │   │   ├── presentation/             # Profile UI
 │   │   │   └── ui/                       # Profile components
-│   │   ├── register/                     # 📝 User registration
-│   │   ├── schedule/                     # 📅 Schedule management
+│   │   ├── register/                     # User registration
+│   │   ├── schedule/                     #  Schedule management
 │   │   │   ├── data/                     # Schedule data layer
 │   │   │   ├── domain/                   # Business logic
 │   │   │   └── presentation/             # Schedule UI
-│   │   ├── task/                         # ✅ Task management
+│   │   ├── task/                         # Task management
 │   │   │   ├── data/                     # Task data & models
 │   │   │   ├── presentation/             # Task UI & services
 │   │   │   └── screens/                  # Task screens
-│   │   ├── user_preference/              # ⚙️ User settings
-│   │   └── widget_aturin/                # 📱 Native widget integration
+│   │   ├── user_preference/              # User settings
+│   │   └── widget_aturin/                # Native widget integration
 │   │       ├── services/                 # Widget services
 │   │       └── widgets/                  # Widget components
-│   ├── shared/                           # 🔗 Shared components
-│   │   ├── core/                         # 🏗️ Core utilities
+│   ├── shared/                           # Shared components
+│   │   ├── core/                         #  Core utilities
 │   │   │   ├── constant/                 # App constants & themes
 │   │   │   ├── database/                 # Database configurations
 │   │   │   ├── infrastructure/           # Routing, DI, etc.
@@ -236,7 +236,7 @@ aturin_app/
 │   │   ├── helpers/                      # Helper utilities
 │   │   ├── screens/                      # Shared screens
 │   │   ├── utils/                        # Utility functions
-│   │   └── widgets/                      # 🧩 Reusable UI components
+│   │   └── widgets/                      # Reusable UI components
 │   └── core/                             # Legacy core (deprecated)
 ├─
 
