@@ -42,12 +42,18 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Environment variables (ADD ONLY SECRETS, NOT PLATFORM FOLDERS)
+# EXCLUDE platform folders we DON'T want in Git
+/linux/
+/macos/
+/web/
+/windows/
+
+# Environment variables
 .env
 .env.local
 .env.production
 
-# Sensitive files (ADD ONLY SENSITIVE FILES)
+# Sensitive files only
 /android/app/google-services.json
 /android/local.properties
 /android/key.properties
