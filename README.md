@@ -295,8 +295,7 @@ flutter build appbundle --release  # For Play Store
 
 ### **Build Configuration**
 - **minSdkVersion**: 21 (Android 5.0)
-- **targetSdkVersion**: 34 (Android 14)
-- **compileSdkVersion**: 34
+
 
 ## 🤝 Contributing
 

@@ -8,19 +8,18 @@
 .buildlog/
 .history
 .svn/
-.swiftpm/
 migrate_working_dir/
-*.tmp
-*.temp
-*~
 
-# IDE related
+# IntelliJ related
 *.iml
 *.ipr
 *.iws
 .idea/
-.vscode/
-*.code-workspace
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
 
 # Flutter/Dart/Pub related
 **/doc/api/
@@ -31,22 +30,6 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
-pubspec.lock
-
-# Generated files
-.flutter-plugins-dependencies
-**/generated_plugin_registrant.*
-**/generated_plugins.cmake
-lib/generated/
-*.g.dart
-*.freezed.dart
-*.chopper.dart
-
-# Test related
-coverage/
-test_driver/
-integration_test/reports/
-.test_coverage/
 
 # Symbolication related
 app.*.symbols
@@ -55,112 +38,23 @@ app.*.symbols
 app.*.map.json
 
 # Android Studio will place build artifacts here
-/android/app/debug/
-/android/app/profile/
-/android/app/release/
-/android/.gradle/
-/android/captures/
-/android/local.properties
-/android/key.properties
-/android/app/google-services.json
+/android/app/debug
+/android/app/profile
+/android/app/release
 
-# iOS build artifacts
-/ios/build/
-/ios/Runner.xcworkspace/
-/ios/Runner.xcodeproj/project.xcworkspace/
-/ios/Flutter/Generated.xcconfig
-/ios/Flutter/flutter_export_environment.sh
-
-# Environment variables
+# Environment variables (ADD ONLY SECRETS, NOT PLATFORM FOLDERS)
 .env
 .env.local
 .env.production
-.env.development
-*.env
 
-# Secrets and keys
-/android/app/keystore/
-/android/app/key.jks
-/android/app/*.keystore
-/ios/Runner/GoogleService-Info.plist
-/lib/core/constants/api_keys.dart
-/assets/config/
-
-# Logs
-logs/
-*.log
-flutter_*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Database
-*.sqlite
-*.sqlite3
-*.db
-
-# Cache directories
-.flutter-cache/
-.dart_tool/build/
-node_modules/
-
-# Platform specific ignores
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-$RECYCLE.BIN/
-
-# macOS
-.AppleDouble
-.LSOverride
-Icon
-._*
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-.com.apple.timemachine.donotpresent
-
-# Windows
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-$RECYCLE.BIN/
-*.cab
-*.msi
-*.msix
-*.msm
-*.msp
-*.lnk
-
-# Linux
-*~
-.fuse_hidden*
-.directory
-.Trash-*
-.nfs*
-
-# Backup files
-*.bak
-*.backup
-*.old
-*.orig
-
-# Temporary files
-*.tmp
-*.temp
-.temp/
-.tmp/
-
-# Firebase
-firebase_options.dart
+# Sensitive files (ADD ONLY SENSITIVE FILES)
 /android/app/google-services.json
+/android/local.properties
+/android/key.properties
 /ios/Runner/GoogleService-Info.plist
-/web/firebase-config.js
 
-# CI/CD
-.github/secrets/
-deploy_key
-deploy_key.pub
+# FVM Version Cache
+.fvm/
+
+# Generated plugin files
+**/generated_plugin_registrant.*
