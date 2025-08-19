@@ -1,10 +1,10 @@
+import 'package:aturin_app/my_app.dart';
+import 'package:aturin_app/shared/core/initialization/app_bootstrap.dart';
+import 'package:aturin_app/shared/core/services/connectivity/connectivity_service.dart';
+import 'package:aturin_app/shared/widgets/error_app.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
-import 'core/initialization/app_bootstrap.dart';
-import 'core/app/my_app.dart';
-import 'core/widgets/error_app.dart';
-import 'routers/app_router.dart';
-import 'core/services/connectivity/connectivity_service.dart';
+import 'shared/core/infrastructure/routers/app_router.dart';
 
 
 final appRouter = AppRouter();
@@ -78,8 +78,6 @@ class _PreloadingAppState extends State<PreloadingApp> {
         connectivityService: connectivityService,
       ));
     } catch (e) {
-      
-      // Tunggu sebentar dan tampilkan error
       await Future.delayed(const Duration(seconds: 1));
       AppBootstrap.removeSplashScreen();
       runApp(ErrorApp(error: e.toString()));

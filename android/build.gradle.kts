@@ -13,6 +13,7 @@ buildscript {
     dependencies {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
         classpath("org.jetbrains.kotlin:kotlin-serialization:$kotlin_version")
+        classpath("com.google.gms:google-services:4.4.0")
     }
 }
 val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()

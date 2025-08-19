@@ -1,0 +1,410 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:aturin_app/features/task/data/model/task_model.dart';
+import 'package:aturin_app/features/schedule/data/model/aktivitas_model.dart';
+import 'package:aturin_app/features/profile/data/models/user_model.dart';
+import 'package:aturin_app/shared/core/services/api/task/task_api_service.dart';
+import 'package:aturin_app/shared/core/services/api/activities/activity_api_service.dart';
+import 'package:aturin_app/shared/core/services/api/profile/profile_service.dart';
+
+/// Global State Service untuk mengelola data yang di-share antara screens
+/// Mengatasi masalah loading redundant dan sinkronisasi data
+class GlobalStateService extends ChangeNotifier {
+  // API Services
+  late final TaskApiService _taskApiService;
+  final ActivityApiService _activityApiService = ActivityApiService();
+  final ProfileService _profileService = ProfileService();
+
+  // ============================
+  // STATE VARIABLES
+  // ============================
+
+  // User data
+  User? _currentUser;
+  DateTime? _userLastFetched;
+
+  // Tasks data
+  List<Task> _allTasks = [];
+  List<Task> _todayTasks = [];
+  DateTime? _tasksLastFetched;
+
+  // Activities data
+  List<AktivitasModel> _allActivities = [];
+  List<AktivitasModel> _todayActivities = [];
+  DateTime? _activitiesLastFetched;
+
+  // Loading states
+  bool _isLoadingUser = false;
+  bool _isLoadingTasks = false;
+  bool _isLoadingActivities = false;
+
+  // Task List State
+  String _selectedTaskFilter = 'Semua';
+  int _overdueTasksCount = 0;
+  bool _isTaskLoading = false;
+  String? _taskError;
+  Timer? _taskDebounceTimer;
+
+  GlobalStateService({required TaskApiService taskApiService}) {
+    _taskApiService = taskApiService;
+    initialize();
+  }
+
+  // ============================
+  // GETTERS
+  // ============================
+
+  User? get currentUser => _currentUser;
+  List<Task> get allTasks => _allTasks;
+  List<Task> get todayTasks => _todayTasks;
+  List<AktivitasModel> get allActivities => _allActivities;
+  List<AktivitasModel> get todayActivities => _todayActivities;
+
+  bool get isLoadingUser => _isLoadingUser;
+  bool get isLoadingTasks => _isLoadingTasks;
+  bool get isLoadingActivities => _isLoadingActivities;
+  bool get isLoading =>
+      _isLoadingUser || _isLoadingTasks || _isLoadingActivities;
+
+  // Cache validation (5 minutes cache)
+  bool get isUserCacheValid =>
+      _userLastFetched != null &&
+      DateTime.now().difference(_userLastFetched!).inMinutes < 5;
+
+  bool get isTasksCacheValid =>
+      _tasksLastFetched != null &&
+      DateTime.now().difference(_tasksLastFetched!).inMinutes < 2;
+
+  bool get isActivitiesCacheValid =>
+      _activitiesLastFetched != null &&
+      DateTime.now().difference(_activitiesLastFetched!).inMinutes < 2;
+
+  // Getters for Task List
+  String get selectedTaskFilter => _selectedTaskFilter;
+  int get overdueTasksCount => _overdueTasksCount;
+  bool get isTaskLoading => _isTaskLoading;
+  String? get taskError => _taskError;
+
+  // ============================
+  // COMPUTED PROPERTIES
+  // ============================
+
+  int get todayTasksCount {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    return _allTasks.where((task) {
+      final taskDate = DateTime(
+        task.deadline.year,
+        task.deadline.month,
+        task.deadline.day,
+      );
+      return taskDate.isAtSameMomentAs(today) &&
+          task.status != TaskStatus.completed;
+    }).length;
+  }
+
+  int get todayActivitiesCount {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    return _allActivities.where((aktivitas) {
+      final aktivitasDate = DateTime(
+        aktivitas.activityDate.year,
+        aktivitas.activityDate.month,
+        aktivitas.activityDate.day,
+      );
+      return aktivitasDate.isAtSameMomentAs(today);
+    }).length;
+  }
+
+  // ============================
+  // USER MANAGEMENT
+  // ============================
+
+  Future<User?> getUser({bool forceRefresh = false}) async {
+    if (!forceRefresh && isUserCacheValid && _currentUser != null) {
+      return _currentUser;
+    }
+
+    if (_isLoadingUser) {
+      // Wait for current loading to complete
+      while (_isLoadingUser) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      return _currentUser;
+    }
+
+    _isLoadingUser = true;
+    notifyListeners();
+
+    try {
+      final user = await _profileService.getBannerProfile();
+
+      if (user != null) {
+        _currentUser = user;
+        _userLastFetched = DateTime.now();
+      }
+
+      return user;
+    } catch (e) {
+      return _currentUser; // Return cached data on error
+    } finally {
+      _isLoadingUser = false;
+      notifyListeners();
+    }
+  }
+
+  // ============================
+  // TASKS MANAGEMENT
+  // ============================
+
+  Future<List<Task>> getTasks({bool forceRefresh = false}) async {
+    if (!forceRefresh && isTasksCacheValid && _allTasks.isNotEmpty) {
+      return _allTasks;
+    }
+
+    if (_isLoadingTasks) {
+      while (_isLoadingTasks) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      return _allTasks;
+    }
+
+    _isLoadingTasks = true;
+    notifyListeners();
+
+    try {
+      final tasks = await _taskApiService.getAllTasks();
+
+      _allTasks = tasks;
+      _updateTodayTasks();
+      _tasksLastFetched = DateTime.now();
+
+      return tasks;
+    } catch (e) {
+      return _allTasks; // Return cached data on error
+    } finally {
+      _isLoadingTasks = false;
+      notifyListeners();
+    }
+  }
+
+  Future<List<Task>> getTodayTasks({bool forceRefresh = false}) async {
+    await getTasks(forceRefresh: forceRefresh);
+    return _todayTasks;
+  }
+
+  void _updateTodayTasks() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    _todayTasks =
+        _allTasks.where((task) {
+          final taskDate = DateTime(
+            task.deadline.year,
+            task.deadline.month,
+            task.deadline.day,
+          );
+          return taskDate.isAtSameMomentAs(today);
+        }).toList();
+  }
+
+  // ============================
+  // ACTIVITIES MANAGEMENT
+  // ============================
+
+  Future<List<AktivitasModel>> getActivities({
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh && isActivitiesCacheValid && _allActivities.isNotEmpty) {
+      return _allActivities;
+    }
+
+    if (_isLoadingActivities) {
+      while (_isLoadingActivities) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      return _allActivities;
+    }
+
+    _isLoadingActivities = true;
+    notifyListeners();
+
+    try {
+      final activities = await _activityApiService.getAllActivities();
+
+      _allActivities = activities;
+      _updateTodayActivities();
+      _activitiesLastFetched = DateTime.now();
+
+      return activities;
+    } catch (e) {
+      return _allActivities; // Return cached data on error
+    } finally {
+      _isLoadingActivities = false;
+      notifyListeners();
+    }
+  }
+
+  Future<List<AktivitasModel>> getTodayActivities({
+    bool forceRefresh = false,
+  }) async {
+    await getActivities(forceRefresh: forceRefresh);
+    return _todayActivities;
+  }
+
+  void _updateTodayActivities() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    _todayActivities =
+        _allActivities.where((aktivitas) {
+          final aktivitasDate = DateTime(
+            aktivitas.activityDate.year,
+            aktivitas.activityDate.month,
+            aktivitas.activityDate.day,
+          );
+          return aktivitasDate.isAtSameMomentAs(today);
+        }).toList();
+  }
+
+  // ============================
+  // DATA SYNCHRONIZATION METHODS
+  // ============================
+
+  /// Force refresh all data
+  Future<void> refreshAllData() async {
+    await Future.wait([
+      getUser(forceRefresh: true),
+      getTasks(forceRefresh: true),
+      getActivities(forceRefresh: true),
+    ]);
+  }
+
+  /// Call this when tasks are modified (create/update/delete)
+  Future<void> onTasksChanged() async {
+    await getTasks(forceRefresh: true);
+  }
+
+  /// Call this when activities are modified (create/update/delete)
+  Future<void> onActivitiesChanged() async {
+    await getActivities(forceRefresh: true);
+  }
+
+  /// Call this when user profile is modified
+  Future<void> onUserChanged() async {
+    await getUser(forceRefresh: true);
+  }
+
+  // ============================
+  // INITIALIZATION
+  // ============================
+
+  /// Initialize with cached data for instant UI
+  Future<void> initialize() async {
+    // Load all data in parallel for fast startup
+    unawaited(Future.wait([getUser(), getTasks(), getActivities()]));
+  }
+
+  // ============================
+  // CACHE MANAGEMENT
+  // ============================
+
+  void clearCache() {
+    _currentUser = null;
+    _userLastFetched = null;
+
+    _allTasks.clear();
+    _todayTasks.clear();
+    _tasksLastFetched = null;
+
+    _allActivities.clear();
+    _todayActivities.clear();
+    _activitiesLastFetched = null;
+
+    notifyListeners();
+  }
+
+  // Task List Methods
+  Future<void> setTaskFilter(String filter) async {
+    if (_selectedTaskFilter != filter) {
+      _selectedTaskFilter = filter;
+      notifyListeners();
+      await refreshTaskData();
+    }
+  }
+
+  Future<void> refreshTaskData() async {
+    _taskDebounceTimer?.cancel();
+
+    _taskDebounceTimer = Timer(const Duration(milliseconds: 300), () async {
+      try {
+        _isTaskLoading = true;
+        _taskError = null;
+        notifyListeners();
+
+        // Parallel fetch
+        await Future.wait([
+          _fetchOverdueTasks(_taskApiService),
+          _fetchFilteredTasks(_taskApiService),
+        ]);
+      } catch (e) {
+        _handleTaskError(e);
+      } finally {
+        _isTaskLoading = false;
+        notifyListeners();
+      }
+    });
+  }
+
+  Future<void> refreshTaskDataImmediately() async {
+    try {
+      _isTaskLoading = true;
+      _taskError = null;
+      notifyListeners();
+
+      await Future.wait([
+        _fetchOverdueTasks(_taskApiService),
+        _fetchFilteredTasks(_taskApiService),
+      ]);
+    } catch (e) {
+      _handleTaskError(e);
+    } finally {
+      _isTaskLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _fetchOverdueTasks(TaskApiService taskService) async {
+    final data = await taskService.countLateTasks();
+    if (data != null && data['overdue_tasks'] != null) {
+      _overdueTasksCount = data['overdue_tasks'] as int;
+    }
+  }
+
+  Future<void> _fetchFilteredTasks(TaskApiService taskService) async {
+    // Implementation will be handled by TaskService
+    await taskService.fetchTasks(forceRefresh: true);
+  }
+
+  void _handleTaskError(dynamic error) {
+    if (error is TimeoutException) {
+      _taskError = 'Waktu permintaan habis. Silakan coba lagi.';
+    } else if (error.toString().contains('SocketException')) {
+      _taskError =
+          'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+    } else {
+      _taskError = 'Terjadi kesalahan. Silakan coba lagi nanti.';
+    }
+  }
+
+  @override
+  void dispose() {
+    _taskDebounceTimer?.cancel();
+    super.dispose();
+  }
+}
+
+// Helper function for unawaited futures
+void unawaited(Future future) {}
